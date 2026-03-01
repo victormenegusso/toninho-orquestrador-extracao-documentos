@@ -4,6 +4,9 @@ Configurações do pytest para o projeto Toninho.
 Este arquivo contém fixtures compartilhadas e configurações
 globais para todos os testes.
 """
+import os
+import tempfile
+from pathlib import Path
 from typing import Callable, Generator
 
 import pytest
@@ -141,3 +144,55 @@ def execucao_factory(db: Session, processo_factory: Callable) -> Callable[..., E
         return execucao
 
     return _create_execucao
+
+
+# ─── Additional fixtures ──────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def sample_html() -> bytes:
+    """HTML de exemplo para testes de extração."""
+    return b"""<!DOCTYPE html>
+<html>
+<head><title>Test Page</title></head>
+<body>
+    <h1>Main Heading</h1>
+    <p>This is a test paragraph.</p>
+    <a href="https://example.com/link">Example Link</a>
+</body>
+</html>"""
+
+
+@pytest.fixture
+def sample_html_file() -> Path:
+    """Caminho para arquivo HTML de exemplo nos fixtures."""
+    return Path(__file__).parent / "fixtures" / "sample_pages" / "example.html"
+
+
+@pytest.fixture
+def sample_markdown() -> str:
+    """Markdown de exemplo para testes."""
+    return """# Main Heading
+
+This is a test paragraph.
+
+[Example Link](https://example.com/link)
+"""
+
+
+@pytest.fixture
+def mock_storage(tmp_path):
+    """LocalFileSystemStorage usando diretório temporário."""
+    from toninho.extraction.storage import LocalFileSystemStorage
+
+    return LocalFileSystemStorage(base_dir=str(tmp_path))
+
+
+@pytest.fixture
+def mock_celery_task(mocker):
+    """Mock para evitar execução real de tasks Celery."""
+    mock = mocker.patch(
+        "toninho.workers.tasks.execucao_task.executar_processo_task.delay"
+    )
+    mock.return_value.id = "test-task-id-123"
+    return mock
