@@ -1,8 +1,8 @@
 # PRD-009: Módulo Página Extraída
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)  
-**Categoria**: Backend - Entidades Core  
+**Status**: ✅ Concluído
+**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)
+**Categoria**: Backend - Entidades Core
 **Estimativa**: 4-5 horas
 
 ---
@@ -178,15 +178,15 @@ async def download_pagina(
 ):
     try:
         pagina = pagina_service.get_pagina_extraida(db, pagina_id)
-        
+
         # Verificar arquivo existe
         filepath = Path(pagina.caminho_arquivo)
         if not filepath.exists():
             raise HTTPException(404, "Arquivo não encontrado no filesystem")
-        
+
         # Gerar nome de arquivo para download
         filename = filepath.name
-        
+
         return FileResponse(
             path=str(filepath),
             media_type="text/markdown",
@@ -308,7 +308,7 @@ def ler_arquivo(caminho: str) -> bytes:
     filepath = Path(caminho)
     if not filepath.exists():
         raise FileNotFoundError(f"Arquivo não encontrado: {caminho}")
-    
+
     with open(filepath, 'rb') as f:
         return f.read()
 ```
@@ -350,5 +350,5 @@ def deletar_arquivo(caminho: str) -> bool:
 
 ---
 
-**PRD Anterior**: PRD-008 - Módulo Log  
+**PRD Anterior**: PRD-008 - Módulo Log
 **Próximo PRD**: PRD-010 - Workers e Processamento Assíncrono

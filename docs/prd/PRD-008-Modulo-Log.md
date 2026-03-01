@@ -1,8 +1,8 @@
 # PRD-008: Módulo Log
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)  
-**Categoria**: Backend - Entidades Core  
+**Status**: ✅ Concluído
+**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)
+**Categoria**: Backend - Entidades Core
 **Estimativa**: 4-5 horas
 
 ---
@@ -177,15 +177,15 @@ async def stream_logs(
             for log in novos_logs:
                 yield f"data: {log.model_dump_json()}\n\n"
                 ultimo_id = log.id
-            
+
             # Verificar se execução finalizou
             execucao = db.query(Execucao).get(execucao_id)
             if execucao.status in estados_finais:
                 yield "event: done\ndata: {}\n\n"
                 break
-            
+
             await sleep(1)  # Poll a cada segundo
-    
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream"
@@ -328,5 +328,5 @@ eventSource.onerror = () => {
 
 ---
 
-**PRD Anterior**: PRD-007 - Módulo Execução  
+**PRD Anterior**: PRD-007 - Módulo Execução
 **Próximo PRD**: PRD-009 - Módulo Página Extraída
