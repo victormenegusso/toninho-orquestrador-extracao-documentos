@@ -1,0 +1,156 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p class="text-gray-600 mt-1">Visão geral do sistema de extração</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total Processos -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 p-3 bg-blue-100 rounded-full">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Processos</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.total_processos | default(0) }}</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="/processos" class="text-sm text-blue-600 hover:text-blue-800">Ver todos →</a>
+            </div>
+        </div>
+
+        <!-- Processos Ativos -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 p-3 bg-green-100 rounded-full">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Processos Ativos</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.processos_ativos | default(0) }}</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="/processos?status=ATIVO" class="text-sm text-green-600 hover:text-green-800">Ver ativos →</a>
+            </div>
+        </div>
+
+        <!-- Execuções Hoje -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 p-3 bg-purple-100 rounded-full">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Execuções Hoje</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.execucoes_hoje | default(0) }}</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="/execucoes" class="text-sm text-purple-600 hover:text-purple-800">Ver execuções →</a>
+            </div>
+        </div>
+
+        <!-- Taxa de Sucesso -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 p-3 bg-yellow-100 rounded-full">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Taxa de Sucesso</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.taxa_sucesso | default(0) }}%</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-sm text-gray-500">Últimas 24 horas</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
+        <div class="flex flex-wrap gap-3">
+            <a href="/processos/novo"
+               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Novo Processo
+            </a>
+            <a href="/processos"
+               class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Ver Processos
+            </a>
+            <a href="/execucoes"
+               class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Ver Execuções
+            </a>
+            <a href="/docs"
+               target="_blank"
+               class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                API Docs
+            </a>
+        </div>
+    </div>
+
+    <!-- System Info -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Informações do Sistema</h2>
+        <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="border border-gray-100 rounded-lg p-4">
+                <dt class="text-sm text-gray-500">Versão</dt>
+                <dd class="mt-1 font-semibold text-gray-900">v{{ version }}</dd>
+            </div>
+            <div class="border border-gray-100 rounded-lg p-4">
+                <dt class="text-sm text-gray-500">Status</dt>
+                <dd class="mt-1">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Operacional
+                    </span>
+                </dd>
+            </div>
+            <div class="border border-gray-100 rounded-lg p-4">
+                <dt class="text-sm text-gray-500">API</dt>
+                <dd class="mt-1 font-semibold text-gray-900">
+                    <a href="/api/v1/health" target="_blank" class="text-blue-600 hover:text-blue-800">Health Check</a>
+                </dd>
+            </div>
+        </dl>
+    </div>
+</div>
+{% endblock %}

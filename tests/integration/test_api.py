@@ -13,9 +13,16 @@ def client():
     return TestClient(app)
 
 
-def test_root_endpoint(client):
-    """Testa o endpoint raiz."""
+def test_root_endpoint_html(client):
+    """Testa que o endpoint raiz retorna a página HTML home."""
     response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+
+def test_api_info_endpoint(client):
+    """Testa o endpoint de informações da API (JSON)."""
+    response = client.get("/api/v1/info")
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Toninho"

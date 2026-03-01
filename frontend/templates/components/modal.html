@@ -1,0 +1,51 @@
+<!-- Modal Component - utilizar com Alpine.js x-data="{ open: false }" no elemento pai -->
+<!-- Parâmetros esperados no contexto:
+  - modal_id: ID único do modal
+  - modal_title: Título do modal
+  - modal_content: bloco de conteúdo do modal
+-->
+<div x-show="open"
+     x-transition:enter="ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 overflow-y-auto"
+     @click.away="open = false">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Overlay -->
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"></div>
+
+        <!-- Modal Panel -->
+        <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    {% block modal_title %}Modal{% endblock %}
+                </h3>
+                <button @click="open = false"
+                        class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-4">
+                {% block modal_body %}{% endblock %}
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-end px-6 py-4 space-x-3 border-t border-gray-200 bg-gray-50">
+                {% block modal_footer %}
+                <button @click="open = false"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none">
+                    Cancelar
+                </button>
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+</div>

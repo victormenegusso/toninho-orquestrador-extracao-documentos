@@ -16,6 +16,7 @@ from toninho.api.routes import execucoes
 from toninho.api.routes import logs
 from toninho.api.routes import paginas_extraidas
 from toninho.api.routes import monitoring
+from toninho.api import frontend
 from toninho.core.config import settings
 from toninho.core.logging import setup_logging
 
@@ -32,12 +33,9 @@ app = FastAPI(
 )
 
 # Montar arquivos estáticos
-# app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
-# Configurar templates
-# templates = Jinja2Templates(directory="frontend/templates")
-
-# Registrar rotas
+# Registrar rotas da API
 # app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(processos.router)
 app.include_router(configuracoes.router_processos)
@@ -50,10 +48,13 @@ app.include_router(paginas_extraidas.router_execucoes)
 app.include_router(paginas_extraidas.router)
 app.include_router(monitoring.router)
 
+# Registrar rotas do frontend (devem ser incluídas após as rotas da API)
+app.include_router(frontend.router)
 
-@app.get("/")
-async def root():
-    """Endpoint raiz - retorna informações básicas da API."""
+
+@app.get("/api/v1/info", tags=["Info"])
+async def api_info():
+    """Informações básicas da API (JSON)."""
     return {
         "name": "Toninho",
         "version": "0.1.0",

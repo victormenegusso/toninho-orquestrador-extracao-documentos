@@ -1,0 +1,25 @@
+<div class="flex items-center justify-between h-16 px-6">
+    <!-- Page Title / Breadcrumb -->
+    <div class="flex items-center">
+        <h2 class="text-lg font-semibold text-gray-800">{{ title | default('Toninho') }}</h2>
+    </div>
+
+    <!-- Right Side -->
+    <div class="flex items-center space-x-4">
+        <!-- Links to docs -->
+        <a href="/docs"
+           target="_blank"
+           class="text-sm text-gray-500 hover:text-gray-700 flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            API Docs
+        </a>
+
+        <!-- Version Badge -->
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            v{{ version }}
+        </span>
+    </div>
+</div>

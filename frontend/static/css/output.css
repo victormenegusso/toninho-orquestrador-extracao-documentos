@@ -1,0 +1,27 @@
+/* Toninho Frontend - Static CSS
+ * Este arquivo é o output compilado pelo Tailwind CSS.
+ * Em desenvolvimento, o Tailwind CDN é usado diretamente no base.html.
+ * Em produção, usar: npm run build:css
+ *
+ * Para compilar: npm run build:css
+ * Para watch:    npm run watch:css
+ */
+
+/* Custom utility classes não cobertas pelo Tailwind */
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: inline;
+}
+
+.htmx-request.htmx-indicator {
+    display: inline;
+}
+
+/* Fade in/out para HTMX swaps */
+.htmx-swapping {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}

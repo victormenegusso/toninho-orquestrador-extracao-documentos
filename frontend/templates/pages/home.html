@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Bem-vindo{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 flex items-center justify-center">
+    <div class="text-center text-white max-w-2xl px-6">
+        <!-- Logo / Icon -->
+        <div class="mb-8">
+            <div class="inline-flex items-center justify-center w-24 h-24 bg-blue-600 rounded-full mb-6">
+                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+
+            <h1 class="text-5xl font-bold mb-4">{{ app_name }}</h1>
+            <p class="text-xl text-gray-300 mb-8">
+                Sistema de Extração de Dados de Processos Judiciais
+            </p>
+        </div>
+
+        <!-- Features -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-left">
+            <div class="bg-gray-700 bg-opacity-50 rounded-lg p-5">
+                <div class="text-blue-400 mb-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                </div>
+                <h3 class="font-semibold mb-2">Extração Automática</h3>
+                <p class="text-sm text-gray-400">Coleta dados de múltiplas URLs de forma automática e agendada.</p>
+            </div>
+
+            <div class="bg-gray-700 bg-opacity-50 rounded-lg p-5">
+                <div class="text-green-400 mb-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="font-semibold mb-2">Agendamento Flexível</h3>
+                <p class="text-sm text-gray-400">Configure execuções via expressões cron com precisão.</p>
+            </div>
+
+            <div class="bg-gray-700 bg-opacity-50 rounded-lg p-5">
+                <div class="text-purple-400 mb-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <h3 class="font-semibold mb-2">Monitoramento</h3>
+                <p class="text-sm text-gray-400">Acompanhe execuções, logs e métricas em tempo real.</p>
+            </div>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/dashboard"
+               class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                Acessar Dashboard
+            </a>
+            <a href="/docs"
+               target="_blank"
+               class="px-8 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors border border-gray-600">
+                Ver API Docs
+            </a>
+        </div>
+
+        <!-- Version -->
+        <p class="mt-10 text-sm text-gray-500">Toninho v{{ version }}</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,8 +1,8 @@
 # PRD-012: Monitoramento e Métricas
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟡 Média - Backend Features Avançadas (Prioridade 3)  
-**Categoria**: Backend - Features Avançadas  
+**Status**: ✅ Concluído
+**Prioridade**: 🟡 Média - Backend Features Avançadas (Prioridade 3)
+**Categoria**: Backend - Features Avançadas
 **Estimativa**: 6-8 horas
 
 ---
@@ -54,7 +54,7 @@ import time
 
 class HealthCheckService:
     """Serviço de health checks"""
-    
+
     def __init__(
         self,
         db_session: AsyncSession,
@@ -64,11 +64,11 @@ class HealthCheckService:
         self.db = db_session
         self.celery = celery_app
         self.redis = redis_client
-    
+
     async def check_all(self) -> Dict[str, any]:
         """
         Executa todos os health checks
-        
+
         Returns:
             {
                 "status": "healthy" | "degraded" | "unhealthy",
@@ -81,44 +81,44 @@ class HealthCheckService:
             }
         """
         checks = {}
-        
+
         # Database check
         checks["database"] = await self._check_database()
-        
+
         # Redis check
         checks["redis"] = self._check_redis()
-        
+
         # Celery workers
         checks["celery_workers"] = self._check_celery_workers()
-        
+
         # Overall status
         all_healthy = all(c["status"] == "healthy" for c in checks.values())
         any_unhealthy = any(c["status"] == "unhealthy" for c in checks.values())
-        
+
         if all_healthy:
             overall_status = "healthy"
         elif any_unhealthy:
             overall_status = "unhealthy"
         else:
             overall_status = "degraded"
-        
+
         return {
             "status": overall_status,
             "timestamp": datetime.utcnow().isoformat(),
             "checks": checks
         }
-    
+
     async def _check_database(self) -> Dict[str, any]:
         """Verifica conexão com database"""
         try:
             start = time.time()
-            
+
             # Simple query
             result = await self.db.execute(text("SELECT 1"))
             result.scalar()
-            
+
             latency = (time.time() - start) * 1000  # ms
-            
+
             return {
                 "status": "healthy",
                 "latency_ms": round(latency, 2)
@@ -129,20 +129,20 @@ class HealthCheckService:
                 "status": "unhealthy",
                 "error": str(e)
             }
-    
+
     def _check_redis(self) -> Dict[str, any]:
         """Verifica conexão com Redis"""
         try:
             start = time.time()
-            
+
             # Ping Redis
             self.redis.ping()
-            
+
             latency = (time.time() - start) * 1000  # ms
-            
+
             # Redis info
             info = self.redis.info()
-            
+
             return {
                 "status": "healthy",
                 "latency_ms": round(latency, 2),
@@ -155,32 +155,32 @@ class HealthCheckService:
                 "status": "unhealthy",
                 "error": str(e)
             }
-    
+
     def _check_celery_workers(self) -> Dict[str, any]:
         """Verifica workers Celery"""
         try:
             # Inspect active workers
             inspect = self.celery.control.inspect()
-            
+
             stats = inspect.stats()
             active = inspect.active()
-            
+
             if not stats:
                 return {
                     "status": "unhealthy",
                     "error": "No workers available"
                 }
-            
+
             worker_count = len(stats)
             active_tasks = sum(len(tasks) for tasks in active.values()) if active else 0
-            
+
             return {
                 "status": "healthy",
                 "worker_count": worker_count,
                 "active_tasks": active_tasks,
                 "workers": list(stats.keys())
             }
-            
+
         except Exception as e:
             logger.error(f"Celery health check failed: {e}")
             return {
@@ -201,14 +201,14 @@ from typing import Dict
 
 class MetricsService:
     """Serviço de cálculo de métricas"""
-    
+
     def __init__(self, db: AsyncSession):
         self.db = db
-    
+
     async def get_dashboard_metrics(self) -> Dict[str, any]:
         """
         Métricas para dashboard
-        
+
         Returns:
             {
                 "executions": {
@@ -227,22 +227,22 @@ class MetricsService:
                 "recent_activity": [...]
             }
         """
-        
+
         # Executions count by status
         exec_counts = await self._count_executions_by_status()
-        
+
         # Processes count
         process_count = await self._count_processes()
-        
+
         # Success rate
         success_rate = await self._calculate_success_rate()
-        
+
         # Average duration
         avg_duration = await self._calculate_avg_duration()
-        
+
         # Recent activity (últimas 10 execuções)
         recent = await self._get_recent_activity(limit=10)
-        
+
         return {
             "executions": exec_counts,
             "processes": process_count,
@@ -250,24 +250,24 @@ class MetricsService:
             "avg_duration_minutes": avg_duration,
             "recent_activity": recent
         }
-    
+
     async def _count_executions_by_status(self) -> Dict[str, int]:
         """Conta execuções por status"""
         query = select(
             Execucao.status,
             func.count(Execucao.id).label("count")
         ).group_by(Execucao.status)
-        
+
         result = await self.db.execute(query)
         counts = {row.status.value: row.count for row in result}
-        
+
         # Active = AGUARDANDO + EM_EXECUCAO + PAUSADO
         active_statuses = [
             ExecucaoStatus.AGUARDANDO.value,
             ExecucaoStatus.EM_EXECUCAO.value,
             ExecucaoStatus.PAUSADO.value
         ]
-        
+
         return {
             "total": sum(counts.values()),
             "active": sum(counts.get(s, 0) for s in active_statuses),
@@ -275,41 +275,41 @@ class MetricsService:
             "failed": counts.get(ExecucaoStatus.ERRO.value, 0),
             "pending": counts.get(ExecucaoStatus.AGUARDANDO.value, 0)
         }
-    
+
     async def _count_processes(self) -> Dict[str, int]:
         """Conta processos"""
         total_query = select(func.count(Processo.id))
         total_result = await self.db.execute(total_query)
         total = total_result.scalar()
-        
+
         scheduled_query = select(func.count(Processo.id)).where(
             Processo.agendamento.isnot(None)
         )
         scheduled_result = await self.db.execute(scheduled_query)
         scheduled = scheduled_result.scalar()
-        
+
         return {
             "total": total,
             "with_schedule": scheduled
         }
-    
+
     async def _calculate_success_rate(self, last_n: int = 100) -> float:
         """Calcula taxa de sucesso das últimas N execuções"""
         query = select(Execucao.status).order_by(
             Execucao.created_at.desc()
         ).limit(last_n)
-        
+
         result = await self.db.execute(query)
         statuses = [row[0] for row in result]
-        
+
         if not statuses:
             return 0.0
-        
+
         succeeded = sum(1 for s in statuses if s == ExecucaoStatus.CONCLUIDO)
         rate = (succeeded / len(statuses)) * 100
-        
+
         return round(rate, 2)
-    
+
     async def _calculate_avg_duration(self) -> float:
         """Calcula duração média de execuções concluídas (em minutos)"""
         query = select(
@@ -321,24 +321,24 @@ class MetricsService:
             Execucao.finished_at.isnot(None),
             Execucao.started_at.isnot(None)
         )
-        
+
         result = await self.db.execute(query)
         avg_seconds = result.scalar()
-        
+
         if not avg_seconds:
             return 0.0
-        
+
         return round(avg_seconds / 60, 2)
-    
+
     async def _get_recent_activity(self, limit: int = 10) -> List[Dict]:
         """Últimas atividades"""
         query = select(Execucao).order_by(
             Execucao.created_at.desc()
         ).limit(limit)
-        
+
         result = await self.db.execute(query)
         execucoes = result.scalars().all()
-        
+
         return [
             {
                 "id": str(exec.id),
@@ -361,18 +361,18 @@ from loguru import logger
 
 class WebSocketManager:
     """Gerencia WebSocket connections para real-time updates"""
-    
+
     def __init__(self):
         # Connections por execução
         self.active_connections: Dict[str, Set[WebSocket]] = {}
-        
+
         # Connections globais (dashboard)
         self.global_connections: Set[WebSocket] = set()
-    
+
     async def connect(self, websocket: WebSocket, execucao_id: str = None):
         """Adiciona nova conexão"""
         await websocket.accept()
-        
+
         if execucao_id:
             if execucao_id not in self.active_connections:
                 self.active_connections[execucao_id] = set()
@@ -381,7 +381,7 @@ class WebSocketManager:
         else:
             self.global_connections.add(websocket)
             logger.info("WebSocket connected to global channel")
-    
+
     def disconnect(self, websocket: WebSocket, execucao_id: str = None):
         """Remove conexão"""
         if execucao_id:
@@ -391,38 +391,38 @@ class WebSocketManager:
                     del self.active_connections[execucao_id]
         else:
             self.global_connections.discard(websocket)
-    
+
     async def broadcast_to_execucao(self, execucao_id: str, message: Dict):
         """
         Envia mensagem para todos conectados a uma execução
         """
         if execucao_id not in self.active_connections:
             return
-        
+
         disconnected = set()
-        
+
         for connection in self.active_connections[execucao_id]:
             try:
                 await connection.send_json(message)
             except Exception as e:
                 logger.error(f"Error sending WebSocket message: {e}")
                 disconnected.add(connection)
-        
+
         # Remove disconnected
         for conn in disconnected:
             self.disconnect(conn, execucao_id)
-    
+
     async def broadcast_global(self, message: Dict):
         """Envia mensagem para todas conexões globais"""
         disconnected = set()
-        
+
         for connection in self.global_connections:
             try:
                 await connection.send_json(message)
             except Exception as e:
                 logger.error(f"Error sending WebSocket message: {e}")
                 disconnected.add(connection)
-        
+
         # Remove disconnected
         for conn in disconnected:
             self.disconnect(conn)
@@ -469,13 +469,13 @@ async def readiness(db: AsyncSession = Depends(get_db)):
     """
     health_service = HealthCheckService(db, celery_app, redis_client)
     checks = await health_service.check_all()
-    
+
     if checks["status"] == "unhealthy":
         return JSONResponse(
             status_code=503,
             content=checks
         )
-    
+
     return checks
 
 # Metrics
@@ -496,7 +496,7 @@ async def get_metrics(db: AsyncSession = Depends(get_db)):
 async def websocket_global(websocket: WebSocket):
     """
     WebSocket para atualizações globais do dashboard
-    
+
     Envia mensagens:
     {
         "type": "execution_update",
@@ -504,7 +504,7 @@ async def websocket_global(websocket: WebSocket):
     }
     """
     await ws_manager.connect(websocket)
-    
+
     try:
         while True:
             # Keep connection alive e recebe mensagens
@@ -518,14 +518,14 @@ async def websocket_global(websocket: WebSocket):
 async def websocket_execucao(websocket: WebSocket, execucao_id: str):
     """
     WebSocket para atualizações de uma execução específica
-    
+
     Envia:
     - Status updates
     - Progress updates
     - Novos logs
     """
     await ws_manager.connect(websocket, execucao_id)
-    
+
     try:
         while True:
             data = await websocket.receive_text()
@@ -544,7 +544,7 @@ from toninho.monitoring.websocket import ws_manager
 async def atualizar_status(execucao_id: str, novo_status: str):
     # Atualizar DB
     ...
-    
+
     # Broadcast via WebSocket
     await ws_manager.broadcast_to_execucao(
         execucao_id,
@@ -556,7 +556,7 @@ async def atualizar_status(execucao_id: str, novo_status: str):
             }
         }
     )
-    
+
     # Broadcast global
     await ws_manager.broadcast_global({
         "type": "execution_update",
@@ -696,5 +696,5 @@ Para produção, adicionar:
 
 ---
 
-**PRD Anterior**: PRD-011 - Sistema de Extração  
+**PRD Anterior**: PRD-011 - Sistema de Extração
 **Próximo PRD**: PRD-013 - Testes e Qualidade

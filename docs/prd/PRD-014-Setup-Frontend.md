@@ -1,6 +1,6 @@
 # PRD-014: Setup Frontend
 
-**Status**: 📋 Pronto para implementação  
+**Status**: ✅ Concluído  
 **Prioridade**: 🟢 Baixa - Frontend (Prioridade 4)  
 **Categoria**: Frontend - Setup  
 **Estimativa**: 6-8 horas

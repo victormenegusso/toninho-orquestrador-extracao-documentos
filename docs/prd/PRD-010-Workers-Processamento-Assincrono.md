@@ -1,8 +1,8 @@
 # PRD-010: Workers e Processamento Assíncrono
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟡 Média - Backend Features Avançadas (Prioridade 3)  
-**Categoria**: Backend - Features Avançadas  
+**Status**: ✅ Concluído
+**Prioridade**: 🟡 Média - Backend Features Avançadas (Prioridade 3)
+**Categoria**: Backend - Features Avançadas
 **Estimativa**: 10-12 horas
 
 ---
@@ -73,17 +73,17 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
-    
+
     # Retry configurado
     task_acks_late=True,  # ACK após task completa (não ao receber)
     task_reject_on_worker_lost=True,
-    
+
     # Limites
     task_time_limit=7200,  # 2 horas (hard limit)
     task_soft_time_limit=7000,  # 1h56min (soft limit)
     worker_prefetch_multiplier=1,  # Pega 1 task por vez
     worker_max_tasks_per_child=100,  # Recicla worker após 100 tasks
-    
+
     # Beat schedule (agendamentos)
     beat_schedule={
         "verificar_agendamentos": {
@@ -95,7 +95,7 @@ celery_app.conf.update(
             "schedule": 86400.0,  # Diariamente
         }
     },
-    
+
     # Concorrência
     worker_concurrency=settings.WORKER_CONCURRENCY,  # Default: 2
 )
@@ -125,7 +125,7 @@ MAX_CONCURRENT_PROCESSES: int = 5  # Máximo de processos simultâneos
 def executar_processo_task(self, execucao_id: str) -> dict:
     """
     Task principal para executar processo de extração.
-    
+
     Fluxo:
     1. Atualizar status da execução para AGUARDANDO
     2. Buscar configuração do processo
@@ -136,13 +136,13 @@ def executar_processo_task(self, execucao_id: str) -> dict:
        d. Registrar logs
        e. Atualizar métricas da execução
     4. Marcar execução como CONCLUIDO ou FALHOU
-    
+
     Args:
         execucao_id: UUID da execução
-    
+
     Returns:
         dict com resultado da execução
-    
+
     Raises:
         Exception: Em caso de erro não recuperável
     """
@@ -150,27 +150,27 @@ def executar_processo_task(self, execucao_id: str) -> dict:
     from toninho.services.execucao_service import ExecucaoService
     from toninho.services.log_service import LogService
     from toninho.workers.utils import ExtractionOrchestrator
-    
+
     db = SessionLocal()
-    
+
     try:
         # 1. Buscar execução
         execucao_service = ExecucaoService()
         execucao = execucao_service.get_execucao_model(db, UUID(execucao_id))
-        
+
         # 2. Atualizar status
         execucao.status = ExecucaoStatus.EM_EXECUCAO
         execucao.iniciado_em = datetime.utcnow()
         db.commit()
-        
+
         # 3. Buscar configuração
         configuracao = db.query(Configuracao).filter(
             Configuracao.processo_id == execucao.processo_id
         ).order_by(Configuracao.created_at.desc()).first()
-        
+
         if not configuracao:
             raise ValueError("Processo não tem configuração")
-        
+
         # 4. Log inicial
         log_service = LogService()
         log_service.create_log(db, LogCreate(
@@ -178,24 +178,24 @@ def executar_processo_task(self, execucao_id: str) -> dict:
             nivel=LogNivel.INFO,
             mensagem=f"Iniciando extração de {len(configuracao.urls)} URLs"
         ))
-        
+
         # 5. Orquestrar extração
         orchestrator = ExtractionOrchestrator(db, execucao, configuracao)
         resultado = orchestrator.executar()
-        
+
         # 6. Finalizar
         execucao.finalizado_em = datetime.utcnow()
         execucao.status = resultado["status"]  # CONCLUIDO ou CONCLUIDO_COM_ERROS
         db.commit()
-        
+
         log_service.create_log(db, LogCreate(
             execucao_id=execucao.id,
             nivel=LogNivel.INFO,
             mensagem=f"Extração finalizada: {resultado['paginas_sucesso']} sucesso, {resultado['paginas_falha']} falhas"
         ))
-        
+
         return resultado
-        
+
     except Exception as e:
         # Registrar erro
         log_service.create_log(db, LogCreate(
@@ -203,20 +203,20 @@ def executar_processo_task(self, execucao_id: str) -> dict:
             nivel=LogNivel.ERROR,
             mensagem=f"Erro na extração: {str(e)}"
         ))
-        
+
         # Atualizar status
         execucao = db.query(Execucao).get(UUID(execucao_id))
         if execucao:
             execucao.status = ExecucaoStatus.FALHOU
             execucao.finalizado_em = datetime.utcnow()
             db.commit()
-        
+
         # Retry se possível
         if self.request.retries < self.max_retries:
             raise self.retry(exc=e)
-        
+
         raise
-        
+
     finally:
         db.close()
 ```
@@ -232,37 +232,37 @@ class ExtractionOrchestrator:
         self.execucao = execucao
         self.configuracao = configuracao
         self.extractor = None  # Implementado no PRD-011
-        
+
     def executar(self) -> dict:
         """Executa extração de todas as URLs"""
         total_urls = len(self.configuracao.urls)
         sucesso = 0
         falhas = 0
-        
+
         for idx, url in enumerate(self.configuracao.urls, 1):
             try:
                 # Log progresso
                 self._log_info(f"Processando URL {idx}/{total_urls}: {url}")
-                
+
                 # Extrair página (ver PRD-011)
                 resultado = self._extrair_pagina(url)
-                
+
                 # Registrar página extraída
                 self._registrar_pagina(url, resultado)
-                
+
                 if resultado["status"] == "sucesso":
                     sucesso += 1
                 else:
                     falhas += 1
-                
+
                 # Atualizar métricas
                 self._atualizar_metricas(resultado["bytes"])
-                
+
             except Exception as e:
                 falhas += 1
                 self._log_error(f"Erro ao processar {url}: {str(e)}")
                 self._registrar_pagina_falha(url, str(e))
-        
+
         # Determinar status final
         if falhas == 0:
             status = ExecucaoStatus.CONCLUIDO
@@ -270,22 +270,22 @@ class ExtractionOrchestrator:
             status = ExecucaoStatus.CONCLUIDO_COM_ERROS
         else:
             status = ExecucaoStatus.FALHOU
-        
+
         return {
             "status": status,
             "paginas_sucesso": sucesso,
             "paginas_falha": falhas,
             "total": total_urls
         }
-    
+
     def _extrair_pagina(self, url: str) -> dict:
         # Implementado no PRD-011 (Sistema de Extração)
         pass
-    
+
     def _log_info(self, mensagem: str):
         # Criar log INFO
         pass
-    
+
     def _log_error(self, mensagem: str):
         # Criar log ERROR
         pass
@@ -300,29 +300,29 @@ def verificar_agendamentos():
     """
     Task periódica que verifica configurações com agendamento
     e cria execuções se necessário.
-    
+
     Executada a cada minuto pelo Celery Beat.
     """
     from toninho.core.database import SessionLocal
     from croniter import croniter
     from datetime import datetime, timedelta
-    
+
     db = SessionLocal()
-    
+
     try:
         # Buscar configurações com agendamento RECORRENTE
         configuracoes = db.query(Configuracao).filter(
             Configuracao.agendamento_tipo == AgendamentoTipo.RECORRENTE,
             Configuracao.agendamento_cron.isnot(None)
         ).all()
-        
+
         agora = datetime.utcnow()
-        
+
         for config in configuracoes:
             # Verificar se deve executar
             cron = croniter(config.agendamento_cron, agora - timedelta(minutes=2))
             proxima = cron.get_next(datetime)
-            
+
             # Se próxima execução é nos próximos 60 segundos, criar execução
             if proxima <= agora + timedelta(seconds=60):
                 # Verificar se não há execução recente (evitar duplicatas)
@@ -330,16 +330,16 @@ def verificar_agendamentos():
                     Execucao.processo_id == config.processo_id,
                     Execucao.created_at >= agora - timedelta(minutes=5)
                 ).first()
-                
+
                 if not ultima_execucao:
                     # Criar e enfileirar execução
                     execucao = Execucao(processo_id=config.processo_id)
                     db.add(execucao)
                     db.commit()
-                    
+
                     # Enfileirar task
                     executar_processo_task.delay(str(execucao.id))
-    
+
     finally:
         db.close()
 ```
@@ -356,21 +356,21 @@ def limpar_logs_antigos(dias_retencao: int = 30):
     """
     from toninho.core.database import SessionLocal
     from datetime import datetime, timedelta
-    
+
     db = SessionLocal()
-    
+
     try:
         data_limite = datetime.utcnow() - timedelta(days=dias_retencao)
-        
+
         # Deletar logs antigos
         count = db.query(Log).filter(
             Log.timestamp < data_limite
         ).delete()
-        
+
         db.commit()
-        
+
         return {"logs_deletados": count}
-    
+
     finally:
         db.close()
 ```
@@ -544,5 +544,5 @@ celery -A toninho.workers.celery_app control revoke <task_id> --terminate
 
 ---
 
-**PRD Anterior**: PRD-009 - Módulo Página Extraída  
+**PRD Anterior**: PRD-009 - Módulo Página Extraída
 **Próximo PRD**: PRD-011 - Sistema de Extração

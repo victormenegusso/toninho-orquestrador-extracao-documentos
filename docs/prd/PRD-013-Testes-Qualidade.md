@@ -1,8 +1,8 @@
 # PRD-013: Testes e Qualidade
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟡 Média - Backend Features Avançadas (Prioridade 3)  
-**Categoria**: Backend - Features Avançadas  
+**Status**: ✅ Concluído
+**Prioridade**: 🟡 Média - Backend Features Avançadas (Prioridade 3)
+**Categoria**: Backend - Features Avançadas
 **Estimativa**: 10-12 horas
 
 ---
@@ -143,13 +143,13 @@ async def db_engine():
         poolclass=NullPool,
         echo=False
     )
-    
+
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
-    
+
     # Cleanup
     await engine.dispose()
 
@@ -163,7 +163,7 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
         class_=AsyncSession,
         expire_on_commit=False
     )
-    
+
     async with async_session() as session:
         yield session
         await session.rollback()
@@ -176,12 +176,12 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
     def override_get_db():
         yield db_session
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
-    
+
     app.dependency_overrides.clear()
 
 # ============================================================
@@ -193,21 +193,21 @@ async def processo_factory(db_session: AsyncSession):
     """Factory para criar Processos de teste"""
     async def _create_processo(**kwargs):
         from toninho.models import Processo
-        
+
         default_data = {
             "nome": "Processo Teste",
             "descricao": "Descrição teste",
             "status": ProcessoStatus.ATIVO
         }
         default_data.update(kwargs)
-        
+
         processo = Processo(**default_data)
         db_session.add(processo)
         await db_session.commit()
         await db_session.refresh(processo)
-        
+
         return processo
-    
+
     return _create_processo
 
 @pytest.fixture
@@ -215,7 +215,7 @@ async def configuracao_factory(db_session: AsyncSession):
     """Factory para criar Configurações de teste"""
     async def _create_configuracao(processo_id: UUID, **kwargs):
         from toninho.models import Configuracao
-        
+
         default_data = {
             "processo_id": processo_id,
             "urls": ["https://example.com"],
@@ -223,14 +223,14 @@ async def configuracao_factory(db_session: AsyncSession):
             "timeout": 30
         }
         default_data.update(kwargs)
-        
+
         config = Configuracao(**default_data)
         db_session.add(config)
         await db_session.commit()
         await db_session.refresh(config)
-        
+
         return config
-    
+
     return _create_configuracao
 
 @pytest.fixture
@@ -238,7 +238,7 @@ async def execucao_factory(db_session: AsyncSession):
     """Factory para criar Execuções de teste"""
     async def _create_execucao(processo_id: UUID, **kwargs):
         from toninho.models import Execucao
-        
+
         default_data = {
             "processo_id": processo_id,
             "status": ExecucaoStatus.CRIADO,
@@ -246,14 +246,14 @@ async def execucao_factory(db_session: AsyncSession):
             "urls_processadas": 0
         }
         default_data.update(kwargs)
-        
+
         execucao = Execucao(**default_data)
         db_session.add(execucao)
         await db_session.commit()
         await db_session.refresh(execucao)
-        
+
         return execucao
-    
+
     return _create_execucao
 
 # ============================================================
@@ -264,14 +264,14 @@ async def execucao_factory(db_session: AsyncSession):
 def mock_http_client(mocker):
     """Mock HTTPClient para evitar requests reais"""
     mock = mocker.patch("toninho.extraction.http_client.HTTPClient.get")
-    
+
     mock.return_value = {
         "content": b"<html><body><h1>Test Page</h1></body></html>",
         "status_code": 200,
         "headers": {"content-type": "text/html"},
         "from_cache": False
     }
-    
+
     return mock
 
 @pytest.fixture
@@ -331,15 +331,15 @@ from toninho.models.enums import ProcessoStatus
 @pytest.mark.unit
 class TestProcessoService:
     """Testes para ProcessoService"""
-    
+
     @pytest.fixture
     def processo_repo(self, db_session):
         return ProcessoRepository(db_session)
-    
+
     @pytest.fixture
     def processo_service(self, processo_repo):
         return ProcessoService(processo_repo)
-    
+
     async def test_criar_processo_sucesso(self, processo_service):
         """Deve criar processo com sucesso"""
         data = {
@@ -347,13 +347,13 @@ class TestProcessoService:
             "descricao": "Descrição teste",
             "status": ProcessoStatus.ATIVO
         }
-        
+
         processo = await processo_service.criar(data)
-        
+
         assert processo is not None
         assert processo.nome == "Novo Processo"
         assert processo.status == ProcessoStatus.ATIVO
-    
+
     async def test_criar_processo_nome_duplicado(
         self,
         processo_service,
@@ -362,13 +362,13 @@ class TestProcessoService:
         """Deve lançar erro se nome duplicado"""
         # Criar primeiro processo
         await processo_factory(nome="Duplicado")
-        
+
         # Tentar criar segundo com mesmo nome
         data = {"nome": "Duplicado", "descricao": "Teste"}
-        
+
         with pytest.raises(ValueError, match="Nome já existe"):
             await processo_service.criar(data)
-    
+
     async def test_listar_processos_com_filtros(
         self,
         processo_service,
@@ -379,15 +379,15 @@ class TestProcessoService:
         await processo_factory(nome="Ativo 1", status=ProcessoStatus.ATIVO)
         await processo_factory(nome="Ativo 2", status=ProcessoStatus.ATIVO)
         await processo_factory(nome="Inativo 1", status=ProcessoStatus.INATIVO)
-        
+
         # Filtrar por status ATIVO
         result = await processo_service.listar(
             filters={"status": ProcessoStatus.ATIVO}
         )
-        
+
         assert result["total"] == 2
         assert all(p.status == ProcessoStatus.ATIVO for p in result["items"])
-    
+
     async def test_deletar_processo_com_execucoes(
         self,
         processo_service,
@@ -398,12 +398,12 @@ class TestProcessoService:
         # Criar processo e execução
         processo = await processo_factory()
         await execucao_factory(processo_id=processo.id)
-        
+
         # Deletar processo
         success = await processo_service.deletar(processo.id)
-        
+
         assert success is True
-        
+
         # Verificar que não existe mais
         result = await processo_service.buscar_por_id(processo.id)
         assert result is None
@@ -418,7 +418,7 @@ from httpx import AsyncClient
 @pytest.mark.integration
 class TestProcessoAPI:
     """Testes de integração para API de Processo"""
-    
+
     async def test_criar_processo_via_api(self, client: AsyncClient):
         """POST /api/v1/processos cria processo"""
         payload = {
@@ -426,14 +426,14 @@ class TestProcessoAPI:
             "descricao": "Criado via API",
             "status": "ATIVO"
         }
-        
+
         response = await client.post("/api/v1/processos", json=payload)
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["nome"] == "API Test Processo"
         assert "id" in data
-    
+
     async def test_listar_processos_paginacao(
         self,
         client: AsyncClient,
@@ -443,21 +443,21 @@ class TestProcessoAPI:
         # Criar 15 processos
         for i in range(15):
             await processo_factory(nome=f"Processo {i}")
-        
+
         # Primeira página
         response = await client.get("/api/v1/processos?page=1&size=10")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert len(data["items"]) == 10
         assert data["total"] == 15
         assert data["page"] == 1
-        
+
         # Segunda página
         response = await client.get("/api/v1/processos?page=2&size=10")
         data = response.json()
         assert len(data["items"]) == 5
-    
+
     async def test_atualizar_processo_parcial(
         self,
         client: AsyncClient,
@@ -465,25 +465,25 @@ class TestProcessoAPI:
     ):
         """PATCH /api/v1/processos/{id} atualiza parcialmente"""
         processo = await processo_factory(nome="Original", descricao="Desc")
-        
+
         payload = {"nome": "Atualizado"}
-        
+
         response = await client.patch(
             f"/api/v1/processos/{processo.id}",
             json=payload
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["nome"] == "Atualizado"
         assert data["descricao"] == "Desc"  # Não mudou
-    
+
     async def test_deletar_processo_404(self, client: AsyncClient):
         """DELETE /api/v1/processos/{id} retorna 404 se não existe"""
         fake_id = uuid4()
-        
+
         response = await client.delete(f"/api/v1/processos/{fake_id}")
-        
+
         assert response.status_code == 404
 ```
 
@@ -498,7 +498,7 @@ from toninho.workers.orchestrator import ExtractionOrchestrator
 @pytest.mark.requires_celery
 class TestWorkers:
     """Testes para Celery workers"""
-    
+
     async def test_orchestrator_executa_extracao(
         self,
         db_session,
@@ -519,23 +519,23 @@ class TestWorkers:
             processo_id=processo.id,
             total_urls=2
         )
-        
+
         # Run orchestrator
         orchestrator = ExtractionOrchestrator(
             db_session,
             mock_storage
         )
-        
+
         await orchestrator.run(execucao.id)
-        
+
         # Verificar
         await db_session.refresh(execucao)
-        
+
         assert execucao.status == ExecucaoStatus.CONCLUIDO
         assert execucao.urls_processadas == 2
         assert execucao.urls_sucesso == 2
         assert execucao.urls_erro == 0
-    
+
     async def test_orchestrator_trata_erro_de_url(
         self,
         db_session,
@@ -549,7 +549,7 @@ class TestWorkers:
         # Mock HTTP client para lançar erro
         mock_http = mocker.patch("toninho.extraction.http_client.HTTPClient.get")
         mock_http.side_effect = Exception("Network error")
-        
+
         # Setup
         processo = await processo_factory()
         config = await configuracao_factory(
@@ -560,14 +560,14 @@ class TestWorkers:
             processo_id=processo.id,
             total_urls=1
         )
-        
+
         # Run
         orchestrator = ExtractionOrchestrator(db_session, mock_storage)
         await orchestrator.run(execucao.id)
-        
+
         # Verificar
         await db_session.refresh(execucao)
-        
+
         assert execucao.status == ExecucaoStatus.CONCLUIDO
         assert execucao.urls_erro == 1
 ```
@@ -720,32 +720,32 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      
+
       - name: Install dependencies
         run: poetry install
-      
+
       - name: Run tests
         run: poetry run pytest --cov=toninho --cov-report=xml
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -764,18 +764,18 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
-  
+
   - repo: https://github.com/psf/black
     rev: 23.12.1
     hooks:
       - id: black
-  
+
   - repo: https://github.com/PyCQA/flake8
     rev: 7.0.0
     hooks:
       - id: flake8
         args: [--max-line-length=100]
-  
+
   - repo: local
     hooks:
       - id: pytest-quick
@@ -806,5 +806,5 @@ repos:
 
 ---
 
-**PRD Anterior**: PRD-012 - Monitoramento e Métricas  
+**PRD Anterior**: PRD-012 - Monitoramento e Métricas
 **Próximo PRD**: PRD-014 - Setup Frontend

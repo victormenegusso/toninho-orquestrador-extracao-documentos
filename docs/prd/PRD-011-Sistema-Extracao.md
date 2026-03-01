@@ -1,8 +1,8 @@
 # PRD-011: Sistema de Extração
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟡 Média - Backend Features Avançadas (Prioridade 3)  
-**Categoria**: Backend - Features Avançadas  
+**Status**: ✅ Concluído
+**Prioridade**: 🟡 Média - Backend Features Avançadas (Prioridade 3)
+**Categoria**: Backend - Features Avançadas
 **Estimativa**: 8-10 horas
 
 ---
@@ -51,27 +51,27 @@ from pathlib import Path
 
 class StorageInterface(ABC):
     """Interface abstrata para diferentes tipos de armazenamento"""
-    
+
     @abstractmethod
     async def save_file(self, path: str, content: bytes) -> str:
         """Salva arquivo e retorna o caminho/URL"""
         pass
-    
+
     @abstractmethod
     async def get_file(self, path: str) -> bytes:
         """Recupera arquivo do storage"""
         pass
-    
+
     @abstractmethod
     async def delete_file(self, path: str) -> bool:
         """Deleta arquivo do storage"""
         pass
-    
+
     @abstractmethod
     async def list_files(self, directory: str) -> List[str]:
         """Lista arquivos em um diretório"""
         pass
-    
+
     @abstractmethod
     def exists(self, path: str) -> bool:
         """Verifica se arquivo existe"""
@@ -82,41 +82,41 @@ class StorageInterface(ABC):
 ```python
 class LocalFileSystemStorage(StorageInterface):
     """Implementação para filesystem local"""
-    
+
     def __init__(self, base_dir: str):
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
-    
+
     async def save_file(self, path: str, content: bytes) -> str:
         full_path = self.base_dir / path
         full_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         with open(full_path, 'wb') as f:
             f.write(content)
-        
+
         return str(full_path)
-    
+
     async def get_file(self, path: str) -> bytes:
         full_path = self.base_dir / path
         if not full_path.exists():
             raise FileNotFoundError(f"File not found: {path}")
-        
+
         with open(full_path, 'rb') as f:
             return f.read()
-    
+
     async def delete_file(self, path: str) -> bool:
         full_path = self.base_dir / path
         if full_path.exists():
             full_path.unlink()
             return True
         return False
-    
+
     async def list_files(self, directory: str) -> List[str]:
         dir_path = self.base_dir / directory
         if not dir_path.exists():
             return []
         return [str(f.relative_to(self.base_dir)) for f in dir_path.rglob("*") if f.is_file()]
-    
+
     def exists(self, path: str) -> bool:
         return (self.base_dir / path).exists()
 ```
@@ -143,7 +143,7 @@ from loguru import logger
 
 class HTTPClient:
     """Cliente HTTP com retry, timeout e cache"""
-    
+
     def __init__(
         self,
         timeout: int = 30,
@@ -154,17 +154,17 @@ class HTTPClient:
         self.max_retries = max_retries
         self.cache_enabled = cache_enabled
         self.cache: Dict[str, bytes] = {}  # Simple in-memory cache (melhorar com Redis)
-        
+
         self.client = httpx.AsyncClient(
             timeout=httpx.Timeout(timeout),
             follow_redirects=True,
             headers={"User-Agent": "Toninho/1.0"}
         )
-    
+
     async def get(self, url: str) -> Dict[str, any]:
         """
         Faz GET request com retry e cache
-        
+
         Returns:
             dict com keys: content, status_code, headers, from_cache
         """
@@ -176,26 +176,26 @@ class HTTPClient:
                 "status_code": 200,
                 "from_cache": True
             }
-        
+
         # Retry logic
         for attempt in range(self.max_retries):
             try:
                 response = await self.client.get(url)
                 response.raise_for_status()
-                
+
                 content = response.content
-                
+
                 # Cache successful response
                 if self.cache_enabled and response.status_code == 200:
                     self.cache[url] = content
-                
+
                 return {
                     "content": content,
                     "status_code": response.status_code,
                     "headers": dict(response.headers),
                     "from_cache": False
                 }
-                
+
             except httpx.HTTPStatusError as e:
                 if e.response.status_code in [404, 403, 401]:
                     # Não fazer retry em erros de cliente
@@ -203,15 +203,15 @@ class HTTPClient:
                 if attempt == self.max_retries - 1:
                     raise
                 logger.warning(f"HTTP error on attempt {attempt + 1}: {e}")
-                
+
             except (httpx.TimeoutException, httpx.ConnectError) as e:
                 if attempt == self.max_retries - 1:
                     raise
                 logger.warning(f"Network error on attempt {attempt + 1}: {e}")
                 await asyncio.sleep(2 ** attempt)  # Exponential backoff
-        
+
         raise Exception(f"Failed to fetch {url} after {self.max_retries} attempts")
-    
+
     async def close(self):
         await self.client.aclose()
 ```
@@ -228,7 +228,7 @@ from loguru import logger
 
 class PageExtractor:
     """Extrator de páginas web para markdown"""
-    
+
     def __init__(
         self,
         storage: StorageInterface,
@@ -239,34 +239,34 @@ class PageExtractor:
         self.storage = storage
         self.http_client = HTTPClient(timeout=timeout, max_retries=max_retries)
         self.use_headless = use_headless
-    
+
     async def extract(self, url: str, output_path: str) -> Dict[str, any]:
         """
         Extrai conteúdo de URL e salva como markdown
-        
+
         Args:
             url: URL para extrair
             output_path: Caminho relativo para salvar arquivo
-        
+
         Returns:
             dict com informações da extração
-        
+
         Raises:
             Exception: Em caso de erro
         """
         try:
             logger.info(f"Extracting: {url}")
-            
+
             # 1. Fetch HTML
             response = await self.http_client.get(url)
             html_content = response["content"]
-            
+
             # 2. Extract usando Docling
             extracted = await self._extract_with_docling(html_content, url)
-            
+
             # 3. Convert to markdown
             markdown_content = self._convert_to_markdown(extracted)
-            
+
             # 4. Add metadata
             markdown_with_metadata = self._add_metadata(
                 markdown_content,
@@ -274,15 +274,15 @@ class PageExtractor:
                 title=extracted.get("title", ""),
                 timestamp=datetime.utcnow()
             )
-            
+
             # 5. Save file
             saved_path = await self.storage.save_file(
                 output_path,
                 markdown_with_metadata.encode("utf-8")
             )
-            
+
             logger.info(f"Saved to: {saved_path}")
-            
+
             return {
                 "status": "success",
                 "url": url,
@@ -291,7 +291,7 @@ class PageExtractor:
                 "title": extracted.get("title", ""),
                 "from_cache": response.get("from_cache", False)
             }
-            
+
         except Exception as e:
             logger.error(f"Error extracting {url}: {e}")
             return {
@@ -299,20 +299,20 @@ class PageExtractor:
                 "url": url,
                 "error": str(e)
             }
-    
+
     async def _extract_with_docling(self, html_content: bytes, url: str) -> Dict:
         """Extrai conteúdo estruturado usando Docling"""
         # Integração com Docling
         # Nota: Docling API pode variar, adaptar conforme documentação
         docling = Docling()
-        
+
         if self.use_headless:
             # Usar headless browser para sites JS pesados
             result = await docling.extract_from_url(url, headless=True)
         else:
             # Parse HTML diretamente
             result = await docling.extract_from_html(html_content, base_url=url)
-        
+
         return {
             "title": result.get("title", ""),
             "content": result.get("content", ""),
@@ -320,28 +320,28 @@ class PageExtractor:
             "links": result.get("links", []),
             "images": result.get("images", [])
         }
-    
+
     def _convert_to_markdown(self, extracted: Dict) -> str:
         """Converte conteúdo extraído para markdown"""
         # Docling já retorna markdown, mas podemos processar
         markdown = extracted.get("content", "")
-        
+
         # Processar: limpar, formatar, etc
         markdown = self._clean_markdown(markdown)
-        
+
         return markdown
-    
+
     def _clean_markdown(self, markdown: str) -> str:
         """Limpa e normaliza markdown"""
         # Remove múltiplas linhas vazias
         import re
         markdown = re.sub(r'\n{3,}', '\n\n', markdown)
-        
+
         # Remove espaços em branco no final das linhas
         lines = [line.rstrip() for line in markdown.split('\n')]
-        
+
         return '\n'.join(lines)
-    
+
     def _add_metadata(
         self,
         content: str,
@@ -360,29 +360,29 @@ class PageExtractor:
             "",
             content
         ]
-        
+
         return '\n'.join(metadata)
-    
+
     def generate_filename(self, url: str) -> str:
         """Gera nome de arquivo seguro a partir da URL"""
         from urllib.parse import urlparse
         import re
-        
+
         parsed = urlparse(url)
         path = parsed.path.strip('/').replace('/', '-')
-        
+
         if not path:
             path = "index"
-        
+
         # Remove caracteres inválidos
         path = re.sub(r'[^\w\-]', '_', path)
-        
+
         # Limite de tamanho
         if len(path) > 100:
             path = path[:100]
-        
+
         return f"{path}.md"
-    
+
     async def close(self):
         await self.http_client.close()
 ```
@@ -526,5 +526,5 @@ resultado = await extractor.extract(
 
 ---
 
-**PRD Anterior**: PRD-010 - Workers e Processamento Assíncrono  
+**PRD Anterior**: PRD-010 - Workers e Processamento Assíncrono
 **Próximo PRD**: PRD-012 - Monitoramento e Métricas
