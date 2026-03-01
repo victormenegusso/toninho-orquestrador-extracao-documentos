@@ -15,6 +15,7 @@ from toninho.api.routes import configuracoes
 from toninho.api.routes import execucoes
 from toninho.api.routes import logs
 from toninho.api.routes import paginas_extraidas
+from toninho.api.routes import monitoring
 from toninho.core.config import settings
 from toninho.core.logging import setup_logging
 
@@ -47,6 +48,7 @@ app.include_router(logs.router_execucoes)
 app.include_router(logs.router)
 app.include_router(paginas_extraidas.router_execucoes)
 app.include_router(paginas_extraidas.router)
+app.include_router(monitoring.router)
 
 
 @app.get("/")
