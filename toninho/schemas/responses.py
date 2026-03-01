@@ -20,15 +20,17 @@ class SuccessResponse(BaseSchema, Generic[T]):
     Encapsula dados de resposta em um campo 'data' consistente.
 
     Attributes:
+        success: Indica que a operação foi bem-sucedida (sempre True)
         data: Dados da resposta (tipo genérico)
 
     Example:
         ```python
         response = SuccessResponse[ProcessoResponse](data=processo)
-        # { "data": { "id": "...", "nome": "..." } }
+        # { "success": true, "data": { "id": "...", "nome": "..." } }
         ```
     """
 
+    success: bool = Field(default=True, description="Operação bem-sucedida")
     data: T = Field(..., description="Dados da resposta")
 
 

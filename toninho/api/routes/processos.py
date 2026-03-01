@@ -247,9 +247,7 @@ def update_processo(
     """
     try:
         processo = service.update_processo(db, processo_id, processo_update)
-        return success_response(
-            data=processo, message="Processo atualizado com sucesso"
-        )
+        return success_response(data=processo)
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except ConflictError as e:
@@ -298,9 +296,7 @@ def patch_processo(
     """
     try:
         processo = service.update_processo(db, processo_id, processo_update)
-        return success_response(
-            data=processo, message="Processo atualizado com sucesso"
-        )
+        return success_response(data=processo)
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except ConflictError as e:
