@@ -5,7 +5,7 @@ Fornece funcionalidades compartilhadas como timestamps automáticos
 e geração de UUIDs para primary keys.
 """
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import DateTime, event
@@ -74,4 +74,4 @@ def receive_before_update(mapper: Any, connection: Any, target: TimestampMixin) 
     Este listener é executado antes de qualquer UPDATE no banco,
     garantindo que updated_at reflita a última modificação.
     """
-    target.updated_at = datetime.utcnow()
+    target.updated_at = datetime.now(UTC)

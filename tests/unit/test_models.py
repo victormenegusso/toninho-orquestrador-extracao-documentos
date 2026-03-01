@@ -4,7 +4,7 @@ Testes unitários para os models do Toninho.
 Testa criação, validações, relacionamentos e constraints dos models.
 """
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -213,8 +213,8 @@ class TestExecucao:
         """Testa computed property duracao."""
         processo = processo_factory()
 
-        inicio = datetime.utcnow()
-        fim = datetime.utcnow()
+        inicio = datetime.now(UTC)
+        fim = datetime.now(UTC)
 
         execucao = Execucao(
             processo_id=processo.id,

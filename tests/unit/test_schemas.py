@@ -4,7 +4,7 @@ Testes unitários para os schemas do Toninho.
 Testa validação, serialização e conversão model→schema.
 """
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -207,8 +207,8 @@ class TestExecucaoSchemas:
         from datetime import timedelta
 
         execucao = execucao_factory(
-            iniciado_em=datetime.utcnow(),
-            finalizado_em=datetime.utcnow() + timedelta(seconds=60),
+            iniciado_em=datetime.now(UTC),
+            finalizado_em=datetime.now(UTC) + timedelta(seconds=60),
         )
 
         schema = ExecucaoResponse.model_validate(execucao)
