@@ -1,8 +1,8 @@
 # PRD-006: Módulo Configuração
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)  
-**Categoria**: Backend - Entidades Core  
+**Status**: ✅ Concluído
+**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)
+**Categoria**: Backend - Entidades Core
 **Estimativa**: 5-6 horas
 
 ---
@@ -293,5 +293,5 @@ def validar_url(url: str) -> bool:
 
 ---
 
-**PRD Anterior**: PRD-005 - Módulo Processo  
+**PRD Anterior**: PRD-005 - Módulo Processo
 **Próximo PRD**: PRD-007 - Módulo Execução

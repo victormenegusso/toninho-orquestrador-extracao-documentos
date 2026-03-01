@@ -173,6 +173,35 @@ class PaginaExtraidaDetail(PaginaExtraidaResponse):
         return self.tamanho_bytes < 1024 * 1024  # 1MB
 
 
+class EstatisticasPaginas(BaseSchema):
+    """
+    Estatísticas de extração de páginas de uma execução.
+
+    Attributes:
+        execucao_id: ID da execução
+        total: Total de páginas
+        sucesso: Páginas com sucesso
+        falhou: Páginas com falha
+        ignorado: Páginas ignoradas
+        taxa_sucesso: Percentual de sucesso
+        tamanho_total_bytes: Total de bytes extraídos
+        tamanho_medio_bytes: Tamanho médio por página
+        maior_pagina_bytes: Maior página em bytes
+        menor_pagina_bytes: Menor página em bytes
+    """
+
+    execucao_id: uuid.UUID = Field(..., description="ID da execução")
+    total: int = Field(..., ge=0, description="Total de páginas")
+    sucesso: int = Field(..., ge=0, description="Páginas com sucesso")
+    falhou: int = Field(..., ge=0, description="Páginas com falha")
+    ignorado: int = Field(..., ge=0, description="Páginas ignoradas")
+    taxa_sucesso: float = Field(..., description="Percentual de sucesso")
+    tamanho_total_bytes: int = Field(..., ge=0, description="Total de bytes")
+    tamanho_medio_bytes: float = Field(..., description="Tamanho médio em bytes")
+    maior_pagina_bytes: int = Field(..., ge=0, description="Maior página em bytes")
+    menor_pagina_bytes: int = Field(..., ge=0, description="Menor página em bytes")
+
+
 # Aliases
 PaginaExtraidaInCreate = PaginaExtraidaCreate
 PaginaExtraidaOut = PaginaExtraidaResponse

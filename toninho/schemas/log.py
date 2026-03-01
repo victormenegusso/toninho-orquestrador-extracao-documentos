@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from toninho.models.enums import LogNivel
 from toninho.schemas.base import BaseSchema
@@ -121,6 +121,27 @@ class LogFilter(BaseSchema):
         description="Busca textual na mensagem (case-insensitive)",
         examples=["erro", "sucesso"],
     )
+
+
+class LogEstatisticas(BaseSchema):
+    """
+    Estatísticas de logs de uma execução.
+
+    Attributes:
+        execucao_id: ID da execução
+        total: Total de logs
+        por_nivel: Contagem por nível
+        percentual_erros: Percentual de erros
+        primeiro_log: Data/hora do primeiro log
+        ultimo_log: Data/hora do último log
+    """
+
+    execucao_id: uuid.UUID = Field(..., description="ID da execução")
+    total: int = Field(..., ge=0, description="Total de logs")
+    por_nivel: Dict[str, int] = Field(..., description="Contagem por nível")
+    percentual_erros: float = Field(..., description="Percentual de logs de erro")
+    primeiro_log: Optional[datetime] = Field(None, description="Primeiro log registrado")
+    ultimo_log: Optional[datetime] = Field(None, description="Último log registrado")
 
 
 # Aliases

@@ -1,8 +1,8 @@
 # PRD-007: Módulo Execução
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)  
-**Categoria**: Backend - Entidades Core  
+**Status**: ✅ Concluído
+**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)
+**Categoria**: Backend - Entidades Core
 **Estimativa**: 7-9 horas
 
 ---
@@ -355,5 +355,5 @@ db.execute(stmt)
 
 ---
 
-**PRD Anterior**: PRD-006 - Módulo Configuração  
+**PRD Anterior**: PRD-006 - Módulo Configuração
 **Próximo PRD**: PRD-008 - Módulo Log
