@@ -16,7 +16,7 @@
             <div>
                 <div class="flex items-center space-x-3">
                     <h1 class="text-2xl font-bold text-gray-900">{{ processo.nome }}</h1>
-                    {% if processo.status.value == 'ativo' %}
+                    {% if processo.status == 'ativo' %}
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         Ativo
                     </span>
@@ -179,11 +179,11 @@
                     </div>
                     <div class="flex items-center space-x-3">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                            {% if execucao.status.value == 'concluido' %}bg-green-100 text-green-800
-                            {% elif execucao.status.value == 'erro' %}bg-red-100 text-red-800
-                            {% elif execucao.status.value == 'executando' %}bg-blue-100 text-blue-800
+                            {% if execucao.status == 'concluido' %}bg-green-100 text-green-800
+                            {% elif execucao.status == 'erro' %}bg-red-100 text-red-800
+                            {% elif execucao.status == 'executando' %}bg-blue-100 text-blue-800
                             {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ execucao.status.value | title }}
+                            {{ execucao.status | title }}
                         </span>
                     </div>
                 </div>

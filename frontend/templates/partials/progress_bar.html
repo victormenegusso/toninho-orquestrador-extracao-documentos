@@ -1,0 +1,18 @@
+<div>
+    <div class="flex justify-between text-sm text-gray-600 mb-1">
+        <span>Progresso</span>
+        <span>{{ execucao.paginas_processadas }} páginas processadas</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-3">
+        <div
+            class="bg-blue-600 h-3 rounded-full transition-all duration-300"
+            style="width: {{ [execucao.paginas_processadas, 100] | min }}%">
+        </div>
+    </div>
+    <div class="flex justify-between text-xs text-gray-500 mt-1">
+        <span>Taxa de erro: {{ execucao.taxa_erro | round(1) }}%</span>
+        {% if execucao.duracao_segundos %}
+        <span>Duração: {{ execucao.duracao_segundos }}s</span>
+        {% endif %}
+    </div>
+</div>

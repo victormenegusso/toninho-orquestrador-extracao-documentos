@@ -4,6 +4,8 @@ Router Frontend para o Toninho.
 Serve as páginas HTML do sistema usando Jinja2 templates.
 Rotas de páginas gerais: home, dashboard.
 Rotas de processos: list, create, edit, detail, search (HTMX partial).
+Rotas de execuções: list, detail, progress partial, ativas partial.
+Rotas de páginas extraídas: list por execução, detail, search partial.
 """
 
 from typing import Optional
@@ -14,10 +16,14 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from toninho.api.dependencies.execucao_deps import get_execucao_service
+from toninho.api.dependencies.pagina_extraida_deps import get_pagina_extraida_service
 from toninho.api.dependencies.processo_deps import get_processo_service
 from toninho.core.database import get_db
 from toninho.core.exceptions import NotFoundError
-from toninho.models.enums import ProcessoStatus
+from toninho.models.enums import ExecucaoStatus, PaginaStatus, ProcessoStatus
+from toninho.services.execucao_service import ExecucaoService
+from toninho.services.pagina_extraida_service import PaginaExtraidaService
 from toninho.services.processo_service import ProcessoService
 
 router = APIRouter(tags=["Frontend"])
@@ -56,16 +62,53 @@ async def home(request: Request):
 
 
 @router.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
-async def dashboard(request: Request):
+async def dashboard(request: Request, db: Session = Depends(get_db)):
     """Dashboard principal com estatísticas gerais."""
-    # Stats padrão - em uma implementação completa viriam do banco de dados
+    from toninho.monitoring.metrics import MetricsService
+    from toninho.services.execucao_service import ExecucaoService
+    from toninho.repositories.execucao_repository import ExecucaoRepository
+    from toninho.repositories.processo_repository import ProcessoRepository
+    from toninho.models.enums import ExecucaoStatus as ExStatus
+
+    # Stats padrão - fallback caso db não esteja disponível
     default_stats = {
         "total_processos": 0,
         "processos_ativos": 0,
         "execucoes_hoje": 0,
         "taxa_sucesso": 0,
     }
-    context = get_template_context(request, title="Dashboard", stats=default_stats)
+    metrics = {
+        "executions": {"total": 0, "active": 0, "completed": 0, "failed": 0},
+        "success_rate": 0.0,
+    }
+    execucoes_ativas = []
+
+    try:
+        metrics_svc = MetricsService(db=db)
+        metrics = metrics_svc.get_dashboard_metrics()
+        default_stats["total_processos"] = metrics.get("processes", {}).get("total", 0)
+        default_stats["execucoes_hoje"] = metrics.get("executions", {}).get("total", 0)
+        default_stats["taxa_sucesso"] = metrics.get("success_rate", 0)
+    except Exception:
+        pass
+
+    try:
+        execucao_svc = ExecucaoService(
+            repository=ExecucaoRepository(),
+            processo_repository=ProcessoRepository(),
+        )
+        resp = execucao_svc.list_execucoes(db, page=1, per_page=5, status=ExStatus.EM_EXECUCAO)
+        execucoes_ativas = resp.data
+    except Exception:
+        execucoes_ativas = []
+
+    context = get_template_context(
+        request,
+        title="Dashboard",
+        stats=default_stats,
+        metrics=metrics,
+        execucoes=execucoes_ativas,
+    )
     return templates.TemplateResponse("pages/dashboard/index.html", context)
 
 
@@ -196,6 +239,227 @@ async def processos_detail(
     return templates.TemplateResponse("pages/processos/detail.html", context)
 
 
+# ==================== Rotas de Execuções ====================
+
+
+@router.get(
+    "/dashboard/stats",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def dashboard_stats(request: Request, db: Session = Depends(get_db)):
+    """Stats cards partial para polling do dashboard."""
+    from toninho.monitoring.metrics import MetricsService
+
+    try:
+        metrics_svc = MetricsService(db=db)
+        metrics = metrics_svc.get_dashboard_metrics()
+    except Exception:
+        metrics = {
+            "executions": {"total": 0, "active": 0, "completed": 0, "failed": 0},
+            "success_rate": 0.0,
+        }
+    context = get_template_context(request, metrics=metrics)
+    return templates.TemplateResponse("partials/dashboard_stats.html", context)
+
+
+@router.get(
+    "/execucoes/ativas",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def execucoes_ativas_partial(
+    request: Request,
+    db: Session = Depends(get_db),
+    service: ExecucaoService = Depends(get_execucao_service),
+):
+    """Execuções ativas partial para polling do dashboard."""
+    execucoes_resp = service.list_execucoes(
+        db,
+        page=1,
+        per_page=10,
+        status=ExecucaoStatus.EM_EXECUCAO,
+    )
+    context = get_template_context(request, execucoes=execucoes_resp.data)
+    return templates.TemplateResponse("partials/execucoes_ativas.html", context)
+
+
+@router.get(
+    "/execucoes/{id}/progress",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def execucao_progress(
+    request: Request,
+    id: UUID,
+    db: Session = Depends(get_db),
+    service: ExecucaoService = Depends(get_execucao_service),
+):
+    """Progress bar partial para polling de detalhe de execução."""
+    try:
+        execucao = service.get_execucao(db, id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Execução não encontrada")
+    context = get_template_context(request, execucao=execucao)
+    return templates.TemplateResponse("partials/progress_bar.html", context)
+
+
+@router.get(
+    "/execucoes",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def execucoes_list(
+    request: Request,
+    page: int = Query(1, ge=1),
+    status: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    service: ExecucaoService = Depends(get_execucao_service),
+):
+    """Lista de todas as execuções com paginação."""
+    status_filter = _parse_execucao_status_filter(status)
+    execucoes_resp = service.list_execucoes(
+        db, page=page, per_page=20, status=status_filter
+    )
+    context = get_template_context(
+        request,
+        title="Execuções",
+        execucoes=execucoes_resp.data,
+        meta=execucoes_resp.meta,
+        status_filter=status or "",
+    )
+    return templates.TemplateResponse("pages/execucoes/list.html", context)
+
+
+@router.get(
+    "/execucoes/{id}",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def execucoes_detail(
+    request: Request,
+    id: UUID,
+    db: Session = Depends(get_db),
+    service: ExecucaoService = Depends(get_execucao_service),
+):
+    """Página de detalhes de uma execução com streaming de logs."""
+    try:
+        execucao = service.get_execucao_detail(db, id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Execução não encontrada")
+
+    context = get_template_context(
+        request,
+        title=f"Execução {str(id)[:8]}",
+        execucao=execucao,
+    )
+    return templates.TemplateResponse("pages/execucoes/detail.html", context)
+
+
+# ==================== Rotas de Páginas Extraídas ====================
+
+
+@router.get(
+    "/paginas/search",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def paginas_search(
+    request: Request,
+    execucao_id: UUID = Query(...),
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
+):
+    """Busca páginas extraídas (partial HTMX)."""
+    status_filter = _parse_pagina_status_filter(status)
+    paginas_resp = service.list_paginas_by_execucao(
+        db,
+        execucao_id,
+        page=1,
+        per_page=12,
+        status=status_filter,
+    )
+    context = get_template_context(request, paginas=paginas_resp)
+    return templates.TemplateResponse("partials/paginas_grid.html", context)
+
+
+@router.get(
+    "/execucoes/{execucao_id}/paginas",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def execucao_paginas(
+    request: Request,
+    execucao_id: UUID,
+    page: int = Query(1, ge=1),
+    status: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    execucao_service: ExecucaoService = Depends(get_execucao_service),
+    pagina_service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
+):
+    """Lista páginas extraídas de uma execução."""
+    try:
+        execucao = execucao_service.get_execucao(db, execucao_id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Execução não encontrada")
+
+    status_filter = _parse_pagina_status_filter(status)
+    paginas_resp = pagina_service.list_paginas_by_execucao(
+        db,
+        execucao_id,
+        page=page,
+        per_page=12,
+        status=status_filter,
+    )
+
+    try:
+        estatisticas = pagina_service.get_estatisticas_paginas(db, execucao_id)
+        total_size_bytes = estatisticas.total_bytes if hasattr(estatisticas, "total_bytes") else 0
+    except Exception:
+        total_size_bytes = 0
+
+    total_size_formatted = _format_bytes(total_size_bytes)
+
+    context = get_template_context(
+        request,
+        title="Páginas Extraídas",
+        execucao=execucao,
+        paginas=paginas_resp,
+        total_size_formatted=total_size_formatted,
+        status_filter=status or "",
+        search=search or "",
+    )
+    return templates.TemplateResponse("pages/execucoes/paginas.html", context)
+
+
+@router.get(
+    "/paginas/{id}",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def pagina_detail(
+    request: Request,
+    id: UUID,
+    db: Session = Depends(get_db),
+    service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
+):
+    """Página de detalhes de uma página extraída."""
+    try:
+        pagina = service.get_pagina_extraida(db, id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+
+    context = get_template_context(
+        request,
+        title=pagina.titulo or pagina.url,
+        pagina=pagina,
+    )
+    return templates.TemplateResponse("pages/paginas/detail.html", context)
+
+
 # ==================== Helpers ====================
 
 
@@ -215,4 +479,35 @@ def _parse_status_filter(status: Optional[str]) -> Optional[ProcessoStatus]:
         return ProcessoStatus(status.upper())
     except ValueError:
         return None
+
+
+def _parse_execucao_status_filter(status: Optional[str]) -> Optional[ExecucaoStatus]:
+    """Converte string de status para enum ExecucaoStatus."""
+    if not status:
+        return None
+    try:
+        return ExecucaoStatus(status.lower())
+    except ValueError:
+        return None
+
+
+def _parse_pagina_status_filter(status: Optional[str]) -> Optional[PaginaStatus]:
+    """Converte string de status para enum PaginaStatus."""
+    if not status:
+        return None
+    try:
+        return PaginaStatus(status.lower())
+    except ValueError:
+        return None
+
+
+def _format_bytes(size_bytes: int) -> str:
+    """Formata bytes para exibição legível (KB, MB, GB)."""
+    if size_bytes == 0:
+        return "0 B"
+    for unit in ["B", "KB", "MB", "GB"]:
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes //= 1024
+    return f"{size_bytes:.1f} TB"
 

@@ -1,8 +1,8 @@
 # PRD-015: Interface CRUD Processos
 
-**Status**: ✅ Concluído  
-**Prioridade**: 🟢 Baixa - Frontend (Prioridade 4)  
-**Categoria**: Frontend - Features  
+**Status**: ✅ Concluído
+**Prioridade**: 🟢 Baixa - Frontend (Prioridade 4)
+**Categoria**: Frontend - Features
 **Estimativa**: 8-10 horas
 
 ---
@@ -81,8 +81,8 @@ async def processos_search(request: Request, q: str):
             <!-- Search -->
             <div class="md:col-span-2">
                 <label class="form-label">Buscar</label>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     name="search"
                     class="form-input"
                     placeholder="Nome ou descrição..."
@@ -101,8 +101,8 @@ async def processos_search(request: Request, q: str):
             <!-- Status Filter -->
             <div>
                 <label class="form-label">Status</label>
-                <select 
-                    name="status" 
+                <select
+                    name="status"
                     class="form-input"
                     hx-get="{{ url_for('processos_list') }}"
                     hx-target="#processos-table"
@@ -153,7 +153,7 @@ async def processos_search(request: Request, q: str):
         <tr class="hover:bg-gray-50">
             <td class="px-6 py-4">
                 <div>
-                    <a href="{{ url_for('processos_detail', id=processo.id) }}" 
+                    <a href="{{ url_for('processos_detail', id=processo.id) }}"
                        class="text-blue-600 hover:text-blue-800 font-medium">
                         {{ processo.nome }}
                     </a>
@@ -183,7 +183,7 @@ async def processos_search(request: Request, q: str):
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                 <!-- Executar -->
-                <button 
+                <button
                     hx-post="{{ url_for('api_executar_processo', id=processo.id) }}"
                     hx-confirm="Executar processo agora?"
                     class="text-green-600 hover:text-green-900"
@@ -195,7 +195,7 @@ async def processos_search(request: Request, q: str):
                 </button>
 
                 <!-- Editar -->
-                <a href="{{ url_for('processos_edit', id=processo.id) }}" 
+                <a href="{{ url_for('processos_edit', id=processo.id) }}"
                    class="text-blue-600 hover:text-blue-900"
                    title="Editar">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,12 +245,12 @@ async def processos_search(request: Request, q: str):
     </div>
 
     <!-- Form -->
-    <form 
+    <form
         class="space-y-6"
         hx-post="{% if processo %}{{ url_for('api_update_processo', id=processo.id) }}{% else %}{{ url_for('api_create_processo') }}{% endif %}"
         hx-target="#form-container"
         hx-swap="outerHTML">
-        
+
         <div id="form-container">
             <!-- Informações Básicas -->
             <div class="card space-y-4">
@@ -259,10 +259,10 @@ async def processos_search(request: Request, q: str):
                 <!-- Nome -->
                 <div>
                     <label for="nome" class="form-label">Nome *</label>
-                    <input 
-                        type="text" 
-                        id="nome" 
-                        name="nome" 
+                    <input
+                        type="text"
+                        id="nome"
+                        name="nome"
                         class="form-input"
                         value="{{ processo.nome if processo else '' }}"
                         required>
@@ -274,9 +274,9 @@ async def processos_search(request: Request, q: str):
                 <!-- Descrição -->
                 <div>
                     <label for="descricao" class="form-label">Descrição</label>
-                    <textarea 
-                        id="descricao" 
-                        name="descricao" 
+                    <textarea
+                        id="descricao"
+                        name="descricao"
                         rows="3"
                         class="form-input">{{ processo.descricao if processo else '' }}</textarea>
                 </div>
@@ -303,9 +303,9 @@ async def processos_search(request: Request, q: str):
                 <div>
                     <label for="urls" class="form-label">URLs *</label>
                     <p class="text-sm text-gray-600 mb-2">Uma URL por linha (mínimo 1, máximo 100)</p>
-                    <textarea 
-                        id="urls" 
-                        name="urls" 
+                    <textarea
+                        id="urls"
+                        name="urls"
                         rows="6"
                         class="form-input font-mono text-sm"
                         placeholder="https://example.com/page1&#10;https://example.com/page2"
@@ -330,10 +330,10 @@ async def processos_search(request: Request, q: str):
                 <!-- Timeout -->
                 <div>
                     <label for="timeout" class="form-label">Timeout (segundos)</label>
-                    <input 
-                        type="number" 
-                        id="timeout" 
-                        name="timeout" 
+                    <input
+                        type="number"
+                        id="timeout"
+                        name="timeout"
                         class="form-input"
                         value="{{ processo.configuracao.timeout if processo and processo.configuracao else 30 }}"
                         min="10"
@@ -346,8 +346,8 @@ async def processos_search(request: Request, q: str):
                 <div class="flex items-center justify-between">
                     <h2 class="text-lg font-semibold">Agendamento</h2>
                     <label class="flex items-center cursor-pointer">
-                        <input 
-                            type="checkbox" 
+                        <input
+                            type="checkbox"
                             x-model="hasSchedule"
                             class="mr-2">
                         <span class="text-sm">Habilitar agendamento</span>
@@ -356,10 +356,10 @@ async def processos_search(request: Request, q: str):
 
                 <div x-show="hasSchedule" x-transition>
                     <label for="agendamento" class="form-label">Expressão Cron</label>
-                    <input 
-                        type="text" 
-                        id="agendamento" 
-                        name="agendamento" 
+                    <input
+                        type="text"
+                        id="agendamento"
+                        name="agendamento"
                         class="form-input font-mono"
                         value="{{ processo.agendamento if processo else '' }}"
                         placeholder="0 9 * * 1-5"
@@ -416,7 +416,7 @@ document.getElementById('urls').dispatchEvent(new Event('input'));
             <p class="text-gray-600 mt-1">{{ processo.descricao }}</p>
         </div>
         <div class="flex space-x-2">
-            <button 
+            <button
                 hx-post="{{ url_for('api_executar_processo', id=processo.id) }}"
                 hx-confirm="Executar processo agora?"
                 class="btn-success">
@@ -641,7 +641,7 @@ document.getElementById('urls').dispatchEvent(new Event('input'));
 
 **Search with debounce:**
 ```html
-<input 
+<input
     hx-get="/processos/search"
     hx-trigger="keyup changed delay:500ms"
     hx-target="#table"
@@ -650,7 +650,7 @@ document.getElementById('urls').dispatchEvent(new Event('input'));
 
 **Delete with confirm:**
 ```html
-<button 
+<button
     hx-delete="/api/v1/processos/{id}"
     hx-confirm="Tem certeza?"
     hx-target="closest tr"
@@ -686,5 +686,5 @@ document.getElementById('urls').dispatchEvent(new Event('input'));
 
 ---
 
-**PRD Anterior**: PRD-014 - Setup Frontend  
+**PRD Anterior**: PRD-014 - Setup Frontend
 **Próximo PRD**: PRD-016 - Interface de Monitoramento

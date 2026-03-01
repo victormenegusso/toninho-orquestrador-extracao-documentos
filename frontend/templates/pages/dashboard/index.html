@@ -152,5 +152,22 @@
             </div>
         </dl>
     </div>
+
+    <!-- Execuções Ativas (polling) -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Execuções Ativas</h2>
+            <a href="/execucoes" class="text-sm text-blue-600 hover:text-blue-800">
+                Ver todas →
+            </a>
+        </div>
+        <div
+            id="execucoes-ativas"
+            hx-get="/execucoes/ativas"
+            hx-trigger="every 3s"
+            hx-swap="innerHTML">
+            {% include 'partials/execucoes_ativas.html' %}
+        </div>
+    </div>
 </div>
 {% endblock %}

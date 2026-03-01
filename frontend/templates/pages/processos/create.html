@@ -80,11 +80,11 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required>
                         <option value="ativo"
-                            {% if not processo or processo.status.value == 'ativo' %}selected{% endif %}>
+                            {% if not processo or processo.status == 'ativo' %}selected{% endif %}>
                             Ativo
                         </option>
                         <option value="inativo"
-                            {% if processo and processo.status.value == 'inativo' %}selected{% endif %}>
+                            {% if processo and processo.status == 'inativo' %}selected{% endif %}>
                             Inativo
                         </option>
                     </select>
