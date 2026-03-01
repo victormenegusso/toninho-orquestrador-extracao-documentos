@@ -1,8 +1,8 @@
 # PRD-001: Setup do Projeto
 
-**Status**: 📋 Pronto para implementação  
-**Prioridade**: 🔴 Crítica - Bloqueante  
-**Categoria**: Setup e Infraestrutura  
+**Status**: ✅ Implementado
+**Prioridade**: 🔴 Crítica - Bloqueante
+**Categoria**: Setup e Infraestrutura
 **Estimativa**: 4-6 horas
 
 ---

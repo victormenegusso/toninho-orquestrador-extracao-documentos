@@ -1,8 +1,8 @@
 # PRD-005: Módulo Processo
 
-**Status**: 📋 Pronto para implementação  
-**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)  
-**Categoria**: Backend - Entidades Core  
+**Status**: ✅ Implementado
+**Prioridade**: 🟠 Alta - Backend Entidades Core (Prioridade 2)
+**Categoria**: Backend - Entidades Core
 **Estimativa**: 6-8 horas
 
 ---
@@ -512,5 +512,5 @@ Este PRD estará completo quando:
 
 ---
 
-**PRD Anterior**: PRD-004 - Schemas e DTOs  
+**PRD Anterior**: PRD-004 - Schemas e DTOs
 **Próximo PRD**: PRD-006 - Módulo Configuração

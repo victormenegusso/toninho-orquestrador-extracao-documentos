@@ -1,8 +1,8 @@
 # PRD-003: Models e Database
 
-**Status**: 📋 Pronto para implementação  
-**Prioridade**: 🔴 Crítica - Fundação Backend (Prioridade 1)  
-**Categoria**: Backend - Fundação  
+**Status**: ✅ Implementado
+**Prioridade**: 🔴 Crítica - Fundação Backend (Prioridade 1)
+**Categoria**: Backend - Fundação
 **Estimativa**: 8-10 horas
 
 ---
@@ -265,7 +265,7 @@ class PaginaStatus(str, Enum):
 - mensagem: não vazia
 - contexto: JSON válido se presente
 
-**Observação**: 
+**Observação**:
 Logs são append-only. Nunca devem ser atualizados, apenas inseridos.
 
 #### 3.4.5. PaginaExtraida (toninho/models/pagina_extraida.py)
@@ -364,17 +364,17 @@ Configuração centralizada com Pydantic BaseSettings:
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./toninho.db"
-    
+
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     DEBUG: bool = False
-    
+
     # Logging
     LOG_LEVEL: str = "INFO"
-    
+
     # Outros settings conforme necessário...
-    
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
@@ -548,7 +548,7 @@ from sqlalchemy import String
 
 class Processo(Base):
     __tablename__ = "processos"
-    
+
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     nome: Mapped[str] = mapped_column(String(200), nullable=False)
 ```
@@ -627,5 +627,5 @@ Este PRD estará completo quando:
 
 ---
 
-**PRD Anterior**: PRD-002 - Ambiente de Desenvolvimento  
+**PRD Anterior**: PRD-002 - Ambiente de Desenvolvimento
 **Próximo PRD**: PRD-004 - Schemas e DTOs

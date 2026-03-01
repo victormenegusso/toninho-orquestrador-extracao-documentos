@@ -1,8 +1,8 @@
 # PRD-004: Schemas e DTOs
 
-**Status**: 📋 Pronto para implementação  
-**Prioridade**: 🔴 Crítica - Fundação Backend (Prioridade 1)  
-**Categoria**: Backend - Fundação  
+**Status**: ✅ Implementado
+**Prioridade**: 🔴 Crítica - Fundação Backend (Prioridade 1)
+**Categoria**: Backend - Fundação
 **Estimativa**: 6-8 horas
 
 ---
@@ -566,16 +566,16 @@ from pydantic import BaseModel, Field, field_validator, computed_field, ConfigDi
 
 class ProcessoCreate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     nome: str = Field(..., min_length=1, max_length=200, description="Nome do processo")
-    
+
     @field_validator('nome')
     @classmethod
     def validate_nome(cls, v: str) -> str:
         if not v.strip():
             raise ValueError("Nome não pode ser vazio")
         return v.strip()
-    
+
     @computed_field
     @property
     def nome_upper(self) -> str:
@@ -663,5 +663,5 @@ Este PRD estará completo quando:
 
 ---
 
-**PRD Anterior**: PRD-003 - Models e Database  
+**PRD Anterior**: PRD-003 - Models e Database
 **Próximo PRD**: PRD-005 - Módulo Processo
