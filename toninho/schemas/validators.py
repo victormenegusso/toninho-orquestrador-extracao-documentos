@@ -144,7 +144,16 @@ def validate_urls_list(urls: list[str]) -> list[str]:
 
     # Valida cada URL
     validated = []
+    seen: set[str] = set()
     for url in urls:
-        validated.append(validate_url(url))
+        if len(url) > 2048:
+            raise ValueError(
+                f"URL excede o comprimento máximo de 2048 caracteres: {url[:50]}..."
+            )
+        validated_url = validate_url(url)
+        if validated_url in seen:
+            raise ValueError(f"URL duplicada na lista: {validated_url}")
+        seen.add(validated_url)
+        validated.append(validated_url)
 
     return validated

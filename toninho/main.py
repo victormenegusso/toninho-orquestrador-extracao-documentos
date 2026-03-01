@@ -11,6 +11,8 @@ from fastapi.templating import Jinja2Templates
 
 # from toninho.api.routes import health
 from toninho.api.routes import processos
+from toninho.api.routes import configuracoes
+from toninho.api.routes import execucoes
 from toninho.core.config import settings
 from toninho.core.logging import setup_logging
 
@@ -35,6 +37,10 @@ app = FastAPI(
 # Registrar rotas
 # app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(processos.router)
+app.include_router(configuracoes.router_processos)
+app.include_router(configuracoes.router)
+app.include_router(execucoes.router_processos)
+app.include_router(execucoes.router)
 
 
 @app.get("/")

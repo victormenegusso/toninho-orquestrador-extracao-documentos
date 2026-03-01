@@ -223,6 +223,26 @@ class ConfiguracaoResponse(BaseSchema):
     updated_at: datetime = Field(..., description="Data/hora da última atualização")
 
 
+class AgendamentoInfo(BaseSchema):
+    """
+    Informações de agendamento retornadas pelo endpoint de validação.
+
+    Attributes:
+        expressao_cron: Expressão cron avaliada
+        valida: Se a expressão é válida
+        proximas_execucoes: Próximas 5 execuções calculadas
+        descricao_legivel: Descrição em linguagem natural
+    """
+
+    expressao_cron: str = Field(..., description="Expressão cron avaliada")
+    valida: bool = Field(..., description="Se a expressão é válida")
+    proximas_execucoes: List[datetime] = Field(
+        default_factory=list,
+        description="Próximas 5 execuções",
+    )
+    descricao_legivel: str = Field(..., description="Descrição em linguagem natural")
+
+
 # Aliases
 ConfiguracaoInCreate = ConfiguracaoCreate
 ConfiguracaoInUpdate = ConfiguracaoUpdate

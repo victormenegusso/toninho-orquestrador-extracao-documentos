@@ -16,14 +16,14 @@ from toninho.models.processo import Processo
 def client(test_engine):
     """Fixture que retorna cliente de teste com override de database."""
     from sqlalchemy.orm import sessionmaker
-    
+
     # Criar SessionLocal usando o mesmo engine dos testes
     TestingSessionLocal = sessionmaker(
         autocommit=False,
         autoflush=False,
         bind=test_engine,
     )
-    
+
     # Override da dependência get_db para usar o engine de teste
     def override_get_db():
         db = TestingSessionLocal()
@@ -31,13 +31,13 @@ def client(test_engine):
             yield db
         finally:
             db.close()
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     # Criar client com raise_server_exceptions para ver o erro real
     test_client = TestClient(app, raise_server_exceptions=True)
     yield test_client
-    
+
     # Limpar overrides
     app.dependency_overrides.clear()
 

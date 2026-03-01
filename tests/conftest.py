@@ -29,31 +29,31 @@ async def async_sample_fixture() -> str:
 def test_engine():
     """
     Fixture que fornece um engine de banco de dados para testes.
-    
+
     Usa arquivo temporário em vez de in-memory para permitir múltiplas
     conexões (necessário para TestClient do FastAPI).
     """
     import tempfile
     import os
-    
+
     # Criar arquivo temporário para o banco
     db_fd, db_path = tempfile.mkstemp(suffix=".db")
-    
+
     engine = create_engine(
         f"sqlite:///{db_path}",
         connect_args={"check_same_thread": False},
         poolclass=None,
     )
-    
+
     # Criar todas as tabelas
     Base.metadata.create_all(bind=engine)
-    
+
     yield engine
-    
+
     # Limpar
     Base.metadata.drop_all(bind=engine)
     engine.dispose()
-    
+
     # Remover arquivo temporário
     os.close(db_fd)
     os.unlink(db_path)
