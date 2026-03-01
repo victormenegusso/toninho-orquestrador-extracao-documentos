@@ -1,0 +1,215 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}{{ processo.nome }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div class="flex items-start space-x-4">
+            <a href="/processos"
+               class="mt-1 text-gray-500 hover:text-gray-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <div class="flex items-center space-x-3">
+                    <h1 class="text-2xl font-bold text-gray-900">{{ processo.nome }}</h1>
+                    {% if processo.status.value == 'ativo' %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Ativo
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Inativo
+                    </span>
+                    {% endif %}
+                </div>
+                {% if processo.descricao %}
+                <p class="text-gray-600 mt-1">{{ processo.descricao }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <a href="/processos/{{ processo.id }}/editar"
+               class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Editar
+            </a>
+            <button
+                hx-post="/api/v1/processos/{{ processo.id }}/execucoes"
+                hx-confirm="Executar este processo agora?"
+                class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Executar Agora
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow-sm p-5">
+            <p class="text-sm font-medium text-gray-500">Total de Execuções</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ processo.total_execucoes }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-5">
+            <p class="text-sm font-medium text-gray-500">Configurações</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ processo.configuracoes | length }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-5">
+            <p class="text-sm font-medium text-gray-500">Criado em</p>
+            <p class="text-lg font-semibold text-gray-900 mt-1">{{ processo.created_at.strftime('%d/%m/%Y') }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-5">
+            <p class="text-sm font-medium text-gray-500">Última Execução</p>
+            {% if processo.ultima_execucao_em %}
+            <p class="text-lg font-semibold text-gray-900 mt-1">
+                {{ processo.ultima_execucao_em.strftime('%d/%m/%Y %H:%M') }}
+            </p>
+            {% else %}
+            <p class="text-sm text-gray-400 mt-2">Nunca executado</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Configurações -->
+    {% if processo.configuracoes %}
+    <div class="bg-white rounded-lg shadow-md">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="text-base font-semibold text-gray-900">Configurações de Extração</h2>
+        </div>
+        <div class="p-6 space-y-4">
+            {% for config in processo.configuracoes %}
+            <div class="border border-gray-100 rounded-lg p-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <p class="text-gray-500">Timeout</p>
+                        <p class="font-medium mt-1">{{ config.timeout }}s</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Formato de Saída</p>
+                        <p class="font-medium mt-1">{{ config.formato_saida.value | replace('_', ' ') | title }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Tipo Agendamento</p>
+                        <p class="font-medium mt-1">{{ config.agendamento_tipo.value | title }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">URLs</p>
+                        <p class="font-medium mt-1">{{ config.urls | length }} URL(s)</p>
+                    </div>
+                </div>
+
+                {% if config.agendamento_cron %}
+                <div class="mt-3 pt-3 border-t border-gray-50">
+                    <p class="text-gray-500 text-sm">Expressão Cron</p>
+                    <code class="text-sm font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block">
+                        {{ config.agendamento_cron }}
+                    </code>
+                </div>
+                {% endif %}
+
+                <!-- URLs -->
+                {% if config.urls %}
+                <div class="mt-3 pt-3 border-t border-gray-50">
+                    <p class="text-gray-500 text-sm mb-2">URLs Configuradas</p>
+                    <ul class="space-y-1 max-h-40 overflow-y-auto">
+                        {% for url in config.urls %}
+                        <li class="flex items-center text-sm">
+                            <svg class="w-3 h-3 mr-2 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                            </svg>
+                            <a href="{{ url }}" target="_blank" class="text-blue-600 hover:text-blue-800 truncate">
+                                {{ url }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-3">Configurações de Extração</h2>
+        <div class="text-center py-6 text-gray-500">
+            <p class="text-sm">Nenhuma configuração cadastrada.</p>
+            <a href="/docs#/Configurações" target="_blank"
+               class="mt-2 inline-block text-sm text-blue-600 hover:underline">
+                Adicionar configuração via API →
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Execuções Recentes -->
+    <div class="bg-white rounded-lg shadow-md">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <h2 class="text-base font-semibold text-gray-900">Execuções Recentes</h2>
+            <a href="/execucoes?processo_id={{ processo.id }}"
+               class="text-sm text-blue-600 hover:text-blue-800">
+                Ver todas →
+            </a>
+        </div>
+        <div class="p-6">
+            {% if processo.execucoes_recentes %}
+            <div class="space-y-3">
+                {% for execucao in processo.execucoes_recentes %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">
+                            {{ execucao.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            ID: {{ execucao.id }}
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if execucao.status.value == 'concluido' %}bg-green-100 text-green-800
+                            {% elif execucao.status.value == 'erro' %}bg-red-100 text-red-800
+                            {% elif execucao.status.value == 'executando' %}bg-blue-100 text-blue-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ execucao.status.value | title }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-6">
+                <p class="text-sm text-gray-500">Nenhuma execução registrada.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Informações extras -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-4">Informações</h2>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <dt class="text-gray-500">ID</dt>
+                <dd class="font-mono text-gray-900 mt-1 text-xs">{{ processo.id }}</dd>
+            </div>
+            <div>
+                <dt class="text-gray-500">Atualizado em</dt>
+                <dd class="text-gray-900 mt-1">{{ processo.updated_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+            </div>
+        </dl>
+    </div>
+</div>
+{% endblock %}
