@@ -1,0 +1,32 @@
+# Docker Compose Override para Desenvolvimento
+# Este arquivo é automaticamente mergeado com docker-compose.yml
+
+services:
+  api:
+    volumes:
+      # Hot-reload: montar código fonte
+      - ./toninho:/app/toninho:ro
+      - ./output:/app/output
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    command: uvicorn toninho.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker:
+    volumes:
+      # Hot-reload: montar código fonte
+      - ./toninho:/app/toninho:ro
+      - ./output:/app/output
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    # Recarregar automaticamente em mudanças
+    command: watchfiles --filter python 'celery -A toninho.workers.celery_app worker --loglevel=debug --concurrency=2'
+
+  beat:
+    volumes:
+      - ./toninho:/app/toninho:ro
+      - ./output:/app/output
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
