@@ -1,0 +1,88 @@
+{% if paginas and paginas.data %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="paginas-cards">
+    {% for pagina in paginas.data %}
+    <div class="card hover:shadow-lg transition-shadow">
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-3">
+            <div class="flex-1 min-w-0">
+                <h3 class="text-sm font-medium text-gray-900 truncate">
+                    {{ pagina.url_original }}
+                </h3>
+                <p class="text-xs text-gray-500 truncate mt-1">
+                    {{ pagina.tamanho_legivel }}
+                </p>
+            </div>
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                {% if pagina.status == 'sucesso' %}bg-green-100 text-green-800
+                {% elif pagina.status == 'falhou' %}bg-red-100 text-red-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ pagina.status }}
+            </span>
+        </div>
+
+        <!-- Metadata -->
+        <div class="space-y-1 text-xs text-gray-600 mb-3">
+            <div class="flex justify-between">
+                <span>Tamanho:</span>
+                <span class="font-medium">{{ pagina.tamanho_legivel }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>ID:</span>
+                <span class="font-medium font-mono">{{ pagina.id | string | truncate(8, True, '') }}</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex space-x-2 pt-3 border-t">
+            <!-- Preview -->
+            {% if pagina.status == 'sucesso' %}
+            <button
+                onclick="openPreview('{{ pagina.id }}')"
+                class="flex-1 text-sm text-blue-600 hover:text-blue-800 font-medium text-center">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                Preview
+            </button>
+            {% endif %}
+
+            <!-- Detail -->
+            <a
+                href="/paginas/{{ pagina.id }}"
+                class="flex-1 text-sm text-gray-600 hover:text-gray-800 font-medium text-center">
+                Detalhes
+            </a>
+
+            <!-- Download -->
+            {% if pagina.status == 'sucesso' %}
+            <a
+                href="/api/v1/paginas/{{ pagina.id }}/download"
+                download
+                class="flex-1 text-sm text-green-600 hover:text-green-800 font-medium text-center">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Baixar
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center py-12">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">Nenhuma página encontrada</h3>
+    <p class="mt-1 text-sm text-gray-500">
+        Ajuste os filtros ou aguarde a extração terminar.
+    </p>
+</div>
+{% endif %}

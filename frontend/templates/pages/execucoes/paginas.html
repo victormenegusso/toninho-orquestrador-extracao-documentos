@@ -1,0 +1,104 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Páginas Extraídas</h1>
+            <p class="text-gray-600 mt-1">
+                <a href="/execucoes/{{ execucao.id }}"
+                   class="text-blue-600 hover:text-blue-800">
+                    ← Voltar para execução
+                </a>
+            </p>
+        </div>
+        <div class="flex space-x-2">
+            <!-- Download All -->
+            <a
+                href="/api/v1/execucoes/{{ execucao.id }}/download-all"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 {% if not paginas or not paginas.data %}opacity-50 cursor-not-allowed pointer-events-none{% endif %}">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Baixar Todas (ZIP)
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <p class="text-sm text-gray-600">Total de Páginas</p>
+            <p class="text-2xl font-bold mt-1">{{ execucao.total_urls or '—' }}</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <p class="text-sm text-gray-600">Extraídas com Sucesso</p>
+            <p class="text-2xl font-bold text-green-600 mt-1">{{ execucao.urls_sucesso or '—' }}</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <p class="text-sm text-gray-600">Erros</p>
+            <p class="text-2xl font-bold text-red-600 mt-1">{{ execucao.urls_erro or '—' }}</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <p class="text-sm text-gray-600">Tamanho Total</p>
+            <p class="text-2xl font-bold mt-1">{{ total_size_formatted }}</p>
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <form method="get" action="/execucoes/{{ execucao.id }}/paginas" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Search -->
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                <input
+                    type="text"
+                    name="search"
+                    value="{{ search }}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="URL..."
+                    hx-get="/paginas/search?execucao_id={{ execucao.id }}"
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-target="#paginas-grid"
+                    hx-include="[name='status']">
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                    name="status"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    hx-get="/paginas/search?execucao_id={{ execucao.id }}"
+                    hx-target="#paginas-grid"
+                    hx-include="[name='search']">
+                    <option value="" {% if not status_filter %}selected{% endif %}>Todos</option>
+                    <option value="sucesso" {% if status_filter == 'sucesso' %}selected{% endif %}>Sucesso</option>
+                    <option value="falhou" {% if status_filter == 'falhou' %}selected{% endif %}>Falhou</option>
+                    <option value="ignorado" {% if status_filter == 'ignorado' %}selected{% endif %}>Ignorado</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Grid de Páginas -->
+    <div id="paginas-grid">
+        {% include 'partials/paginas_grid.html' %}
+    </div>
+
+    <!-- Paginação -->
+    {% if paginas and paginas.meta %}
+    {% set pg = {'page': paginas.meta.page, 'pages': paginas.meta.total_pages, 'total': paginas.meta.total, 'page_size': paginas.meta.per_page} %}
+    {% set base_url = '/execucoes/' + execucao.id|string + '/paginas' %}
+    {% with pagination = pg %}
+        {% include 'components/pagination.html' %}
+    {% endwith %}
+    {% endif %}
+</div>
+
+<!-- Preview Modal -->
+{% include 'components/preview_modal.html' %}
+
+{% endblock %}

@@ -1,11 +1,14 @@
 """Rotas da API para gerenciamento de Páginas Extraídas."""
 
+import io
+import re
+import zipfile
 from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from toninho.api.dependencies.pagina_extraida_deps import get_pagina_extraida_service
@@ -148,6 +151,54 @@ def get_estatisticas_paginas(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
+@router_execucoes.get(
+    "/{execucao_id}/download-all",
+    summary="Download ZIP com todas as páginas extraídas",
+    responses={
+        200: {"description": "Arquivo ZIP para download"},
+        404: {"description": "Execução não encontrada ou sem páginas", "model": ErrorResponse},
+    },
+)
+def download_all_paginas(
+    execucao_id: UUID,
+    db: Session = Depends(get_db),
+    service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
+):
+    """Download ZIP com todas as páginas extraídas com sucesso de uma execução."""
+    try:
+        paginas_resp = service.list_paginas_by_execucao(
+            db, execucao_id, page=1, per_page=100, status=PaginaStatus.SUCESSO
+        )
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    if not paginas_resp.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nenhuma página com sucesso para baixar",
+        )
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for pagina_summary in paginas_resp.data:
+            try:
+                detail = service.get_pagina_extraida(db, pagina_summary.id)
+                file_path = Path(detail.caminho_arquivo)
+                if file_path.exists():
+                    safe_name = re.sub(r"[^\w\-\.]", "_", file_path.name)
+                    zf.write(str(file_path), arcname=safe_name)
+            except Exception:
+                continue
+
+    zip_buffer.seek(0)
+    filename = f"execucao_{str(execucao_id)[:8]}_paginas.zip"
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 # ---------------------------------------------------------------------------
 # Rotas por pagina_id
 # ---------------------------------------------------------------------------
@@ -215,6 +266,33 @@ def download_pagina(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Arquivo não encontrado no filesystem",
         )
+
+
+@router.get(
+    "/paginas/{pagina_id}/content",
+    summary="Conteúdo markdown da página",
+    responses={
+        200: {"description": "Conteúdo markdown como texto"},
+        404: {"description": "Página ou arquivo não encontrado", "model": ErrorResponse},
+    },
+)
+def get_pagina_content(
+    pagina_id: UUID,
+    db: Session = Depends(get_db),
+    service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
+):
+    """Retorna o conteúdo markdown de uma página extraída como texto simples."""
+    try:
+        pagina = service.get_pagina_extraida(db, pagina_id)
+        filepath = Path(pagina.caminho_arquivo)
+        if not filepath.exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Arquivo não encontrado no filesystem",
+            )
+        return PlainTextResponse(content=filepath.read_text(encoding="utf-8"))
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.delete(

@@ -1,0 +1,121 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 truncate">Detalhes da Página</h1>
+            <p class="text-gray-600 mt-1 truncate">
+                {{ pagina.url_original }}
+            </p>
+        </div>
+        <div class="flex space-x-2">
+            <a
+                href="/execucoes/{{ pagina.execucao_id }}/paginas"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50">
+                ← Voltar para Páginas
+            </a>
+            {% if pagina.status == 'sucesso' %}
+            <a
+                href="{{ pagina.download_url }}"
+                download
+                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Download
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Status Badge -->
+    <div>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+            {% if pagina.status == 'sucesso' %}bg-green-100 text-green-800
+            {% elif pagina.status == 'falhou' %}bg-red-100 text-red-800
+            {% else %}bg-gray-100 text-gray-800{% endif %}">
+            {{ pagina.status }}
+        </span>
+    </div>
+
+    <!-- Metadados -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Informações</h2>
+        </div>
+        <div class="px-6 py-4 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">ID</p>
+                    <p class="mt-1 text-sm text-gray-900 font-mono">{{ pagina.id }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Execução</p>
+                    <p class="mt-1 text-sm text-gray-900">
+                        <a href="/execucoes/{{ pagina.execucao_id }}"
+                           class="text-blue-600 hover:text-blue-800 font-mono">
+                            {{ pagina.execucao_id | string | truncate(8, True, '') }}...
+                        </a>
+                    </p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">URL Original</p>
+                    <p class="mt-1 text-sm text-gray-900 break-all">{{ pagina.url_original }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Tamanho</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ pagina.tamanho_legivel }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Extraída em</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ pagina.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Arquivo</p>
+                    <p class="mt-1 text-sm text-gray-900 font-mono break-all">{{ pagina.caminho_arquivo }}</p>
+                </div>
+            </div>
+
+            {% if pagina.erro_mensagem %}
+            <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p class="text-sm font-medium text-red-800">Mensagem de Erro</p>
+                <p class="mt-1 text-sm text-red-600">{{ pagina.erro_mensagem }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Preview de Conteúdo -->
+    {% if pagina.status == 'sucesso' and pagina.preview_disponivel %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 class="text-lg font-medium text-gray-900">Preview do Conteúdo</h2>
+            <a href="{{ pagina.download_url }}" download
+               class="text-sm text-blue-600 hover:text-blue-800">
+                Baixar arquivo completo
+            </a>
+        </div>
+        <div class="px-6 py-4">
+            <div id="content-area" class="bg-gray-50 rounded-md p-4">
+                <p class="text-sm text-gray-500">
+                    <a href="{{ pagina.download_url }}" class="text-blue-600 hover:text-blue-800">
+                        Clique para baixar o conteúdo markdown
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+    {% elif pagina.status == 'falhou' %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+        <h3 class="text-sm font-medium text-red-800">Extração falhou</h3>
+        <p class="mt-1 text-sm text-red-600">
+            Não há conteúdo disponível para esta página pois a extração não foi bem-sucedida.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

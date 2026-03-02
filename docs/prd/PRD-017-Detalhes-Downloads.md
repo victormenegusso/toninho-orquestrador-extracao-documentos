@@ -1,6 +1,6 @@
 # PRD-017: Detalhes e Downloads
 
-**Status**: 📋 Pronto para implementação  
+**Status**: ✅ Concluído
 **Prioridade**: 🟢 Baixa - Frontend (Prioridade 4)  
 **Categoria**: Frontend - Features  
 **Estimativa**: 6-8 horas

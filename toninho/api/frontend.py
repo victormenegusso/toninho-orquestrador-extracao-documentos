@@ -454,7 +454,7 @@ async def pagina_detail(
 
     context = get_template_context(
         request,
-        title=pagina.titulo or pagina.url,
+        title=pagina.url_original,
         pagina=pagina,
     )
     return templates.TemplateResponse("pages/paginas/detail.html", context)
