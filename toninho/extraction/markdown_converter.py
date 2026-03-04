@@ -101,9 +101,9 @@ def build_markdown_with_metadata(
     frontmatter_lines = [
         "---",
         f"url: {url}",
-        f'title: "{title}"',
-        f"extracted_at: {extracted_at}",
-        "extractor: Toninho v1.0",
+        f'titulo: "{title}"',
+        f"extraido_em: {extracted_at}",
+        "extrator: Toninho v1.0",
         "---",
         "",
     ]

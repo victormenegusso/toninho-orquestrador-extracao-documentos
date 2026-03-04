@@ -104,9 +104,9 @@ class TestBuildMarkdownWithMetadata:
         )
         assert result.startswith("---")
         assert "url: https://example.com" in result
-        assert 'title: "Example"' in result
-        assert "extracted_at: 2026-01-01T00:00:00+00:00" in result
-        assert "Toninho v1.0" in result
+        assert 'titulo: "Example"' in result
+        assert "extraido_em: 2026-01-01T00:00:00+00:00" in result
+        assert "extrator: Toninho v1.0" in result
 
     def test_content_after_frontmatter(self):
         result = build_markdown_with_metadata(
