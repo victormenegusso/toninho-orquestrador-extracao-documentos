@@ -26,8 +26,8 @@ logger = setup_logging()
 
 # Criar aplicação FastAPI
 app = FastAPI(
-    title="Toninho - Extrator de Documentos",
-    description="Sistema de extração de dados de documentos",
+    title="Toninho - Extrator de Processos",
+    description="Sistema de extração de dados de processos",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
