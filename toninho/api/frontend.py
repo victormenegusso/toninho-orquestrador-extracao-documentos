@@ -8,7 +8,6 @@ Rotas de execuções: list, detail, progress partial, ativas partial.
 Rotas de páginas extraídas: list por execução, detail, search partial.
 """
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -64,11 +63,11 @@ async def home(request: Request):
 @router.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
 async def dashboard(request: Request, db: Session = Depends(get_db)):
     """Dashboard principal com estatísticas gerais."""
+    from toninho.models.enums import ExecucaoStatus as ExStatus
     from toninho.monitoring.metrics import MetricsService
-    from toninho.services.execucao_service import ExecucaoService
     from toninho.repositories.execucao_repository import ExecucaoRepository
     from toninho.repositories.processo_repository import ProcessoRepository
-    from toninho.models.enums import ExecucaoStatus as ExStatus
+    from toninho.services.execucao_service import ExecucaoService
 
     # Stats padrão - fallback caso db não esteja disponível
     default_stats = {
@@ -97,7 +96,9 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
             repository=ExecucaoRepository(),
             processo_repository=ProcessoRepository(),
         )
-        resp = execucao_svc.list_execucoes(db, page=1, per_page=5, status=ExStatus.EM_EXECUCAO)
+        resp = execucao_svc.list_execucoes(
+            db, page=1, per_page=5, status=ExStatus.EM_EXECUCAO
+        )
         execucoes_ativas = resp.data
     except Exception:
         execucoes_ativas = []
@@ -138,8 +139,8 @@ async def processos_create(request: Request):
 )
 async def processos_search(
     request: Request,
-    search: Optional[str] = Query(None, alias="search"),
-    status: Optional[str] = Query(None),
+    search: str | None = Query(None, alias="search"),
+    status: str | None = Query(None),
     db: Session = Depends(get_db),
     service: ProcessoService = Depends(get_processo_service),
 ):
@@ -164,8 +165,8 @@ async def processos_search(
 async def processos_list(
     request: Request,
     page: int = Query(1, ge=1),
-    status: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
+    status: str | None = Query(None),
+    search: str | None = Query(None),
     db: Session = Depends(get_db),
     service: ProcessoService = Depends(get_processo_service),
 ):
@@ -312,7 +313,7 @@ async def execucao_progress(
 async def execucoes_list(
     request: Request,
     page: int = Query(1, ge=1),
-    status: Optional[str] = Query(None),
+    status: str | None = Query(None),
     db: Session = Depends(get_db),
     service: ExecucaoService = Depends(get_execucao_service),
 ):
@@ -367,8 +368,8 @@ async def execucoes_detail(
 async def paginas_search(
     request: Request,
     execucao_id: UUID = Query(...),
-    search: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
+    search: str | None = Query(None),
+    status: str | None = Query(None),
     db: Session = Depends(get_db),
     service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
 ):
@@ -394,8 +395,8 @@ async def execucao_paginas(
     request: Request,
     execucao_id: UUID,
     page: int = Query(1, ge=1),
-    status: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
+    status: str | None = Query(None),
+    search: str | None = Query(None),
     db: Session = Depends(get_db),
     execucao_service: ExecucaoService = Depends(get_execucao_service),
     pagina_service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
@@ -417,7 +418,9 @@ async def execucao_paginas(
 
     try:
         estatisticas = pagina_service.get_estatisticas_paginas(db, execucao_id)
-        total_size_bytes = estatisticas.total_bytes if hasattr(estatisticas, "total_bytes") else 0
+        total_size_bytes = (
+            estatisticas.total_bytes if hasattr(estatisticas, "total_bytes") else 0
+        )
     except Exception:
         total_size_bytes = 0
 
@@ -463,7 +466,7 @@ async def pagina_detail(
 # ==================== Helpers ====================
 
 
-def _parse_status_filter(status: Optional[str]) -> Optional[ProcessoStatus]:
+def _parse_status_filter(status: str | None) -> ProcessoStatus | None:
     """
     Converte string de status para enum ProcessoStatus.
 
@@ -481,7 +484,7 @@ def _parse_status_filter(status: Optional[str]) -> Optional[ProcessoStatus]:
         return None
 
 
-def _parse_execucao_status_filter(status: Optional[str]) -> Optional[ExecucaoStatus]:
+def _parse_execucao_status_filter(status: str | None) -> ExecucaoStatus | None:
     """Converte string de status para enum ExecucaoStatus."""
     if not status:
         return None
@@ -491,7 +494,7 @@ def _parse_execucao_status_filter(status: Optional[str]) -> Optional[ExecucaoSta
         return None
 
 
-def _parse_pagina_status_filter(status: Optional[str]) -> Optional[PaginaStatus]:
+def _parse_pagina_status_filter(status: str | None) -> PaginaStatus | None:
     """Converte string de status para enum PaginaStatus."""
     if not status:
         return None
@@ -510,4 +513,3 @@ def _format_bytes(size_bytes: int) -> str:
             return f"{size_bytes:.1f} {unit}"
         size_bytes //= 1024
     return f"{size_bytes:.1f} TB"
-

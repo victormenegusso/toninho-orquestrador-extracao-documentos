@@ -1,6 +1,5 @@
 """Rotas da API para gerenciamento de Logs."""
 
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -57,7 +56,7 @@ def create_log(
 
 @router.post(
     "/logs/batch",
-    response_model=SuccessResponse[List[LogResponse]],
+    response_model=SuccessResponse[list[LogResponse]],
     status_code=status.HTTP_201_CREATED,
     summary="Criar múltiplos logs em lote",
     responses={
@@ -66,10 +65,10 @@ def create_log(
     },
 )
 def create_log_batch(
-    logs_create: List[LogCreate],
+    logs_create: list[LogCreate],
     db: Session = Depends(get_db),
     service: LogService = Depends(get_log_service),
-) -> SuccessResponse[List[LogResponse]]:
+) -> SuccessResponse[list[LogResponse]]:
     """Cria múltiplos logs em lote."""
     try:
         logs = service.create_log_batch(db, logs_create)
@@ -97,10 +96,10 @@ def list_logs_by_execucao(
     execucao_id: UUID,
     page: int = Query(default=1, ge=1, description="Número da página"),
     per_page: int = Query(default=100, ge=1, le=100, description="Itens por página"),
-    nivel: Optional[LogNivel] = Query(default=None, description="Filtrar por nível"),
-    desde: Optional[str] = Query(default=None, description="Filtrar desde (ISO 8601)"),
-    ate: Optional[str] = Query(default=None, description="Filtrar até (ISO 8601)"),
-    busca: Optional[str] = Query(default=None, description="Busca na mensagem"),
+    nivel: LogNivel | None = Query(default=None, description="Filtrar por nível"),
+    desde: str | None = Query(default=None, description="Filtrar desde (ISO 8601)"),
+    ate: str | None = Query(default=None, description="Filtrar até (ISO 8601)"),
+    busca: str | None = Query(default=None, description="Busca na mensagem"),
     db: Session = Depends(get_db),
     service: LogService = Depends(get_log_service),
 ) -> SuccessListResponse[LogResponse]:
@@ -123,7 +122,7 @@ def list_logs_by_execucao(
 
 @router_execucoes.get(
     "/{execucao_id}/logs/recentes",
-    response_model=SuccessResponse[List[LogResponse]],
+    response_model=SuccessResponse[list[LogResponse]],
     status_code=status.HTTP_200_OK,
     summary="Obter últimos logs da execução",
     responses={
@@ -136,7 +135,7 @@ def get_logs_recentes(
     limit: int = Query(default=20, ge=1, le=100, description="Número de logs"),
     db: Session = Depends(get_db),
     service: LogService = Depends(get_log_service),
-) -> SuccessResponse[List[LogResponse]]:
+) -> SuccessResponse[list[LogResponse]]:
     """Retorna os últimos N logs de uma execução."""
     try:
         logs = service.get_logs_recentes(db, execucao_id, limit=limit)
@@ -183,17 +182,22 @@ async def stream_logs(
 ):
     """Stream de logs em tempo real via Server-Sent Events."""
     from asyncio import sleep
+
     from sqlalchemy import select as sa_select
-    from toninho.models.execucao import Execucao
+
     from toninho.models.enums import ExecucaoStatus
     from toninho.models.log import Log
 
     # Verificar execução existe
     from toninho.repositories.execucao_repository import ExecucaoRepository
+
     execucao_repo = ExecucaoRepository()
     execucao = execucao_repo.get_by_id(db, execucao_id)
     if not execucao:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Execucao com identificador '{execucao_id}' não encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Execucao com identificador '{execucao_id}' não encontrado",
+        )
 
     ESTADOS_FINAIS = {
         ExecucaoStatus.CONCLUIDO,
@@ -212,8 +216,9 @@ async def stream_logs(
                 .order_by(Log.timestamp.asc())
             )
             if ultimo_id is not None:
-                from toninho.models.log import Log as LogModel
                 from sqlalchemy import select as sel
+
+                from toninho.models.log import Log as LogModel
 
                 # Filter logs com id > ultimo_id by timestamp comparison
                 ultimo_log = db.execute(

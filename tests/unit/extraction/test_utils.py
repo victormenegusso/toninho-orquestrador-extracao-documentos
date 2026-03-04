@@ -2,8 +2,6 @@
 Testes unitários para toninho/extraction/utils.py.
 """
 
-import pytest
-
 from toninho.extraction.utils import build_output_path, sanitize_filename
 
 

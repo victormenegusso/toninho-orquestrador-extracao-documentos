@@ -2,18 +2,17 @@
 Testes para as exceções customizadas.
 """
 
-import pytest
 from toninho.core.exceptions import (
-    ToninhoBaseException,
-    ProcessNotFoundError,
-    ExecutionNotFoundError,
     ConfigurationNotFoundError,
+    ExecutionNotFoundError,
     ExtractionError,
-    ValidationError,
-    StorageError,
-    WorkerError,
-    TimeoutError,
     MaxRetriesExceededError,
+    ProcessNotFoundError,
+    StorageError,
+    TimeoutError,
+    ToninhoBaseException,
+    ValidationError,
+    WorkerError,
 )
 
 

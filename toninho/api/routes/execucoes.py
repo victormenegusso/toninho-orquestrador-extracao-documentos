@@ -1,6 +1,5 @@
 """Rotas da API para gerenciamento de Execuções."""
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -78,7 +77,7 @@ def list_execucoes_by_processo(
     processo_id: UUID,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    status: Optional[ExecucaoStatus] = Query(None),
+    status: ExecucaoStatus | None = Query(None),
     db: Session = Depends(get_db),
     service: ExecucaoService = Depends(get_execucao_service),
 ) -> SuccessListResponse[ExecucaoSummary]:
@@ -109,7 +108,7 @@ def list_execucoes_by_processo(
 def list_execucoes(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    status: Optional[ExecucaoStatus] = Query(None),
+    status: ExecucaoStatus | None = Query(None),
     ordem: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     service: ExecucaoService = Depends(get_execucao_service),

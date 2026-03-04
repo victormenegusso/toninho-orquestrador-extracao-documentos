@@ -2,22 +2,21 @@
 Testes unitários para PageExtractor.
 """
 
-import pytest
 import httpx
+import pytest
 
 from toninho.extraction.extractor import PageExtractor
 from toninho.extraction.storage import LocalFileSystemStorage
 
-
 SAMPLE_HTML = (
-    "<html>"
-    "<head><title>Test Page</title></head>"
-    "<body>"
-    "<h1>Main Heading</h1>"
-    "<p>This is a test paragraph.</p>"
-    "</body>"
-    "</html>"
-).encode("utf-8")
+    b"<html>"
+    b"<head><title>Test Page</title></head>"
+    b"<body>"
+    b"<h1>Main Heading</h1>"
+    b"<p>This is a test paragraph.</p>"
+    b"</body>"
+    b"</html>"
+)
 
 
 @pytest.fixture
@@ -36,9 +35,7 @@ class TestPageExtractorSuccess:
     @pytest.mark.asyncio
     async def test_extract_returns_sucesso_status(self, extractor, respx_mock):
         url = "https://example.com/page"
-        respx_mock.get(url).mock(
-            return_value=httpx.Response(200, content=SAMPLE_HTML)
-        )
+        respx_mock.get(url).mock(return_value=httpx.Response(200, content=SAMPLE_HTML))
 
         result = await extractor.extract(url, "output.md")
 
@@ -47,9 +44,7 @@ class TestPageExtractorSuccess:
     @pytest.mark.asyncio
     async def test_extract_saves_file(self, extractor, storage, respx_mock, tmp_path):
         url = "https://example.com/page"
-        respx_mock.get(url).mock(
-            return_value=httpx.Response(200, content=SAMPLE_HTML)
-        )
+        respx_mock.get(url).mock(return_value=httpx.Response(200, content=SAMPLE_HTML))
 
         await extractor.extract(url, "output.md")
 
@@ -58,9 +53,7 @@ class TestPageExtractorSuccess:
     @pytest.mark.asyncio
     async def test_extract_returns_title(self, extractor, respx_mock):
         url = "https://example.com/page"
-        respx_mock.get(url).mock(
-            return_value=httpx.Response(200, content=SAMPLE_HTML)
-        )
+        respx_mock.get(url).mock(return_value=httpx.Response(200, content=SAMPLE_HTML))
 
         result = await extractor.extract(url, "output.md")
 
@@ -69,9 +62,7 @@ class TestPageExtractorSuccess:
     @pytest.mark.asyncio
     async def test_extract_returns_bytes_count(self, extractor, respx_mock):
         url = "https://example.com/page"
-        respx_mock.get(url).mock(
-            return_value=httpx.Response(200, content=SAMPLE_HTML)
-        )
+        respx_mock.get(url).mock(return_value=httpx.Response(200, content=SAMPLE_HTML))
 
         result = await extractor.extract(url, "output.md")
 
@@ -82,9 +73,7 @@ class TestPageExtractorSuccess:
         self, extractor, storage, respx_mock, tmp_path
     ):
         url = "https://example.com/page"
-        respx_mock.get(url).mock(
-            return_value=httpx.Response(200, content=SAMPLE_HTML)
-        )
+        respx_mock.get(url).mock(return_value=httpx.Response(200, content=SAMPLE_HTML))
 
         await extractor.extract(url, "output.md")
 
@@ -97,9 +86,7 @@ class TestPageExtractorSuccess:
         self, extractor, respx_mock, tmp_path
     ):
         url = "https://example.com/about"
-        respx_mock.get(url).mock(
-            return_value=httpx.Response(200, content=SAMPLE_HTML)
-        )
+        respx_mock.get(url).mock(return_value=httpx.Response(200, content=SAMPLE_HTML))
 
         result = await extractor.extract(url)
 
@@ -110,9 +97,7 @@ class TestPageExtractorSuccess:
     @pytest.mark.asyncio
     async def test_extract_url_is_in_result(self, extractor, respx_mock):
         url = "https://example.com/page"
-        respx_mock.get(url).mock(
-            return_value=httpx.Response(200, content=SAMPLE_HTML)
-        )
+        respx_mock.get(url).mock(return_value=httpx.Response(200, content=SAMPLE_HTML))
 
         result = await extractor.extract(url, "output.md")
 
@@ -178,11 +163,11 @@ class TestPageExtractorContextManager:
     @pytest.mark.asyncio
     async def test_context_manager(self, storage, respx_mock):
         url = "https://example.com/cm"
-        respx_mock.get(url).mock(
-            return_value=httpx.Response(200, content=SAMPLE_HTML)
-        )
+        respx_mock.get(url).mock(return_value=httpx.Response(200, content=SAMPLE_HTML))
 
-        async with PageExtractor(storage, max_retries=1, cache_enabled=False) as extractor:
+        async with PageExtractor(
+            storage, max_retries=1, cache_enabled=False
+        ) as extractor:
             result = await extractor.extract(url, "cm.md")
 
         assert result["status"] == "sucesso"

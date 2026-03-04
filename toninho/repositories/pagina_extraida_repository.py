@@ -1,6 +1,5 @@
 """Repository para operações de banco de dados da entidade PaginaExtraida."""
 
-from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -30,8 +29,8 @@ class PaginaExtraidaRepository:
         return pagina
 
     def create_batch(
-        self, db: Session, paginas: List[PaginaExtraida]
-    ) -> List[PaginaExtraida]:
+        self, db: Session, paginas: list[PaginaExtraida]
+    ) -> list[PaginaExtraida]:
         """
         Inserção em lote de páginas extraídas.
 
@@ -48,9 +47,7 @@ class PaginaExtraidaRepository:
             db.refresh(pagina)
         return paginas
 
-    def get_by_id(
-        self, db: Session, pagina_id: UUID
-    ) -> Optional[PaginaExtraida]:
+    def get_by_id(self, db: Session, pagina_id: UUID) -> PaginaExtraida | None:
         """
         Busca uma página extraída por ID.
 
@@ -70,8 +67,8 @@ class PaginaExtraidaRepository:
         execucao_id: UUID,
         skip: int = 0,
         limit: int = 100,
-        status: Optional[PaginaStatus] = None,
-    ) -> Tuple[List[PaginaExtraida], int]:
+        status: PaginaStatus | None = None,
+    ) -> tuple[list[PaginaExtraida], int]:
         """
         Lista páginas extraídas de uma execução com paginação e filtro.
 
@@ -85,9 +82,7 @@ class PaginaExtraidaRepository:
         Returns:
             Tupla (lista de páginas, total)
         """
-        stmt = select(PaginaExtraida).where(
-            PaginaExtraida.execucao_id == execucao_id
-        )
+        stmt = select(PaginaExtraida).where(PaginaExtraida.execucao_id == execucao_id)
         if status is not None:
             stmt = stmt.where(PaginaExtraida.status == status)
 
@@ -100,7 +95,7 @@ class PaginaExtraidaRepository:
 
     def get_by_url(
         self, db: Session, execucao_id: UUID, url: str
-    ) -> Optional[PaginaExtraida]:
+    ) -> PaginaExtraida | None:
         """
         Busca uma página pelo URL dentro de uma execução.
 
@@ -120,7 +115,7 @@ class PaginaExtraidaRepository:
 
     def count_by_status(
         self, db: Session, execucao_id: UUID
-    ) -> Dict[PaginaStatus, int]:
+    ) -> dict[PaginaStatus, int]:
         """
         Conta páginas por status de uma execução.
 
@@ -137,7 +132,7 @@ class PaginaExtraidaRepository:
             .group_by(PaginaExtraida.status)
         )
         rows = db.execute(stmt).all()
-        result: Dict[PaginaStatus, int] = {s: 0 for s in PaginaStatus}
+        result: dict[PaginaStatus, int] = {s: 0 for s in PaginaStatus}
         for status, total in rows:
             result[status] = total
         return result
@@ -169,9 +164,7 @@ class PaginaExtraidaRepository:
         Returns:
             Quantidade de registros deletados
         """
-        stmt = select(PaginaExtraida).where(
-            PaginaExtraida.execucao_id == execucao_id
-        )
+        stmt = select(PaginaExtraida).where(PaginaExtraida.execucao_id == execucao_id)
         paginas = list(db.execute(stmt).scalars().all())
         count = len(paginas)
         for pagina in paginas:

@@ -13,7 +13,6 @@ from toninho.models.execucao import Execucao
 from toninho.models.log import Log
 from toninho.models.processo import Processo
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -90,7 +89,6 @@ def log_factory(db, execucao):
 
 
 class TestLogsAPI:
-
     # ------------------------------------------------------------------
     # POST /api/v1/logs
     # ------------------------------------------------------------------
@@ -170,9 +168,7 @@ class TestLogsAPI:
         log_factory(nivel=LogNivel.INFO)
         log_factory(nivel=LogNivel.ERROR)
 
-        response = client.get(
-            f"/api/v1/execucoes/{execucao.id}/logs?nivel=error"
-        )
+        response = client.get(f"/api/v1/execucoes/{execucao.id}/logs?nivel=error")
         assert response.status_code == 200
         data = response.json()
         assert data["meta"]["total"] == 1
@@ -182,9 +178,7 @@ class TestLogsAPI:
         log_factory(mensagem="Página extraída com sucesso")
         log_factory(mensagem="Erro ao processar URL")
 
-        response = client.get(
-            f"/api/v1/execucoes/{execucao.id}/logs?busca=extraída"
-        )
+        response = client.get(f"/api/v1/execucoes/{execucao.id}/logs?busca=extraída")
         assert response.status_code == 200
         data = response.json()
         assert data["meta"]["total"] == 1
@@ -193,9 +187,7 @@ class TestLogsAPI:
         for _ in range(5):
             log_factory()
 
-        response = client.get(
-            f"/api/v1/execucoes/{execucao.id}/logs?page=1&per_page=3"
-        )
+        response = client.get(f"/api/v1/execucoes/{execucao.id}/logs?page=1&per_page=3")
         assert response.status_code == 200
         data = response.json()
         assert data["meta"]["total"] == 5
@@ -214,9 +206,7 @@ class TestLogsAPI:
         for _ in range(5):
             log_factory()
 
-        response = client.get(
-            f"/api/v1/execucoes/{execucao.id}/logs/recentes?limit=3"
-        )
+        response = client.get(f"/api/v1/execucoes/{execucao.id}/logs/recentes?limit=3")
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
@@ -271,6 +261,7 @@ class TestLogsAPI:
     def test_stream_logs_execucao_finalizada(self, client, db, processo):
         """SSE deve emitir evento done quando execução está em estado final."""
         from toninho.models.enums import ExecucaoStatus
+
         execucao_final = Execucao(
             processo_id=processo.id,
             status=ExecucaoStatus.CONCLUIDO,

@@ -2,10 +2,8 @@
 Testes unitários para ExtractionOrchestrator.
 """
 
-import asyncio
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from sqlalchemy import create_engine
@@ -21,8 +19,8 @@ from toninho.models.enums import (
 )
 from toninho.workers.utils import ExtractionOrchestrator
 
-
 # ──────────────────────────────────────────────────────── fixtures ────────────
+
 
 @pytest.fixture(scope="module")
 def engine():
@@ -83,6 +81,7 @@ def execucao(db, processo):
 @pytest.fixture
 def mock_storage(tmp_path):
     from toninho.extraction.storage import LocalFileSystemStorage
+
     return LocalFileSystemStorage(base_dir=str(tmp_path))
 
 
@@ -116,7 +115,9 @@ class TestExtractionOrchestratorSuccess:
         self, db, execucao, configuracao, mock_storage
     ):
         """Após run(), execução deve estar CONCLUIDO."""
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
 
             orch = ExtractionOrchestrator(db, storage=mock_storage)
@@ -133,10 +134,14 @@ class TestExtractionOrchestratorSuccess:
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
 
-            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(
+                execucao.id
+            )
 
         assert resultado["paginas_sucesso"] == 2  # 2 URLs
         assert resultado["paginas_falha"] == 0
@@ -149,7 +154,9 @@ class TestExtractionOrchestratorSuccess:
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
             ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
 
@@ -163,28 +170,38 @@ class TestExtractionOrchestratorSuccess:
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
             ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
 
         db.refresh(execucao)
         assert execucao.finalizado_em is not None
 
-    def test_run_updates_bytes_extraidos(self, db, processo, configuracao, mock_storage):
+    def test_run_updates_bytes_extraidos(
+        self, db, processo, configuracao, mock_storage
+    ):
         """bytes_extraidos deve ser acumulado."""
         execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
         db.add(execucao)
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
-            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(
+                execucao.id
+            )
 
-        # 2 URLs × 1024 bytes = 2048
+        # 2 URLs x 1024 bytes = 2048
         assert resultado["bytes_extraidos"] == 2048
 
-    def test_run_creates_paginas_extraidas(self, db, processo, configuracao, mock_storage):
+    def test_run_creates_paginas_extraidas(
+        self, db, processo, configuracao, mock_storage
+    ):
         """Deve criar registros de PaginaExtraida para cada URL."""
         from toninho.models.pagina_extraida import PaginaExtraida
 
@@ -193,11 +210,17 @@ class TestExtractionOrchestratorSuccess:
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
             ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
 
-        paginas = db.query(PaginaExtraida).filter(PaginaExtraida.execucao_id == execucao.id).all()
+        paginas = (
+            db.query(PaginaExtraida)
+            .filter(PaginaExtraida.execucao_id == execucao.id)
+            .all()
+        )
         assert len(paginas) == 2
         assert all(p.status == PaginaStatus.SUCESSO for p in paginas)
 
@@ -210,7 +233,9 @@ class TestExtractionOrchestratorSuccess:
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
             ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
 
@@ -232,9 +257,13 @@ class TestExtractionOrchestratorMixedResults:
 
         side_effects = [SUCESSO_RESULT, ERRO_RESULT]
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.side_effect = side_effects
-            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(
+                execucao.id
+            )
 
         assert resultado["status"] == ExecucaoStatus.CONCLUIDO_COM_ERROS
         assert resultado["paginas_sucesso"] == 1
@@ -247,9 +276,13 @@ class TestExtractionOrchestratorMixedResults:
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = ERRO_RESULT
-            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(
+                execucao.id
+            )
 
         assert resultado["status"] == ExecucaoStatus.FALHOU
         assert resultado["paginas_falha"] == 2
@@ -277,21 +310,27 @@ class TestExtractionOrchestratorEdgeCases:
         db.refresh(execucao)
         assert execucao.status == ExecucaoStatus.FALHOU
 
-    def test_run_zero_taxa_erro_on_full_success(self, db, processo, configuracao, mock_storage):
+    def test_run_zero_taxa_erro_on_full_success(
+        self, db, processo, configuracao, mock_storage
+    ):
         """taxa_erro deve ser 0.0 quando todas as extrações têm sucesso."""
         execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
         db.add(execucao)
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
             ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
 
         db.refresh(execucao)
         assert execucao.taxa_erro == 0.0
 
-    def test_logs_tem_contexto_preenchido(self, db, processo, configuracao, mock_storage):
+    def test_logs_tem_contexto_preenchido(
+        self, db, processo, configuracao, mock_storage
+    ):
         """Todos os logs de extração devem ter contexto preenchido (MH-001)."""
         from toninho.models.log import Log
 
@@ -300,17 +339,19 @@ class TestExtractionOrchestratorEdgeCases:
         db.commit()
         db.refresh(execucao)
 
-        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
             mock_extract.return_value = SUCESSO_RESULT
             ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
 
         logs = db.query(Log).filter(Log.execucao_id == execucao.id).all()
         assert len(logs) > 0, "Nenhum log criado"
 
-        logs_sem_contexto = [l for l in logs if l.contexto is None]
-        assert not logs_sem_contexto, (
-            f"Logs sem contexto: {[l.mensagem for l in logs_sem_contexto]}"
-        )
+        logs_sem_contexto = [log for log in logs if log.contexto is None]
+        assert (
+            not logs_sem_contexto
+        ), f"Logs sem contexto: {[log.mensagem for log in logs_sem_contexto]}"
 
     def test_add_log_aceita_contexto(self, db, processo, mock_storage):
         """_add_log deve persistir o contexto fornecido (MH-001)."""
@@ -322,9 +363,16 @@ class TestExtractionOrchestratorEdgeCases:
         db.refresh(execucao)
 
         ctx = {"url": "https://example.com", "indice": 1, "total": 3}
-        ExtractionOrchestrator._add_log(db, execucao.id, LogNivel.INFO, "teste contexto", contexto=ctx)
+        ExtractionOrchestrator._add_log(
+            db, execucao.id, LogNivel.INFO, "teste contexto", contexto=ctx
+        )
         db.commit()
 
-        log = db.query(Log).filter(Log.execucao_id == execucao.id).order_by(Log.timestamp.desc()).first()
+        log = (
+            db.query(Log)
+            .filter(Log.execucao_id == execucao.id)
+            .order_by(Log.timestamp.desc())
+            .first()
+        )
         assert log is not None
         assert log.contexto == ctx

@@ -3,18 +3,18 @@ Testes unitários para as tasks Celery (execucao, agendamento, limpeza).
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch, call
+from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-# Import tasks so they register in celery_app
-import toninho.workers.tasks.execucao_task  # noqa: F401
-import toninho.workers.tasks.agendamento_task  # noqa: F401
-import toninho.workers.tasks.limpeza_task  # noqa: F401
+import toninho.workers.tasks.agendamento_task
 
+# Import tasks so they register in celery_app
+import toninho.workers.tasks.execucao_task
+import toninho.workers.tasks.limpeza_task  # noqa: F401
 from toninho.models import Base, Configuracao, Execucao, Processo
 from toninho.models.enums import (
     AgendamentoTipo,
@@ -22,8 +22,8 @@ from toninho.models.enums import (
     FormatoSaida,
 )
 
-
 # ──────────────────────────────────────────────────────── fixtures ────────────
+
 
 @pytest.fixture(scope="module")
 def engine():
@@ -84,12 +84,14 @@ def configuracao_recorrente(db, processo, tmp_path):
 
 # ──────────────────────────────────────────────── execucao_task tests ────────
 
+
 class TestExecutarProcessoTask:
     """Testes para executar_processo_task."""
 
     def test_task_is_registered(self):
         """Task deve estar registrada no celery_app."""
         from toninho.workers.celery_app import celery_app
+
         task_names = list(celery_app.tasks.keys())
         assert any("executar_processo" in t for t in task_names)
 
@@ -106,8 +108,13 @@ class TestExecutarProcessoTask:
         }
 
         # SessionLocal is imported lazily inside the task — patch at source
-        with patch("toninho.core.database.SessionLocal", return_value=db), \
-             patch("toninho.workers.utils.ExtractionOrchestrator.run", return_value=mock_resultado):
+        with (
+            patch("toninho.core.database.SessionLocal", return_value=db),
+            patch(
+                "toninho.workers.utils.ExtractionOrchestrator.run",
+                return_value=mock_resultado,
+            ),
+        ):
             result = executar_processo_task.apply(args=[str(execucao.id)])
 
         assert result.get()["status"] == "concluido"
@@ -124,30 +131,51 @@ class TestExecutarProcessoTask:
             "bytes_extraidos": 1024,
         }
 
-        with patch("toninho.core.database.SessionLocal", return_value=db), \
-             patch("toninho.workers.utils.ExtractionOrchestrator.run", return_value=mock_resultado):
+        with (
+            patch("toninho.core.database.SessionLocal", return_value=db),
+            patch(
+                "toninho.workers.utils.ExtractionOrchestrator.run",
+                return_value=mock_resultado,
+            ),
+        ):
             result = executar_processo_task.apply(args=[str(execucao.id)])
 
         data = result.get()
-        assert all(k in data for k in ("status", "paginas_sucesso", "paginas_falha", "total", "bytes_extraidos"))
+        assert all(
+            k in data
+            for k in (
+                "status",
+                "paginas_sucesso",
+                "paginas_falha",
+                "total",
+                "bytes_extraidos",
+            )
+        )
 
     def test_task_handles_value_error_without_retry(self, db, execucao):
         """ValueError (erro de negócio) não deve causar retry."""
         from toninho.workers.tasks.execucao_task import executar_processo_task
 
-        with patch("toninho.core.database.SessionLocal", return_value=db), \
-             patch("toninho.workers.utils.ExtractionOrchestrator.run", side_effect=ValueError("bad data")):
-            with pytest.raises(ValueError):
-                executar_processo_task.apply(args=[str(execucao.id)]).get()
+        with (
+            patch("toninho.core.database.SessionLocal", return_value=db),
+            patch(
+                "toninho.workers.utils.ExtractionOrchestrator.run",
+                side_effect=ValueError("bad data"),
+            ),
+            pytest.raises(ValueError),
+        ):
+            executar_processo_task.apply(args=[str(execucao.id)]).get()
 
 
 # ──────────────────────────────────────────── agendamento_task tests ─────────
+
 
 class TestVerificarAgendamentos:
     """Testes para verificar_agendamentos task."""
 
     def test_task_is_registered(self):
         from toninho.workers.celery_app import celery_app
+
         task_names = list(celery_app.tasks.keys())
         assert any("verificar_agendamentos" in t for t in task_names)
 
@@ -162,20 +190,22 @@ class TestVerificarAgendamentos:
         expected_name = "toninho.workers.tasks.agendamento_task.verificar_agendamentos"
         beat_task_name = celery_app.conf.beat_schedule["verificar-agendamentos"]["task"]
 
-        assert verificar_agendamentos.name == expected_name, (
-            f"Task name '{verificar_agendamentos.name}' difere do esperado '{expected_name}'"
-        )
-        assert verificar_agendamentos.name == beat_task_name, (
-            f"Task name '{verificar_agendamentos.name}' difere do beat_schedule '{beat_task_name}'"
-        )
+        assert (
+            verificar_agendamentos.name == expected_name
+        ), f"Task name '{verificar_agendamentos.name}' difere do esperado '{expected_name}'"
+        assert (
+            verificar_agendamentos.name == beat_task_name
+        ), f"Task name '{verificar_agendamentos.name}' difere do beat_schedule '{beat_task_name}'"
 
     def test_returns_execucoes_criadas(self, db, configuracao_recorrente):
         """Deve retornar contagem de execuções criadas."""
         from toninho.workers.tasks.agendamento_task import verificar_agendamentos
         from toninho.workers.tasks.execucao_task import executar_processo_task
 
-        with patch("toninho.core.database.SessionLocal", return_value=db), \
-             patch.object(executar_processo_task, "delay"):
+        with (
+            patch("toninho.core.database.SessionLocal", return_value=db),
+            patch.object(executar_processo_task, "delay"),
+        ):
             result = verificar_agendamentos.apply()
 
         data = result.get()
@@ -228,11 +258,13 @@ class TestVerificarAgendamentos:
 
 # ──────────────────────────────────────────────── limpeza_task tests ─────────
 
+
 class TestLimparLogsAntigos:
     """Testes para limpar_logs_antigos task."""
 
     def test_task_is_registered(self):
         from toninho.workers.celery_app import celery_app
+
         task_names = list(celery_app.tasks.keys())
         assert any("limpar_logs_antigos" in t for t in task_names)
 
@@ -252,12 +284,12 @@ class TestLimparLogsAntigos:
 
     def test_limpar_logs_retorna_deleted_count(self, db, execucao):
         """Deve retornar logs_deletados e dias_retencao."""
-        from toninho.workers.tasks.limpeza_task import limpar_logs_antigos
-        from toninho.models.log import Log
         from toninho.models.enums import LogNivel
+        from toninho.models.log import Log
+        from toninho.workers.tasks.limpeza_task import limpar_logs_antigos
 
         # Criar logs antigos (40 dias atrás)
-        data_antiga = datetime.now(timezone.utc) - timedelta(days=40)
+        data_antiga = datetime.now(UTC) - timedelta(days=40)
         for i in range(3):
             log = Log(
                 execucao_id=execucao.id,
@@ -278,9 +310,9 @@ class TestLimparLogsAntigos:
 
     def test_limpar_logs_keeps_recent_logs(self, db, execucao):
         """Logs recentes não devem ser deletados."""
-        from toninho.workers.tasks.limpeza_task import limpar_logs_antigos
-        from toninho.models.log import Log
         from toninho.models.enums import LogNivel
+        from toninho.models.log import Log
+        from toninho.workers.tasks.limpeza_task import limpar_logs_antigos
 
         # Salvar id antes — execucao pode ser detached após o task fechar a sessão
         execucao_id = execucao.id
@@ -290,13 +322,13 @@ class TestLimparLogsAntigos:
             execucao_id=execucao_id,
             nivel=LogNivel.INFO,
             mensagem="Log recente",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         db.add(log)
         db.commit()
 
         with patch("toninho.core.database.SessionLocal", return_value=db):
-            result = limpar_logs_antigos.apply(kwargs={"dias_retencao": 30})
+            limpar_logs_antigos.apply(kwargs={"dias_retencao": 30})
 
         db.expire_all()
         after_count = db.query(Log).filter(Log.execucao_id == execucao_id).count()

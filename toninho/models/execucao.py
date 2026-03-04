@@ -3,9 +3,10 @@ Model Execucao.
 
 Representa uma execução de um processo de extração.
 """
+
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -58,80 +59,63 @@ class Execucao(Base, UUIDMixin, TimestampMixin):
     processo_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("processos.id", ondelete="CASCADE"),
         nullable=False,
-        doc="ID do processo sendo executado"
+        doc="ID do processo sendo executado",
     )
 
     # Campos
     status: Mapped[ExecucaoStatus] = mapped_column(
-        nullable=False,
-        default=ExecucaoStatus.CRIADO,
-        doc="Status atual da execução"
+        nullable=False, default=ExecucaoStatus.CRIADO, doc="Status atual da execução"
     )
 
     iniciado_em: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        doc="Data/hora de início da execução"
+        DateTime(timezone=True), nullable=True, doc="Data/hora de início da execução"
     )
 
     finalizado_em: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
-        doc="Data/hora de finalização da execução"
+        doc="Data/hora de finalização da execução",
     )
 
     paginas_processadas: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-        doc="Número de páginas processadas"
+        Integer, nullable=False, default=0, doc="Número de páginas processadas"
     )
 
     bytes_extraidos: Mapped[int] = mapped_column(
-        BigInteger,
-        nullable=False,
-        default=0,
-        doc="Total de bytes extraídos"
+        BigInteger, nullable=False, default=0, doc="Total de bytes extraídos"
     )
 
     taxa_erro: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
-        default=0.0,
-        doc="Taxa de erro percentual (0-100)"
+        Float, nullable=False, default=0.0, doc="Taxa de erro percentual (0-100)"
     )
 
     tentativa_atual: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=1,
-        doc="Número da tentativa atual"
+        Integer, nullable=False, default=1, doc="Número da tentativa atual"
     )
 
-    celery_task_id: Mapped[Optional[str]] = mapped_column(
+    celery_task_id: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         default=None,
-        doc="ID da task Celery associada (para revogação)"
+        doc="ID da task Celery associada (para revogação)",
     )
 
     # Relacionamentos
     processo: Mapped["Processo"] = relationship(
-        back_populates="execucoes",
-        doc="Processo sendo executado"
+        back_populates="execucoes", doc="Processo sendo executado"
     )
 
-    logs: Mapped[List["Log"]] = relationship(
+    logs: Mapped[list["Log"]] = relationship(
         back_populates="execucao",
         cascade="all, delete-orphan",
         order_by="Log.timestamp",
-        doc="Logs gerados durante a execução"
+        doc="Logs gerados durante a execução",
     )
 
-    paginas: Mapped[List["PaginaExtraida"]] = relationship(
+    paginas: Mapped[list["PaginaExtraida"]] = relationship(
         back_populates="execucao",
         cascade="all, delete-orphan",
-        doc="Páginas extraídas durante a execução"
+        doc="Páginas extraídas durante a execução",
     )
 
     # Constraints

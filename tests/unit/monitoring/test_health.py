@@ -1,8 +1,8 @@
 """Testes para o HealthCheckService."""
 
-import pytest
+from unittest.mock import MagicMock
+
 from sqlalchemy.orm import Session
-from unittest.mock import MagicMock, patch
 
 from toninho.monitoring.health import HealthCheckService
 

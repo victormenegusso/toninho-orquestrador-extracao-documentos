@@ -6,7 +6,6 @@ conteúdo de páginas HTML em markdown estruturado.
 """
 
 import re
-from typing import Dict
 
 import html2text
 from bs4 import BeautifulSoup
@@ -45,7 +44,7 @@ def html_to_markdown(html_content: bytes, base_url: str = "") -> str:
     converter.IGNORE_LINKS = False
     converter.IGNORE_IMAGES = False
     converter.IGNORE_EMPHASIS = False
-    converter.BODY_WIDTH = 0          # Sem quebra de linha forçada
+    converter.BODY_WIDTH = 0  # Sem quebra de linha forçada
     converter.UNICODE_SNOB = True
     converter.BYPASS_TABLES = False
     converter.PROTECT_LINKS = False
@@ -110,7 +109,7 @@ def build_markdown_with_metadata(
     return "\n".join(frontmatter_lines) + content
 
 
-def extract_from_html(html_content: bytes, base_url: str = "") -> Dict:
+def extract_from_html(html_content: bytes, base_url: str = "") -> dict:
     """
     Pipeline completo de extração: HTML → estrutura com título e markdown.
 

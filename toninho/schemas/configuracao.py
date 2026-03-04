@@ -3,9 +3,9 @@ Schemas para a entidade Configuracao.
 
 Define schemas de entrada, saída e variações para operações com Configurações.
 """
+
 import uuid
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import Field, field_validator
 
@@ -34,11 +34,11 @@ class ConfiguracaoCreate(BaseSchema):
         agendamento_tipo: Tipo de agendamento
     """
 
-    processo_id: Optional[uuid.UUID] = Field(
+    processo_id: uuid.UUID | None = Field(
         None,
         description="ID do processo (setado automaticamente pela rota)",
     )
-    urls: List[str] = Field(
+    urls: list[str] = Field(
         ...,
         min_length=1,
         max_length=100,
@@ -72,9 +72,9 @@ class ConfiguracaoCreate(BaseSchema):
             "Os arquivos gerados seguem a estrutura: "
             "`{output_dir}/{processo_id}/{execucao_id}/{slug}.md`."
         ),
-        examples=["/tmp/output", "./output", "output"],
+        examples=["/tmp/output", "./output", "output"],  # nosec B108
     )
-    agendamento_cron: Optional[str] = Field(
+    agendamento_cron: str | None = Field(
         None,
         description="Expressão cron para agendamento recorrente",
         examples=["0 */6 * * *", "0 0 * * *"],
@@ -94,7 +94,7 @@ class ConfiguracaoCreate(BaseSchema):
 
     @field_validator("urls")
     @classmethod
-    def validate_urls(cls, v: List[str]) -> List[str]:
+    def validate_urls(cls, v: list[str]) -> list[str]:
         """Valida lista de URLs."""
         return validate_urls_list(v)
 
@@ -112,7 +112,7 @@ class ConfiguracaoCreate(BaseSchema):
 
     @field_validator("agendamento_cron")
     @classmethod
-    def validate_cron(cls, v: Optional[str]) -> Optional[str]:
+    def validate_cron(cls, v: str | None) -> str | None:
         """Valida expressão cron se fornecida."""
         if v is not None:
             return validate_cron_expression(v)
@@ -138,44 +138,44 @@ class ConfiguracaoUpdate(BaseSchema):
     Todos os campos são opcionais para permitir atualização parcial.
     """
 
-    urls: Optional[List[str]] = Field(
+    urls: list[str] | None = Field(
         None,
         min_length=1,
         max_length=100,
         description="Nova lista de URLs",
     )
-    timeout: Optional[int] = Field(
+    timeout: int | None = Field(
         None,
         ge=1,
         le=86400,
         description="Novo timeout",
     )
-    max_retries: Optional[int] = Field(
+    max_retries: int | None = Field(
         None,
         ge=0,
         le=10,
         description="Novo max_retries",
     )
-    formato_saida: Optional[FormatoSaida] = Field(
+    formato_saida: FormatoSaida | None = Field(
         None,
         description="Novo formato de saída",
     )
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         None,
         description="Novo diretório de saída",
     )
-    agendamento_cron: Optional[str] = Field(
+    agendamento_cron: str | None = Field(
         None,
         description="Nova expressão cron",
     )
-    agendamento_tipo: Optional[AgendamentoTipo] = Field(
+    agendamento_tipo: AgendamentoTipo | None = Field(
         None,
         description="Novo tipo de agendamento",
     )
 
     @field_validator("urls")
     @classmethod
-    def validate_urls(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_urls(cls, v: list[str] | None) -> list[str] | None:
         """Valida lista de URLs se fornecida."""
         if v is not None:
             return validate_urls_list(v)
@@ -183,7 +183,7 @@ class ConfiguracaoUpdate(BaseSchema):
 
     @field_validator("timeout")
     @classmethod
-    def validate_timeout_range(cls, v: Optional[int]) -> Optional[int]:
+    def validate_timeout_range(cls, v: int | None) -> int | None:
         """Valida timeout se fornecido."""
         if v is not None:
             return validate_timeout(v)
@@ -191,7 +191,7 @@ class ConfiguracaoUpdate(BaseSchema):
 
     @field_validator("output_dir")
     @classmethod
-    def validate_output_dir(cls, v: Optional[str]) -> Optional[str]:
+    def validate_output_dir(cls, v: str | None) -> str | None:
         """Valida output_dir se fornecido."""
         if v is not None:
             return validate_path(v)
@@ -199,7 +199,7 @@ class ConfiguracaoUpdate(BaseSchema):
 
     @field_validator("agendamento_cron")
     @classmethod
-    def validate_cron(cls, v: Optional[str]) -> Optional[str]:
+    def validate_cron(cls, v: str | None) -> str | None:
         """Valida expressão cron se fornecida."""
         if v is not None:
             return validate_cron_expression(v)
@@ -226,7 +226,7 @@ class ConfiguracaoResponse(BaseSchema):
 
     id: uuid.UUID = Field(..., description="Identificador único")
     processo_id: uuid.UUID = Field(..., description="ID do processo")
-    urls: List[str] = Field(..., description="Lista de URLs para extração")
+    urls: list[str] = Field(..., description="Lista de URLs para extração")
     timeout: int = Field(..., description="Timeout em segundos")
     max_retries: int = Field(..., description="Número máximo de retentativas")
     formato_saida: FormatoSaida = Field(..., description="Formato de saída")
@@ -238,7 +238,7 @@ class ConfiguracaoResponse(BaseSchema):
             "`{output_dir}/{processo_id}/{execucao_id}/{slug}.md`."
         ),
     )
-    agendamento_cron: Optional[str] = Field(None, description="Expressão cron")
+    agendamento_cron: str | None = Field(None, description="Expressão cron")
     agendamento_tipo: AgendamentoTipo = Field(..., description="Tipo de agendamento")
     use_browser: bool = Field(..., description="Se usa Playwright para renderizar JS")
     created_at: datetime = Field(..., description="Data/hora de criação")
@@ -258,7 +258,7 @@ class AgendamentoInfo(BaseSchema):
 
     expressao_cron: str = Field(..., description="Expressão cron avaliada")
     valida: bool = Field(..., description="Se a expressão é válida")
-    proximas_execucoes: List[datetime] = Field(
+    proximas_execucoes: list[datetime] = Field(
         default_factory=list,
         description="Próximas 5 execuções",
     )

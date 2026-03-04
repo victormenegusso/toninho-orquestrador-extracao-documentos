@@ -2,7 +2,6 @@
 Testes para o módulo de constantes.
 """
 
-import pytest
 from toninho.core import constants
 
 

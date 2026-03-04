@@ -1,7 +1,8 @@
 """Testes para ProcessoRepository."""
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from toninho.models.enums import ProcessoStatus
 from toninho.models.processo import Processo
@@ -136,16 +137,12 @@ class TestProcessoRepository:
             repository.create(db, processo)
 
         # Filtrar por ATIVO
-        ativos, total_ativos = repository.get_all(
-            db, status=ProcessoStatus.ATIVO
-        )
+        ativos, total_ativos = repository.get_all(db, status=ProcessoStatus.ATIVO)
         assert len(ativos) == 3
         assert total_ativos == 3
 
         # Filtrar por INATIVO
-        inativos, total_inativos = repository.get_all(
-            db, status=ProcessoStatus.INATIVO
-        )
+        inativos, total_inativos = repository.get_all(db, status=ProcessoStatus.INATIVO)
         assert len(inativos) == 2
         assert total_inativos == 2
 
@@ -320,5 +317,5 @@ class TestProcessoRepository:
         assert result is not None
         assert result.id == processo.id
         # Relacionamentos devem estar carregados (não lazy)
-        assert hasattr(result, 'configuracoes')
-        assert hasattr(result, 'execucoes')
+        assert hasattr(result, "configuracoes")
+        assert hasattr(result, "execucoes")

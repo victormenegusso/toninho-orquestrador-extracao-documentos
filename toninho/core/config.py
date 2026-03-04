@@ -6,7 +6,6 @@ de ambiente e configurações da aplicação.
 """
 
 from functools import lru_cache
-from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -15,7 +14,7 @@ class Settings(BaseSettings):
     """Configurações da aplicação carregadas de variáveis de ambiente."""
 
     # Servidor
-    HOST: str = "0.0.0.0"
+    HOST: str = "0.0.0.0"  # nosec B104
     PORT: int = 8000
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"

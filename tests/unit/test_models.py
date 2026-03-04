@@ -3,6 +3,7 @@ Testes unitários para os models do Toninho.
 
 Testa criação, validações, relacionamentos e constraints dos models.
 """
+
 import uuid
 from datetime import UTC, datetime
 
@@ -107,7 +108,9 @@ class TestConfiguracao:
         assert configuracao.timeout == 1800
         assert configuracao.max_retries == 3
 
-    def test_configuracao_timeout_constraint(self, db: Session, processo_factory) -> None:
+    def test_configuracao_timeout_constraint(
+        self, db: Session, processo_factory
+    ) -> None:
         """Testa constraints de timeout."""
         processo = processo_factory()
 
@@ -137,7 +140,9 @@ class TestConfiguracao:
         with pytest.raises(IntegrityError):
             db.commit()
 
-    def test_configuracao_max_retries_constraint(self, db: Session, processo_factory) -> None:
+    def test_configuracao_max_retries_constraint(
+        self, db: Session, processo_factory
+    ) -> None:
         """Testa constraints de max_retries."""
         processo = processo_factory()
 
@@ -228,7 +233,9 @@ class TestExecucao:
         assert execucao.duracao is not None
         assert execucao.duracao >= 0
 
-    def test_execucao_property_em_andamento(self, db: Session, processo_factory) -> None:
+    def test_execucao_property_em_andamento(
+        self, db: Session, processo_factory
+    ) -> None:
         """Testa computed property em_andamento."""
         processo = processo_factory()
 

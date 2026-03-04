@@ -2,14 +2,12 @@
 Testes unitários para a configuração do Celery app.
 """
 
-import pytest
-
-from toninho.workers.celery_app import celery_app
+import toninho.workers.tasks.agendamento_task
 
 # Import tasks so they register themselves in celery_app
-import toninho.workers.tasks.execucao_task  # noqa: F401
-import toninho.workers.tasks.agendamento_task  # noqa: F401
+import toninho.workers.tasks.execucao_task
 import toninho.workers.tasks.limpeza_task  # noqa: F401
+from toninho.workers.celery_app import celery_app
 
 
 class TestCeleryAppConfig:
@@ -68,7 +66,12 @@ class TestCeleryAppConfig:
 
     def test_tasks_are_registered(self):
         registered = list(celery_app.tasks.keys())
-        assert any("executar_processo" in t or "executar-processo" in t or "executar_processo" in t for t in registered), f"Tasks registradas: {registered}"
+        assert any(
+            "executar_processo" in t
+            or "executar-processo" in t
+            or "executar_processo" in t
+            for t in registered
+        ), f"Tasks registradas: {registered}"
 
     def test_include_task_modules(self):
         includes = celery_app.conf.include

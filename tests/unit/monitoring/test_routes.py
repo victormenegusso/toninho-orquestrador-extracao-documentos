@@ -1,9 +1,9 @@
 """Testes para as rotas de monitoramento."""
 
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
-from unittest.mock import MagicMock, patch
 
 from toninho.core.database import get_db
 from toninho.main import app

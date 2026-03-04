@@ -3,11 +3,11 @@ Schemas para a entidade PaginaExtraida.
 
 Define schemas de entrada, saída e variações para operações com Páginas Extraídas.
 """
+
 import uuid
 from datetime import datetime
-from typing import Optional
 
-from pydantic import Field, computed_field, field_validator
+from pydantic import Field, computed_field
 
 from toninho.models.enums import PaginaStatus
 from toninho.schemas.base import BaseSchema
@@ -38,7 +38,7 @@ class PaginaExtraidaCreate(BaseSchema):
     caminho_arquivo: str = Field(
         ...,
         description="Caminho do arquivo salvo",
-        examples=["/tmp/output/pagina.md"],
+        examples=["/tmp/output/pagina.md"],  # nosec B108
     )
     status: PaginaStatus = Field(
         ...,
@@ -49,7 +49,7 @@ class PaginaExtraidaCreate(BaseSchema):
         ge=0,
         description="Tamanho do arquivo em bytes",
     )
-    erro_mensagem: Optional[str] = Field(
+    erro_mensagem: str | None = Field(
         None,
         description="Mensagem de erro (obrigatória se status=FALHOU)",
     )
@@ -57,9 +57,7 @@ class PaginaExtraidaCreate(BaseSchema):
     def model_post_init(self, __context) -> None:
         """Valida que erro_mensagem é obrigatória quando status=FALHOU."""
         if self.status == PaginaStatus.FALHOU and not self.erro_mensagem:
-            raise ValueError(
-                "erro_mensagem é obrigatória quando status=FALHOU"
-            )
+            raise ValueError("erro_mensagem é obrigatória quando status=FALHOU")
 
 
 class PaginaExtraidaResponse(BaseSchema):
@@ -85,7 +83,7 @@ class PaginaExtraidaResponse(BaseSchema):
     status: PaginaStatus = Field(..., description="Status da extração")
     tamanho_bytes: int = Field(..., description="Tamanho do arquivo em bytes")
     timestamp: datetime = Field(..., description="Data/hora da extração")
-    erro_mensagem: Optional[str] = Field(None, description="Mensagem de erro")
+    erro_mensagem: str | None = Field(None, description="Mensagem de erro")
 
     @computed_field
     @property
@@ -98,7 +96,7 @@ class PaginaExtraidaResponse(BaseSchema):
         """
         bytes_val = float(self.tamanho_bytes)
 
-        for unit in ['B', 'KB', 'MB', 'GB']:
+        for unit in ["B", "KB", "MB", "GB"]:
             if bytes_val < 1024.0:
                 return f"{bytes_val:.1f} {unit}"
             bytes_val /= 1024.0
@@ -129,7 +127,7 @@ class PaginaExtraidaSummary(BaseSchema):
         """Formata tamanho em formato human-readable."""
         bytes_val = float(self.tamanho_bytes)
 
-        for unit in ['B', 'KB', 'MB', 'GB']:
+        for unit in ["B", "KB", "MB", "GB"]:
             if bytes_val < 1024.0:
                 return f"{bytes_val:.1f} {unit}"
             bytes_val /= 1024.0

@@ -1,9 +1,11 @@
 """Service para lógica de negócio de Log."""
 
 import math
-from datetime import datetime
-from typing import AsyncGenerator, Dict, List, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -66,8 +68,8 @@ class LogService:
         return LogResponse.model_validate(log)
 
     def create_log_batch(
-        self, db: Session, logs_create: List[LogCreate]
-    ) -> List[LogResponse]:
+        self, db: Session, logs_create: list[LogCreate]
+    ) -> list[LogResponse]:
         """
         Cria múltiplos logs em lote.
 
@@ -125,7 +127,7 @@ class LogService:
         execucao_id: UUID,
         page: int = 1,
         per_page: int = 100,
-        filtro: Optional[LogFilter] = None,
+        filtro: LogFilter | None = None,
     ) -> SuccessListResponse[LogResponse]:
         """
         Lista logs de uma execução com paginação e filtros.
@@ -180,7 +182,7 @@ class LogService:
 
     def get_logs_recentes(
         self, db: Session, execucao_id: UUID, limit: int = 20
-    ) -> List[LogResponse]:
+    ) -> list[LogResponse]:
         """
         Retorna os últimos N logs de uma execução.
 
@@ -202,9 +204,7 @@ class LogService:
         logs = self.repository.get_recent(db, execucao_id, limit=limit)
         return [LogResponse.model_validate(log) for log in logs]
 
-    def get_estatisticas_logs(
-        self, db: Session, execucao_id: UUID
-    ) -> LogEstatisticas:
+    def get_estatisticas_logs(self, db: Session, execucao_id: UUID) -> LogEstatisticas:
         """
         Obtém estatísticas de logs de uma execução.
 
@@ -233,15 +233,13 @@ class LogService:
             db, execucao_id, skip=0, limit=1
         )
         # get_by_execucao_id returns desc, so we get the last. For first, reverse
-        from sqlalchemy import select, asc
         from toninho.models.log import Log as LogModel
 
         # Primeiro log
-        primeiro_log_dt: Optional[datetime] = None
-        ultimo_log_dt: Optional[datetime] = None
+        primeiro_log_dt: datetime | None = None
+        ultimo_log_dt: datetime | None = None
 
         if total > 0:
-            from sqlalchemy.orm import Session as SASession
             from sqlalchemy import select as sa_select
 
             stmt_first = (

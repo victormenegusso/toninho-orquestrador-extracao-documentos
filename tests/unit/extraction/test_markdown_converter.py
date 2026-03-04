@@ -2,8 +2,6 @@
 Testes unitários para o módulo markdown_converter.
 """
 
-import pytest
-
 from toninho.extraction.markdown_converter import (
     build_markdown_with_metadata,
     clean_markdown,
@@ -12,21 +10,18 @@ from toninho.extraction.markdown_converter import (
     html_to_markdown,
 )
 
-
 SIMPLE_HTML = (
-    "<html>"
-    "<head><title>Minha Pagina</title></head>"
-    "<body>"
-    "<h1>Titulo Principal</h1>"
-    "<p>Paragrafo de exemplo.</p>"
-    '<a href="https://example.com">Link</a>'
-    "</body>"
-    "</html>"
-).encode("utf-8")
+    b"<html>"
+    b"<head><title>Minha Pagina</title></head>"
+    b"<body>"
+    b"<h1>Titulo Principal</h1>"
+    b"<p>Paragrafo de exemplo.</p>"
+    b'<a href="https://example.com">Link</a>'
+    b"</body>"
+    b"</html>"
+)
 
-H1_ONLY_HTML = (
-    "<html><head></head><body><h1>Somente H1</h1></body></html>"
-).encode("utf-8")
+H1_ONLY_HTML = b"<html><head></head><body><h1>Somente H1</h1></body></html>"
 
 NO_TITLE_HTML = b"<html><body><p>Sem titulo</p></body></html>"
 

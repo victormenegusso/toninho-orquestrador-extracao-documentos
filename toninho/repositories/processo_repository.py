@@ -1,9 +1,8 @@
 """Repository para operações de banco de dados da entidade Processo."""
 
-from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from toninho.models.enums import ProcessoStatus
@@ -29,7 +28,7 @@ class ProcessoRepository:
         db.refresh(processo)
         return processo
 
-    def get_by_id(self, db: Session, processo_id: UUID) -> Optional[Processo]:
+    def get_by_id(self, db: Session, processo_id: UUID) -> Processo | None:
         """
         Busca um processo por ID.
 
@@ -44,7 +43,7 @@ class ProcessoRepository:
         result = db.execute(stmt)
         return result.scalar_one_or_none()
 
-    def get_by_nome(self, db: Session, nome: str) -> Optional[Processo]:
+    def get_by_nome(self, db: Session, nome: str) -> Processo | None:
         """
         Busca um processo por nome.
 
@@ -64,11 +63,11 @@ class ProcessoRepository:
         db: Session,
         skip: int = 0,
         limit: int = 20,
-        status: Optional[ProcessoStatus] = None,
-        busca: Optional[str] = None,
+        status: ProcessoStatus | None = None,
+        busca: str | None = None,
         order_by: str = "created_at",
         order_dir: str = "desc",
-    ) -> Tuple[List[Processo], int]:
+    ) -> tuple[list[Processo], int]:
         """
         Lista processos com paginação e filtros.
 
@@ -150,7 +149,7 @@ class ProcessoRepository:
         return True
 
     def exists_by_nome(
-        self, db: Session, nome: str, exclude_id: Optional[UUID] = None
+        self, db: Session, nome: str, exclude_id: UUID | None = None
     ) -> bool:
         """
         Verifica se já existe um processo com o nome informado.
@@ -200,7 +199,7 @@ class ProcessoRepository:
         result = db.execute(stmt)
         return result.scalar()
 
-    def get_by_id_with_details(self, db: Session, processo_id: UUID) -> Optional[Processo]:
+    def get_by_id_with_details(self, db: Session, processo_id: UUID) -> Processo | None:
         """
         Busca um processo por ID com eager loading de relacionamentos.
 

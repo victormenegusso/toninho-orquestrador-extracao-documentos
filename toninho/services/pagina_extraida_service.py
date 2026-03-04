@@ -2,7 +2,6 @@
 
 import math
 from pathlib import Path
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -67,7 +66,10 @@ class PaginaExtraidaService:
         if not execucao:
             raise NotFoundError("Execucao", str(pagina_create.execucao_id))
 
-        if pagina_create.status == PaginaStatus.FALHOU and not pagina_create.erro_mensagem:
+        if (
+            pagina_create.status == PaginaStatus.FALHOU
+            and not pagina_create.erro_mensagem
+        ):
             raise ValidationError("erro_mensagem é obrigatória quando status=FALHOU")
 
         pagina = PaginaExtraida(
@@ -86,8 +88,8 @@ class PaginaExtraidaService:
         return PaginaExtraidaResponse.model_validate(pagina)
 
     def create_pagina_extraida_batch(
-        self, db: Session, paginas_create: List[PaginaExtraidaCreate]
-    ) -> List[PaginaExtraidaResponse]:
+        self, db: Session, paginas_create: list[PaginaExtraidaCreate]
+    ) -> list[PaginaExtraidaResponse]:
         """
         Cria múltiplas páginas extraídas em lote.
 
@@ -125,13 +127,13 @@ class PaginaExtraidaService:
         # Atualizar métricas para cada execução
         for execucao_id, execucao in execucoes.items():
             paginas_da_execucao = [p for p in paginas if p.execucao_id == execucao_id]
-            self._atualizar_metricas_execucao(db, execucao, paginas_novas=paginas_da_execucao)
+            self._atualizar_metricas_execucao(
+                db, execucao, paginas_novas=paginas_da_execucao
+            )
 
         return [PaginaExtraidaResponse.model_validate(p) for p in paginas]
 
-    def get_pagina_extraida(
-        self, db: Session, pagina_id: UUID
-    ) -> PaginaExtraidaDetail:
+    def get_pagina_extraida(self, db: Session, pagina_id: UUID) -> PaginaExtraidaDetail:
         """
         Busca uma página extraída por ID.
 
@@ -156,7 +158,7 @@ class PaginaExtraidaService:
         execucao_id: UUID,
         page: int = 1,
         per_page: int = 100,
-        status: Optional[PaginaStatus] = None,
+        status: PaginaStatus | None = None,
     ) -> SuccessListResponse[PaginaExtraidaSummary]:
         """
         Lista páginas de uma execução com paginação.
@@ -259,9 +261,7 @@ class PaginaExtraidaService:
             menor_pagina_bytes=menor_pagina,
         )
 
-    def download_pagina(
-        self, db: Session, pagina_id: UUID
-    ) -> Tuple[bytes, str, str]:
+    def download_pagina(self, db: Session, pagina_id: UUID) -> tuple[bytes, str, str]:
         """
         Retorna o conteúdo do arquivo de uma página extraída.
 
@@ -328,7 +328,7 @@ class PaginaExtraidaService:
         self,
         db: Session,
         execucao: Execucao,
-        paginas_novas: List[PaginaExtraida],
+        paginas_novas: list[PaginaExtraida],
     ) -> None:
         """
         Atualiza métricas da execução após inserção de páginas.
@@ -339,11 +339,12 @@ class PaginaExtraidaService:
             paginas_novas: Páginas recém inseridas
         """
         bytes_novos = sum(p.tamanho_bytes for p in paginas_novas)
-        execucao.paginas_processadas = (execucao.paginas_processadas or 0) + len(paginas_novas)
+        execucao.paginas_processadas = (execucao.paginas_processadas or 0) + len(
+            paginas_novas
+        )
         execucao.bytes_extraidos = (execucao.bytes_extraidos or 0) + bytes_novos
 
         # Recalcular taxa de erro com base no status atual
-        falhas = sum(1 for p in paginas_novas if p.status == PaginaStatus.FALHOU)
         total_processadas = execucao.paginas_processadas
         if total_processadas > 0:
             # Calcular taxa de erro total reconsultando banco

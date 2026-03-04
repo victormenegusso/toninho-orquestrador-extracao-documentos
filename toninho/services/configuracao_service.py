@@ -1,7 +1,6 @@
 """Service para lógica de negócio de Configuracao."""
 
 from datetime import datetime
-from typing import List
 from uuid import UUID
 
 from croniter import croniter
@@ -129,7 +128,7 @@ class ConfiguracaoService:
 
     def list_configuracoes_by_processo(
         self, db: Session, processo_id: UUID
-    ) -> List[ConfiguracaoResponse]:
+    ) -> list[ConfiguracaoResponse]:
         """
         Lista o histórico de configurações de um processo.
 

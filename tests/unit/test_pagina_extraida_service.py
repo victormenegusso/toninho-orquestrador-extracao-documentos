@@ -1,10 +1,11 @@
 """Testes unitários para PaginaExtraidaService."""
 
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
 from uuid import uuid4
+
+import pytest
 
 from toninho.core.exceptions import NotFoundError
 from toninho.models.enums import ExecucaoStatus, PaginaStatus
@@ -214,7 +215,9 @@ class TestPaginaExtraidaService:
         assert result.meta.total == 2
         assert len(result.data) == 2
 
-    def test_list_paginas_com_filtro_status(self, db, service, pagina_factory, execucao):
+    def test_list_paginas_com_filtro_status(
+        self, db, service, pagina_factory, execucao
+    ):
         pagina_factory(status=PaginaStatus.SUCESSO)
         pagina_factory(status=PaginaStatus.FALHOU, erro_mensagem="Erro")
 
@@ -242,7 +245,9 @@ class TestPaginaExtraidaService:
     def test_get_estatisticas_paginas(self, db, service, pagina_factory, execucao):
         pagina_factory(status=PaginaStatus.SUCESSO, tamanho_bytes=1000)
         pagina_factory(status=PaginaStatus.SUCESSO, tamanho_bytes=2000)
-        pagina_factory(status=PaginaStatus.FALHOU, erro_mensagem="Erro", tamanho_bytes=0)
+        pagina_factory(
+            status=PaginaStatus.FALHOU, erro_mensagem="Erro", tamanho_bytes=0
+        )
         pagina_factory(status=PaginaStatus.IGNORADO, tamanho_bytes=0)
 
         result = service.get_estatisticas_paginas(db, execucao.id)

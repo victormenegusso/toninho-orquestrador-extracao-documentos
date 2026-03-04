@@ -9,8 +9,7 @@ Suporta dois modos de extração:
 - Navegador headless via Playwright (use_browser=True, suporta SPAs)
 """
 
-from datetime import datetime, timezone
-from typing import Dict
+from datetime import UTC, datetime
 
 from loguru import logger
 
@@ -61,12 +60,13 @@ class PageExtractor:
         self._browser_client = None
         if use_browser:
             from toninho.extraction.browser_client import BrowserClient
+
             self._browser_client = BrowserClient(
                 timeout=timeout * 1000,  # Playwright usa milissegundos
                 wait_for=browser_wait_for,
             )
 
-    async def extract(self, url: str, output_path: str | None = None) -> Dict:
+    async def extract(self, url: str, output_path: str | None = None) -> dict:
         """
         Extrai uma URL e salva como markdown.
 
@@ -105,7 +105,7 @@ class PageExtractor:
             extracted = extract_from_html(html_content, base_url=url)
 
             # 3. Montar timestamp
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             extracted_at = now.isoformat()
 
             # 4. Adicionar metadados (frontmatter)

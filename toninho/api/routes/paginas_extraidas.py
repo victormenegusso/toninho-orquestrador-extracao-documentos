@@ -4,7 +4,6 @@ import io
 import re
 import zipfile
 from pathlib import Path
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -73,7 +72,7 @@ def create_pagina(
 
 @router.post(
     "/paginas/batch",
-    response_model=SuccessResponse[List[PaginaExtraidaResponse]],
+    response_model=SuccessResponse[list[PaginaExtraidaResponse]],
     status_code=status.HTTP_201_CREATED,
     summary="Criar múltiplas páginas em lote",
     responses={
@@ -82,10 +81,10 @@ def create_pagina(
     },
 )
 def create_paginas_batch(
-    paginas_create: List[PaginaExtraidaCreate],
+    paginas_create: list[PaginaExtraidaCreate],
     db: Session = Depends(get_db),
     service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
-) -> SuccessResponse[List[PaginaExtraidaResponse]]:
+) -> SuccessResponse[list[PaginaExtraidaResponse]]:
     """Cria múltiplas páginas extraídas em lote."""
     try:
         paginas = service.create_pagina_extraida_batch(db, paginas_create)
@@ -113,7 +112,7 @@ def list_paginas_by_execucao(
     execucao_id: UUID,
     page: int = Query(default=1, ge=1, description="Número da página"),
     per_page: int = Query(default=100, ge=1, le=100, description="Itens por página"),
-    status_filter: Optional[PaginaStatus] = Query(
+    status_filter: PaginaStatus | None = Query(
         default=None, alias="status", description="Filtrar por status"
     ),
     db: Session = Depends(get_db),
@@ -156,7 +155,10 @@ def get_estatisticas_paginas(
     summary="Download ZIP com todas as páginas extraídas",
     responses={
         200: {"description": "Arquivo ZIP para download"},
-        404: {"description": "Execução não encontrada ou sem páginas", "model": ErrorResponse},
+        404: {
+            "description": "Execução não encontrada ou sem páginas",
+            "model": ErrorResponse,
+        },
     },
 )
 def download_all_paginas(
@@ -232,7 +234,10 @@ def get_pagina(
     summary="Download do arquivo markdown",
     responses={
         200: {"description": "Arquivo para download"},
-        404: {"description": "Página ou arquivo não encontrado", "model": ErrorResponse},
+        404: {
+            "description": "Página ou arquivo não encontrado",
+            "model": ErrorResponse,
+        },
     },
 )
 def download_pagina(
@@ -273,7 +278,10 @@ def download_pagina(
     summary="Conteúdo markdown da página",
     responses={
         200: {"description": "Conteúdo markdown como texto"},
-        404: {"description": "Página ou arquivo não encontrado", "model": ErrorResponse},
+        404: {
+            "description": "Página ou arquivo não encontrado",
+            "model": ErrorResponse,
+        },
     },
 )
 def get_pagina_content(

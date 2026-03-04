@@ -325,7 +325,10 @@ class TestProgressBarPartial:
         """Progress partial deve exibir contagem de páginas."""
         response = client.get(f"/execucoes/{execucao_no_db.id}/progress")
         html = response.text
-        assert "paginas_processadas" in html or str(execucao_no_db.paginas_processadas) in html
+        assert (
+            "paginas_processadas" in html
+            or str(execucao_no_db.paginas_processadas) in html
+        )
 
     def test_progress_execucao_nao_encontrada(self, client):
         """Progress de execução inexistente deve retornar 404."""

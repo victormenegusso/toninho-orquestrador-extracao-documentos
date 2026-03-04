@@ -12,8 +12,6 @@ Se o Playwright não estiver instalado, o BrowserClient lança
 ImportError com instrução de instalação.
 """
 
-from typing import Dict
-
 from loguru import logger
 
 
@@ -72,7 +70,7 @@ class BrowserClient:
             self._playwright = None
         logger.debug("BrowserClient encerrado")
 
-    async def get(self, url: str) -> Dict:
+    async def get(self, url: str) -> dict:
         """
         Busca uma URL usando o navegador Playwright.
 
@@ -107,7 +105,9 @@ class BrowserClient:
             html = await page.content()
             status_code = response.status if response else 200
 
-            logger.debug(f"[browser] HTML capturado: {len(html)} chars — status={status_code}")
+            logger.debug(
+                f"[browser] HTML capturado: {len(html)} chars — status={status_code}"
+            )
 
             return {
                 "content": html.encode("utf-8"),

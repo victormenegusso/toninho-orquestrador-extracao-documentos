@@ -12,7 +12,6 @@ from toninho.models.enums import ExecucaoStatus
 from toninho.models.execucao import Execucao
 from toninho.models.processo import Processo
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 def client():
     """Fixture que retorna um cliente de teste da API."""
     from toninho.main import app
+
     return TestClient(app)
 
 

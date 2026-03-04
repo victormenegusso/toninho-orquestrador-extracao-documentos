@@ -3,40 +3,9 @@ Schemas Pydantic do Toninho.
 
 Este módulo exporta todos os schemas para fácil importação.
 """
+
 # Base
 from toninho.schemas.base import BaseSchema
-
-# Responses
-from toninho.schemas.responses import (
-    ErrorDetail,
-    ErrorInfo,
-    ErrorResponse,
-    PaginationMeta,
-    SuccessListResponse,
-    SuccessResponse,
-    error_response,
-    success_list_response,
-    success_response,
-)
-
-# Validators
-from toninho.schemas.validators import (
-    validate_cron_expression,
-    validate_path,
-    validate_timeout,
-    validate_url,
-    validate_urls_list,
-)
-
-# Processo
-from toninho.schemas.processo import (
-    ProcessoCreate,
-    ProcessoDetail,
-    ProcessoMetricas,
-    ProcessoResponse,
-    ProcessoSummary,
-    ProcessoUpdate,
-)
 
 # Configuracao
 from toninho.schemas.configuracao import (
@@ -68,6 +37,38 @@ from toninho.schemas.pagina_extraida import (
     PaginaExtraidaDetail,
     PaginaExtraidaResponse,
     PaginaExtraidaSummary,
+)
+
+# Processo
+from toninho.schemas.processo import (
+    ProcessoCreate,
+    ProcessoDetail,
+    ProcessoMetricas,
+    ProcessoResponse,
+    ProcessoSummary,
+    ProcessoUpdate,
+)
+
+# Responses
+from toninho.schemas.responses import (
+    ErrorDetail,
+    ErrorInfo,
+    ErrorResponse,
+    PaginationMeta,
+    SuccessListResponse,
+    SuccessResponse,
+    error_response,
+    success_list_response,
+    success_response,
+)
+
+# Validators
+from toninho.schemas.validators import (
+    validate_cron_expression,
+    validate_path,
+    validate_timeout,
+    validate_url,
+    validate_urls_list,
 )
 
 __all__ = [

@@ -4,7 +4,8 @@ Configuração do banco de dados e gerenciamento de sessões.
 Este módulo configura o SQLAlchemy engine, SessionLocal e
 fornece a dependency para injeção de sessão no FastAPI.
 """
-from typing import Generator
+
+from collections.abc import Generator
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine

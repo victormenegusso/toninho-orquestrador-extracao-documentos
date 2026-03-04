@@ -132,7 +132,9 @@ class TestExecucaoPaginasPage:
         """Resposta é HTML com estrutura esperada."""
         resp = client.get(f"/execucoes/{execucao_no_db.id}/paginas")
         assert "text/html" in resp.headers["content-type"]
-        assert b"P\xc3\xa1ginas Extra\xc3\xaddas" in resp.content  # "Páginas Extraídas" in UTF-8
+        assert (
+            b"P\xc3\xa1ginas Extra\xc3\xaddas" in resp.content
+        )  # "Páginas Extraídas" in UTF-8
 
     def test_execucao_paginas_link_voltar(self, client, execucao_no_db):
         """Página contém link de volta para a execução."""
@@ -144,13 +146,17 @@ class TestExecucaoPaginasPage:
         resp = client.get(f"/execucoes/{execucao_no_db.id}/paginas")
         assert b"download-all" in resp.content or b"Baixar Todas" in resp.content
 
-    def test_execucao_paginas_exibe_paginas(self, client, execucao_no_db, pagina_sucesso_no_db):
+    def test_execucao_paginas_exibe_paginas(
+        self, client, execucao_no_db, pagina_sucesso_no_db
+    ):
         """Página exibe páginas existentes."""
         resp = client.get(f"/execucoes/{execucao_no_db.id}/paginas")
         assert resp.status_code == 200
         assert b"exemplo.com" in resp.content
 
-    def test_execucao_paginas_filtro_status(self, client, execucao_no_db, pagina_sucesso_no_db, pagina_falhou_no_db):
+    def test_execucao_paginas_filtro_status(
+        self, client, execucao_no_db, pagina_sucesso_no_db, pagina_falhou_no_db
+    ):
         """Filtro por status funciona."""
         resp = client.get(f"/execucoes/{execucao_no_db.id}/paginas?status=sucesso")
         assert resp.status_code == 200
@@ -187,21 +193,31 @@ class TestPaginasSearch:
         resp = client.get(f"/paginas/search?execucao_id={execucao_no_db.id}")
         assert "text/html" in resp.headers["content-type"]
 
-    def test_paginas_search_com_paginas(self, client, execucao_no_db, pagina_sucesso_no_db):
+    def test_paginas_search_com_paginas(
+        self, client, execucao_no_db, pagina_sucesso_no_db
+    ):
         """Busca retorna páginas existentes."""
         resp = client.get(f"/paginas/search?execucao_id={execucao_no_db.id}")
         assert resp.status_code == 200
         assert b"exemplo.com" in resp.content
 
-    def test_paginas_search_filtro_status_sucesso(self, client, execucao_no_db, pagina_sucesso_no_db, pagina_falhou_no_db):
+    def test_paginas_search_filtro_status_sucesso(
+        self, client, execucao_no_db, pagina_sucesso_no_db, pagina_falhou_no_db
+    ):
         """Filtro por status=sucesso retorna apenas páginas com sucesso."""
-        resp = client.get(f"/paginas/search?execucao_id={execucao_no_db.id}&status=sucesso")
+        resp = client.get(
+            f"/paginas/search?execucao_id={execucao_no_db.id}&status=sucesso"
+        )
         assert resp.status_code == 200
         assert b"pagina-sucesso" in resp.content
 
-    def test_paginas_search_filtro_status_falhou(self, client, execucao_no_db, pagina_sucesso_no_db, pagina_falhou_no_db):
+    def test_paginas_search_filtro_status_falhou(
+        self, client, execucao_no_db, pagina_sucesso_no_db, pagina_falhou_no_db
+    ):
         """Filtro por status=falhou retorna apenas páginas falhas."""
-        resp = client.get(f"/paginas/search?execucao_id={execucao_no_db.id}&status=falhou")
+        resp = client.get(
+            f"/paginas/search?execucao_id={execucao_no_db.id}&status=falhou"
+        )
         assert resp.status_code == 200
         assert b"pagina-erro" in resp.content
 
@@ -276,30 +292,40 @@ class TestDownloadAllEndpoint:
         resp = client.get(f"/api/v1/execucoes/{uuid4()}/download-all")
         assert resp.status_code == 404
 
-    def test_download_all_com_paginas_retorna_200(self, client, execucao_no_db, pagina_sucesso_no_db):
+    def test_download_all_com_paginas_retorna_200(
+        self, client, execucao_no_db, pagina_sucesso_no_db
+    ):
         """Execução com páginas com sucesso retorna 200 com ZIP."""
         resp = client.get(f"/api/v1/execucoes/{execucao_no_db.id}/download-all")
         assert resp.status_code == 200
 
-    def test_download_all_content_type_zip(self, client, execucao_no_db, pagina_sucesso_no_db):
+    def test_download_all_content_type_zip(
+        self, client, execucao_no_db, pagina_sucesso_no_db
+    ):
         """Response tem content-type application/zip."""
         resp = client.get(f"/api/v1/execucoes/{execucao_no_db.id}/download-all")
         assert resp.status_code == 200
         assert "application/zip" in resp.headers["content-type"]
 
-    def test_download_all_header_disposition(self, client, execucao_no_db, pagina_sucesso_no_db):
+    def test_download_all_header_disposition(
+        self, client, execucao_no_db, pagina_sucesso_no_db
+    ):
         """Response tem header Content-Disposition com filename."""
         resp = client.get(f"/api/v1/execucoes/{execucao_no_db.id}/download-all")
         assert resp.status_code == 200
         assert "attachment" in resp.headers.get("content-disposition", "")
         assert ".zip" in resp.headers.get("content-disposition", "")
 
-    def test_download_all_apenas_paginas_falha_retorna_404(self, client, execucao_no_db, pagina_falhou_no_db):
+    def test_download_all_apenas_paginas_falha_retorna_404(
+        self, client, execucao_no_db, pagina_falhou_no_db
+    ):
         """Execução com apenas páginas falhas retorna 404 (ZIP vazio não permitido)."""
         resp = client.get(f"/api/v1/execucoes/{execucao_no_db.id}/download-all")
         assert resp.status_code == 404
 
-    def test_download_all_conteudo_e_zip_valido(self, client, execucao_no_db, pagina_sucesso_no_db):
+    def test_download_all_conteudo_e_zip_valido(
+        self, client, execucao_no_db, pagina_sucesso_no_db
+    ):
         """Resposta ZIP é um arquivo ZIP válido."""
         import io
         import zipfile
@@ -360,14 +386,19 @@ class TestDownloadIndividualEndpoint:
         """Download retorna content-type text/markdown."""
         resp = client.get(f"/api/v1/paginas/{pagina_sucesso_no_db.id}/download")
         assert resp.status_code == 200
-        assert "markdown" in resp.headers["content-type"] or "text" in resp.headers["content-type"]
+        assert (
+            "markdown" in resp.headers["content-type"]
+            or "text" in resp.headers["content-type"]
+        )
 
     def test_download_pagina_inexistente_retorna_404(self, client):
         """Página inexistente retorna 404."""
         resp = client.get(f"/api/v1/paginas/{uuid4()}/download")
         assert resp.status_code == 404
 
-    def test_download_pagina_arquivo_inexistente_retorna_404(self, client, pagina_falhou_no_db):
+    def test_download_pagina_arquivo_inexistente_retorna_404(
+        self, client, pagina_falhou_no_db
+    ):
         """Página com arquivo inexistente retorna 404."""
         resp = client.get(f"/api/v1/paginas/{pagina_falhou_no_db.id}/download")
         assert resp.status_code == 404

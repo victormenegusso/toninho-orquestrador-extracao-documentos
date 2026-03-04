@@ -6,7 +6,6 @@ com backoff exponencial, cache simples e controle de taxa por domínio.
 """
 
 import asyncio
-from typing import Dict, Optional
 from urllib.parse import urlparse
 
 import httpx
@@ -39,8 +38,8 @@ class HTTPClient:
         self.max_retries = max_retries
         self.cache_enabled = cache_enabled
         self.delay_between_requests = delay_between_requests
-        self._cache: Dict[str, bytes] = {}
-        self._last_request_time: Dict[str, float] = {}  # domínio -> timestamp
+        self._cache: dict[str, bytes] = {}
+        self._last_request_time: dict[str, float] = {}  # domínio -> timestamp
 
         self._client = httpx.AsyncClient(
             timeout=httpx.Timeout(timeout),
@@ -48,7 +47,7 @@ class HTTPClient:
             headers={"User-Agent": user_agent},
         )
 
-    async def get(self, url: str) -> Dict:
+    async def get(self, url: str) -> dict:
         """
         Executa GET request com retry e cache.
 
@@ -78,7 +77,7 @@ class HTTPClient:
         if self.delay_between_requests > 0:
             await self._apply_rate_limit(url)
 
-        last_exc: Optional[Exception] = None
+        last_exc: Exception | None = None
 
         for attempt in range(self.max_retries):
             try:
@@ -143,7 +142,9 @@ class HTTPClient:
         remaining = self.delay_between_requests - elapsed
 
         if remaining > 0:
-            logger.debug(f"Rate limit: aguardando {remaining:.2f}s antes de acessar {domain}")
+            logger.debug(
+                f"Rate limit: aguardando {remaining:.2f}s antes de acessar {domain}"
+            )
             await asyncio.sleep(remaining)
 
         self._last_request_time[domain] = time.monotonic()

@@ -3,6 +3,7 @@ Models do Toninho.
 
 Este módulo exporta todos os models e enums para fácil importação.
 """
+
 from toninho.models.base import Base, TimestampMixin, UUIDMixin
 from toninho.models.configuracao import Configuracao
 from toninho.models.enums import (

@@ -4,8 +4,6 @@ WebSocket manager para atualizações em tempo real.
 Gerencia conexões WebSocket para o dashboard e por execução.
 """
 
-from typing import Dict, Optional, Set
-
 from fastapi import WebSocket
 from loguru import logger
 
@@ -15,13 +13,13 @@ class WebSocketManager:
 
     def __init__(self):
         # Connections por execução
-        self.active_connections: Dict[str, Set[WebSocket]] = {}
+        self.active_connections: dict[str, set[WebSocket]] = {}
 
         # Connections globais (dashboard)
-        self.global_connections: Set[WebSocket] = set()
+        self.global_connections: set[WebSocket] = set()
 
     async def connect(
-        self, websocket: WebSocket, execucao_id: Optional[str] = None
+        self, websocket: WebSocket, execucao_id: str | None = None
     ) -> None:
         """Adiciona nova conexão WebSocket."""
         await websocket.accept()
@@ -35,9 +33,7 @@ class WebSocketManager:
             self.global_connections.add(websocket)
             logger.info("WebSocket connected to global channel")
 
-    def disconnect(
-        self, websocket: WebSocket, execucao_id: Optional[str] = None
-    ) -> None:
+    def disconnect(self, websocket: WebSocket, execucao_id: str | None = None) -> None:
         """Remove conexão WebSocket."""
         if execucao_id:
             if execucao_id in self.active_connections:
@@ -47,28 +43,28 @@ class WebSocketManager:
         else:
             self.global_connections.discard(websocket)
 
-    async def broadcast_to_execucao(
-        self, execucao_id: str, message: Dict
-    ) -> None:
+    async def broadcast_to_execucao(self, execucao_id: str, message: dict) -> None:
         """Envia mensagem para todos conectados a uma execução."""
         if execucao_id not in self.active_connections:
             return
 
-        disconnected: Set[WebSocket] = set()
+        disconnected: set[WebSocket] = set()
 
         for connection in list(self.active_connections[execucao_id]):
             try:
                 await connection.send_json(message)
             except Exception as e:
-                logger.error(f"Error sending WebSocket message to execucao {execucao_id}: {e}")
+                logger.error(
+                    f"Error sending WebSocket message to execucao {execucao_id}: {e}"
+                )
                 disconnected.add(connection)
 
         for conn in disconnected:
             self.disconnect(conn, execucao_id)
 
-    async def broadcast_global(self, message: Dict) -> None:
+    async def broadcast_global(self, message: dict) -> None:
         """Envia mensagem para todas as conexões globais."""
-        disconnected: Set[WebSocket] = set()
+        disconnected: set[WebSocket] = set()
 
         for connection in list(self.global_connections):
             try:
@@ -80,7 +76,7 @@ class WebSocketManager:
         for conn in disconnected:
             self.disconnect(conn)
 
-    def get_connection_count(self, execucao_id: Optional[str] = None) -> int:
+    def get_connection_count(self, execucao_id: str | None = None) -> int:
         """Retorna número de conexões ativas."""
         if execucao_id:
             return len(self.active_connections.get(execucao_id, set()))

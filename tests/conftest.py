@@ -4,10 +4,10 @@ Configurações do pytest para o projeto Toninho.
 Este arquivo contém fixtures compartilhadas e configurações
 globais para todos os testes.
 """
-import os
+
 import tempfile
+from collections.abc import Callable, Generator
 from pathlib import Path
-from typing import Callable, Generator
 
 import pytest
 from sqlalchemy import create_engine
@@ -36,7 +36,6 @@ def test_engine():
     Usa arquivo temporário em vez de in-memory para permitir múltiplas
     conexões (necessário para TestClient do FastAPI).
     """
-    import tempfile
     import os
 
     # Criar arquivo temporário para o banco
@@ -121,7 +120,9 @@ def processo_factory(db: Session) -> Callable[..., Processo]:
 
 
 @pytest.fixture
-def execucao_factory(db: Session, processo_factory: Callable) -> Callable[..., Execucao]:
+def execucao_factory(
+    db: Session, processo_factory: Callable
+) -> Callable[..., Execucao]:
     """
     Factory fixture para criar instâncias de Execucao.
 
@@ -132,6 +133,7 @@ def execucao_factory(db: Session, processo_factory: Callable) -> Callable[..., E
     Returns:
         Callable: Função que cria e retorna uma Execucao
     """
+
     def _create_execucao(**kwargs) -> Execucao:
         if "processo_id" not in kwargs:
             processo = processo_factory()

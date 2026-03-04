@@ -1,12 +1,11 @@
 """Testes unitários para LogRepository."""
 
-import pytest
 from uuid import uuid4
-from datetime import datetime, timezone
 
-from toninho.models.enums import LogNivel
+import pytest
+
+from toninho.models.enums import ExecucaoStatus, LogNivel
 from toninho.models.execucao import Execucao
-from toninho.models.enums import ExecucaoStatus
 from toninho.models.log import Log
 from toninho.models.processo import Processo
 from toninho.repositories.log_repository import LogRepository
@@ -49,6 +48,7 @@ class TestLogRepository:
             db.commit()
             db.refresh(log)
             return log
+
         return _create
 
     # ------------------------------------------------------------------
@@ -122,12 +122,21 @@ class TestLogRepository:
         log_factory(nivel=LogNivel.WARNING)
         log_factory(nivel=LogNivel.ERROR)
 
-        result, total = repository.get_by_execucao_id(db, log_factory.__self__.execucao.id if hasattr(log_factory, '__self__') else uuid4())
+        result, total = repository.get_by_execucao_id(
+            db,
+            log_factory.__self__.execucao.id
+            if hasattr(log_factory, "__self__")
+            else uuid4(),
+        )
         # Use execucao from fixture differently
-        result, total = repository.get_by_execucao_id(db, db.query(Log).first().execucao_id)
+        result, total = repository.get_by_execucao_id(
+            db, db.query(Log).first().execucao_id
+        )
         assert total == 3
 
-    def test_get_by_execucao_id_com_filtro_nivel(self, db, repository, log_factory, execucao):
+    def test_get_by_execucao_id_com_filtro_nivel(
+        self, db, repository, log_factory, execucao
+    ):
         log_factory(nivel=LogNivel.INFO)
         log_factory(nivel=LogNivel.INFO)
         log_factory(nivel=LogNivel.ERROR)
@@ -138,7 +147,9 @@ class TestLogRepository:
         assert total == 2
         assert all(log.nivel == LogNivel.INFO for log in result)
 
-    def test_get_by_execucao_id_com_filtro_busca(self, db, repository, log_factory, execucao):
+    def test_get_by_execucao_id_com_filtro_busca(
+        self, db, repository, log_factory, execucao
+    ):
         log_factory(mensagem="Página extraída com sucesso")
         log_factory(mensagem="Erro ao acessar URL")
 

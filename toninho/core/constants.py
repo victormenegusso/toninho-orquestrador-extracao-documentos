@@ -4,6 +4,7 @@ Constantes do sistema Toninho.
 Este módulo centraliza todas as constantes utilizadas na aplicação.
 """
 
+
 # Status de processo
 class ProcessStatus:
     """Status possíveis de um processo de extração."""

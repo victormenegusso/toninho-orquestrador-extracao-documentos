@@ -90,7 +90,10 @@ def list_configuracoes(
     summary="Obter configuração atual do processo",
     responses={
         200: {"description": "Configuração atual"},
-        404: {"description": "Processo/configuração não encontrado", "model": ErrorResponse},
+        404: {
+            "description": "Processo/configuração não encontrado",
+            "model": ErrorResponse,
+        },
     },
 )
 def get_configuracao_by_processo(

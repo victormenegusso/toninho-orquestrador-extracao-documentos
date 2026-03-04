@@ -3,6 +3,7 @@ Testes unitários para os schemas do Toninho.
 
 Testa validação, serialização e conversão model→schema.
 """
+
 import uuid
 from datetime import UTC, datetime
 
@@ -12,14 +13,11 @@ from pydantic import ValidationError
 from toninho.models import (
     AgendamentoTipo,
     Configuracao,
-    Execucao,
     ExecucaoStatus,
-    FormatoSaida,
     Log,
     LogNivel,
     PaginaExtraida,
     PaginaStatus,
-    Processo,
     ProcessoStatus,
 )
 from toninho.schemas import (
@@ -261,15 +259,18 @@ class TestExecucaoSchemas:
         assert schema.duracao_segundos is not None
         assert schema.duracao_segundos == pytest.approx(1.5, abs=0.1)
 
-    def test_duracao_mixin_compartilhado_nos_schemas(self, db, execucao_factory) -> None:
+    def test_duracao_mixin_compartilhado_nos_schemas(
+        self, db, execucao_factory
+    ) -> None:
         """Testa que DuracaoMixin é compartilhado por ExecucaoResponse e ExecucaoSummary (TD-002)."""
-        from datetime import timedelta
         from toninho.schemas.execucao import DuracaoMixin
 
         assert issubclass(ExecucaoResponse, DuracaoMixin)
         assert issubclass(ExecucaoSummary, DuracaoMixin)
 
-    def test_execucao_response_computed_em_andamento(self, db, execucao_factory) -> None:
+    def test_execucao_response_computed_em_andamento(
+        self, db, execucao_factory
+    ) -> None:
         """Testa computed field em_andamento."""
         execucao = execucao_factory(status=ExecucaoStatus.EM_EXECUCAO)
 
@@ -382,7 +383,9 @@ class TestPaginaExtraidaSchemas:
                 tamanho_bytes=-1,
             )
 
-    def test_pagina_response_computed_tamanho_legivel(self, db, execucao_factory) -> None:
+    def test_pagina_response_computed_tamanho_legivel(
+        self, db, execucao_factory
+    ) -> None:
         """Testa computed field tamanho_legivel."""
         execucao = execucao_factory()
         pagina = PaginaExtraida(

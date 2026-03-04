@@ -3,6 +3,7 @@ Model PaginaExtraida.
 
 Representa uma página extraída durante uma execução.
 """
+
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -46,51 +47,40 @@ class PaginaExtraida(Base, UUIDMixin):
     execucao_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("execucoes.id", ondelete="CASCADE"),
         nullable=False,
-        doc="ID da execução que extraiu esta página"
+        doc="ID da execução que extraiu esta página",
     )
 
     # Campos
     url_original: Mapped[str] = mapped_column(
-        String(2048),
-        nullable=False,
-        doc="URL original da página extraída"
+        String(2048), nullable=False, doc="URL original da página extraída"
     )
 
     caminho_arquivo: Mapped[str] = mapped_column(
-        String(1000),
-        nullable=False,
-        doc="Caminho do arquivo salvo no sistema"
+        String(1000), nullable=False, doc="Caminho do arquivo salvo no sistema"
     )
 
     status: Mapped[PaginaStatus] = mapped_column(
-        nullable=False,
-        doc="Status da extração (SUCESSO, FALHOU, IGNORADO)"
+        nullable=False, doc="Status da extração (SUCESSO, FALHOU, IGNORADO)"
     )
 
     tamanho_bytes: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-        doc="Tamanho do arquivo em bytes"
+        Integer, nullable=False, default=0, doc="Tamanho do arquivo em bytes"
     )
 
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        doc="Data/hora da extração"
+        doc="Data/hora da extração",
     )
 
     erro_mensagem: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        doc="Mensagem de erro (obrigatória se status=FALHOU)"
+        String, nullable=True, doc="Mensagem de erro (obrigatória se status=FALHOU)"
     )
 
     # Relacionamentos
     execucao: Mapped["Execucao"] = relationship(
-        back_populates="paginas",
-        doc="Execução que extraiu esta página"
+        back_populates="paginas", doc="Execução que extraiu esta página"
     )
 
     # Constraints

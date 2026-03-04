@@ -1,7 +1,8 @@
 """Testes para o WebSocketManager."""
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 
 class TestWebSocketManager:
@@ -11,6 +12,7 @@ class TestWebSocketManager:
     def manager(self):
         """Fixture que cria um WebSocketManager limpo para cada teste."""
         from toninho.monitoring.websocket import WebSocketManager
+
         return WebSocketManager()
 
     def _make_websocket(self, fail_send=False):
@@ -105,7 +107,9 @@ class TestWebSocketManager:
     async def test_broadcast_to_execucao_no_connections(self, manager):
         """Broadcast sem conexões não gera erro."""
         message = {"type": "test"}
-        await manager.broadcast_to_execucao("exec-nonexistent", message)  # Não deve lançar
+        await manager.broadcast_to_execucao(
+            "exec-nonexistent", message
+        )  # Não deve lançar
 
     @pytest.mark.asyncio
     async def test_broadcast_to_execucao_removes_failed(self, manager):
@@ -169,4 +173,5 @@ class TestWebSocketManager:
     def test_singleton_exists(self):
         """Singleton ws_manager existe e é WebSocketManager."""
         from toninho.monitoring.websocket import WebSocketManager, ws_manager
+
         assert isinstance(ws_manager, WebSocketManager)

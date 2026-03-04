@@ -8,8 +8,6 @@ from fastapi.testclient import TestClient
 from toninho.core.database import get_db
 from toninho.main import app
 from toninho.models.enums import ExecucaoStatus, ProcessoStatus
-from toninho.models.execucao import Execucao
-from toninho.models.processo import Processo
 
 
 @pytest.fixture
@@ -42,7 +40,6 @@ def client(test_engine):
     app.dependency_overrides.clear()
 
 
-
 class TestProcessosAPI:
     """Testes de integração da API de Processos."""
 
@@ -66,7 +63,7 @@ class TestProcessosAPI:
     def test_create_processo_nome_duplicado(self, client, db, processo_factory):
         """Testa criação com nome duplicado."""
         # Criar processo existente
-        processo = processo_factory(nome="Processo Duplicado")
+        _processo = processo_factory(nome="Processo Duplicado")
 
         # Tentar criar com mesmo nome
         payload = {
@@ -221,7 +218,7 @@ class TestProcessosAPI:
     def test_update_processo_nome_duplicado(self, client, db, processo_factory):
         """Testa atualização com nome já existente."""
         processo1 = processo_factory(nome="Processo 1")
-        processo2 = processo_factory(nome="Processo 2")
+        _ = processo_factory(nome="Processo 2")
 
         # Tentar renomear processo1 para "Processo 2"
         payload = {"nome": "Processo 2"}
@@ -275,9 +272,7 @@ class TestProcessosAPI:
         processo = processo_factory(nome="Processo com Execução")
 
         # Criar execução em andamento
-        execucao_factory(
-            processo_id=processo.id, status=ExecucaoStatus.EM_EXECUCAO
-        )
+        execucao_factory(processo_id=processo.id, status=ExecucaoStatus.EM_EXECUCAO)
 
         response = client.delete(f"/api/v1/processos/{processo.id}")
 

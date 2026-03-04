@@ -6,7 +6,8 @@ toda a extração de URLs para uma dada execução.
 """
 
 import uuid
-from typing import Any, Dict
+from datetime import UTC
+from typing import Any
 
 from celery import Task
 from celery.exceptions import SoftTimeLimitExceeded
@@ -26,7 +27,7 @@ from toninho.workers.celery_app import celery_app
     # Não auto-retry em erros de negócio (ValueError)
     dont_autoretry_for=(ValueError,),
 )
-def executar_processo_task(self: Task, execucao_id: str) -> Dict[str, Any]:
+def executar_processo_task(self: Task, execucao_id: str) -> dict[str, Any]:
     """
     Task Celery para executar um processo de extração.
 
@@ -91,19 +92,26 @@ def _marcar_falha(db, execucao_id: str, motivo: str) -> None:
     """Marca execução como FALHOU e registra log."""
     try:
         import uuid as _uuid
-        from datetime import datetime, timezone
-        from toninho.models.execucao import Execucao
+        from datetime import datetime
+
         from toninho.models.enums import ExecucaoStatus, LogNivel
+        from toninho.models.execucao import Execucao
         from toninho.workers.utils import ExtractionOrchestrator
 
         eid = _uuid.UUID(execucao_id)
         execucao = db.get(Execucao, eid)
         if execucao:
             execucao.status = ExecucaoStatus.FALHOU
-            execucao.finalizado_em = datetime.now(timezone.utc)
+            execucao.finalizado_em = datetime.now(UTC)
             db.commit()
 
-        ExtractionOrchestrator._add_log(db, eid, LogNivel.ERROR, f"Task falhou: {motivo}", contexto={"motivo": motivo})
+        ExtractionOrchestrator._add_log(
+            db,
+            eid,
+            LogNivel.ERROR,
+            f"Task falhou: {motivo}",
+            contexto={"motivo": motivo},
+        )
         db.commit()
     except Exception as inner:
         logger.error(f"Erro ao marcar falha: {inner}")

@@ -33,8 +33,8 @@ celery_app.conf.update(
     # Tracking
     task_track_started=True,
     # Limites de tempo
-    task_time_limit=7200,          # 2 horas (hard limit — SIGKILL)
-    task_soft_time_limit=7000,     # 1h56min (soft — SoftTimeLimitExceeded)
+    task_time_limit=7200,  # 2 horas (hard limit — SIGKILL)
+    task_soft_time_limit=7000,  # 1h56min (soft — SoftTimeLimitExceeded)
     # Confiabilidade: ACK só após concluir (evita perda de task se worker cair)
     task_acks_late=True,
     task_reject_on_worker_lost=True,
@@ -46,7 +46,7 @@ celery_app.conf.update(
     beat_schedule={
         "verificar-agendamentos": {
             "task": "toninho.workers.tasks.agendamento_task.verificar_agendamentos",
-            "schedule": 60.0,   # A cada 60 segundos
+            "schedule": 60.0,  # A cada 60 segundos
         },
         "limpar-logs-antigos": {
             "task": "toninho.workers.tasks.limpeza_task.limpar_logs_antigos",

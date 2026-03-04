@@ -3,7 +3,8 @@ Model Processo.
 
 Representa um processo de extração configurável no sistema Toninho.
 """
-from typing import TYPE_CHECKING, List
+
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -38,34 +39,28 @@ class Processo(Base, UUIDMixin, TimestampMixin):
 
     # Campos
     nome: Mapped[str] = mapped_column(
-        String(200),
-        nullable=False,
-        doc="Nome do processo (único)"
+        String(200), nullable=False, doc="Nome do processo (único)"
     )
 
     descricao: Mapped[str | None] = mapped_column(
-        String,
-        nullable=True,
-        doc="Descrição opcional do processo"
+        String, nullable=True, doc="Descrição opcional do processo"
     )
 
     status: Mapped[ProcessoStatus] = mapped_column(
-        nullable=False,
-        default=ProcessoStatus.ATIVO,
-        doc="Status atual do processo"
+        nullable=False, default=ProcessoStatus.ATIVO, doc="Status atual do processo"
     )
 
     # Relacionamentos
-    configuracoes: Mapped[List["Configuracao"]] = relationship(
+    configuracoes: Mapped[list["Configuracao"]] = relationship(
         back_populates="processo",
         cascade="all, delete-orphan",
-        doc="Configurações associadas ao processo"
+        doc="Configurações associadas ao processo",
     )
 
-    execucoes: Mapped[List["Execucao"]] = relationship(
+    execucoes: Mapped[list["Execucao"]] = relationship(
         back_populates="processo",
         cascade="all, delete-orphan",
-        doc="Execuções do processo"
+        doc="Execuções do processo",
     )
 
     # Constraints

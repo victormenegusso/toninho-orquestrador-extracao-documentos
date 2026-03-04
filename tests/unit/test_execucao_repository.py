@@ -1,7 +1,8 @@
 """Testes unitários para ExecucaoRepository."""
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from toninho.models.enums import ExecucaoStatus
 from toninho.models.execucao import Execucao
@@ -37,6 +38,7 @@ class TestExecucaoRepository:
             db.commit()
             db.refresh(e)
             return e
+
         return _create
 
     # ------------------------------------------------------------------
@@ -80,8 +82,9 @@ class TestExecucaoRepository:
     # get_all_by_processo_id
     # ------------------------------------------------------------------
 
-    def test_get_all_by_processo_id_sem_filtro(self, db, repository,
-                                               execucao_factory, processo):
+    def test_get_all_by_processo_id_sem_filtro(
+        self, db, repository, execucao_factory, processo
+    ):
         execucao_factory()
         execucao_factory()
 
@@ -90,8 +93,9 @@ class TestExecucaoRepository:
         assert len(result) == 2
         assert total == 2
 
-    def test_get_all_by_processo_id_com_filtro_status(self, db, repository,
-                                                       execucao_factory, processo):
+    def test_get_all_by_processo_id_com_filtro_status(
+        self, db, repository, execucao_factory, processo
+    ):
         execucao_factory(status=ExecucaoStatus.AGUARDANDO)
         execucao_factory(status=ExecucaoStatus.CONCLUIDO)
 
@@ -102,8 +106,9 @@ class TestExecucaoRepository:
         assert total == 1
         assert result[0].status == ExecucaoStatus.CONCLUIDO
 
-    def test_get_all_by_processo_id_paginacao(self, db, repository,
-                                               execucao_factory, processo):
+    def test_get_all_by_processo_id_paginacao(
+        self, db, repository, execucao_factory, processo
+    ):
         for _ in range(5):
             execucao_factory()
 
@@ -193,8 +198,9 @@ class TestExecucaoRepository:
     # get_em_execucao
     # ------------------------------------------------------------------
 
-    def test_get_em_execucao_encontrado(self, db, repository,
-                                         execucao_factory, processo):
+    def test_get_em_execucao_encontrado(
+        self, db, repository, execucao_factory, processo
+    ):
         e = execucao_factory(status=ExecucaoStatus.EM_EXECUCAO)
         result = repository.get_em_execucao(db, processo.id)
 
@@ -205,8 +211,9 @@ class TestExecucaoRepository:
         result = repository.get_em_execucao(db, processo.id)
         assert result is None
 
-    def test_get_em_execucao_ignora_outros_status(self, db, repository,
-                                                   execucao_factory, processo):
+    def test_get_em_execucao_ignora_outros_status(
+        self, db, repository, execucao_factory, processo
+    ):
         execucao_factory(status=ExecucaoStatus.AGUARDANDO)
         result = repository.get_em_execucao(db, processo.id)
         assert result is None

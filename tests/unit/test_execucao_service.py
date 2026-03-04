@@ -15,7 +15,6 @@ from toninho.repositories.processo_repository import ProcessoRepository
 from toninho.schemas.execucao import ExecucaoStatusUpdate
 from toninho.services.execucao_service import ExecucaoService, validar_transicao
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -101,10 +100,14 @@ class TestValidarTransicao:
         assert validar_transicao(ExecucaoStatus.PAUSADO, ExecucaoStatus.EM_EXECUCAO)
 
     def test_concluido_para_em_execucao_invalido(self):
-        assert not validar_transicao(ExecucaoStatus.CONCLUIDO, ExecucaoStatus.EM_EXECUCAO)
+        assert not validar_transicao(
+            ExecucaoStatus.CONCLUIDO, ExecucaoStatus.EM_EXECUCAO
+        )
 
     def test_cancelado_para_aguardando_invalido(self):
-        assert not validar_transicao(ExecucaoStatus.CANCELADO, ExecucaoStatus.AGUARDANDO)
+        assert not validar_transicao(
+            ExecucaoStatus.CANCELADO, ExecucaoStatus.AGUARDANDO
+        )
 
     def test_falhou_para_em_execucao_invalido(self):
         assert not validar_transicao(ExecucaoStatus.FALHOU, ExecucaoStatus.EM_EXECUCAO)
@@ -122,9 +125,12 @@ class TestValidarTransicao:
 
 
 class TestCreateExecucao:
-    def test_create_sucesso(self, service, mock_repo, mock_processo_repo,
-                             fake_processo, processo_id):
-        fake_exec = make_fake_execucao(processo_id=processo_id, status=ExecucaoStatus.AGUARDANDO)
+    def test_create_sucesso(
+        self, service, mock_repo, mock_processo_repo, fake_processo, processo_id
+    ):
+        fake_exec = make_fake_execucao(
+            processo_id=processo_id, status=ExecucaoStatus.AGUARDANDO
+        )
         mock_processo_repo.get_by_id.return_value = fake_processo
         mock_repo.get_em_execucao.return_value = None
         mock_repo.create.return_value = fake_exec
@@ -141,11 +147,12 @@ class TestCreateExecucao:
         with pytest.raises(NotFoundError):
             service.create_execucao(MagicMock(), processo_id)
 
-    def test_create_bloqueia_segundo_em_execucao(self, service, mock_repo,
-                                                  mock_processo_repo,
-                                                  fake_processo, processo_id):
-        fake_exec_ativa = make_fake_execucao(processo_id=processo_id,
-                                             status=ExecucaoStatus.EM_EXECUCAO)
+    def test_create_bloqueia_segundo_em_execucao(
+        self, service, mock_repo, mock_processo_repo, fake_processo, processo_id
+    ):
+        fake_exec_ativa = make_fake_execucao(
+            processo_id=processo_id, status=ExecucaoStatus.EM_EXECUCAO
+        )
         mock_processo_repo.get_by_id.return_value = fake_processo
         mock_repo.get_em_execucao.return_value = fake_exec_ativa
 
@@ -180,11 +187,13 @@ class TestGetExecucao:
 
 class TestUpdateExecucaoStatus:
     def test_transicao_valida(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.AGUARDANDO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.AGUARDANDO
+        )
         mock_repo.get_by_id.return_value = fake_exec
-        updated = make_fake_execucao(execucao_id=execucao_id,
-                                     status=ExecucaoStatus.EM_EXECUCAO)
+        updated = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.EM_EXECUCAO
+        )
         mock_repo.update.return_value = updated
 
         result = service.update_execucao_status(
@@ -195,8 +204,9 @@ class TestUpdateExecucaoStatus:
         assert result.status == ExecucaoStatus.EM_EXECUCAO
 
     def test_transicao_invalida(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.CONCLUIDO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.CONCLUIDO
+        )
         mock_repo.get_by_id.return_value = fake_exec
 
         with pytest.raises(ValidationError):
@@ -224,10 +234,12 @@ class TestUpdateExecucaoStatus:
 
 class TestCancelarExecucao:
     def test_cancelar_em_execucao(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.EM_EXECUCAO)
-        cancelled = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.CANCELADO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.EM_EXECUCAO
+        )
+        cancelled = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.CANCELADO
+        )
         mock_repo.get_by_id.return_value = fake_exec
         mock_repo.update.return_value = cancelled
 
@@ -235,10 +247,12 @@ class TestCancelarExecucao:
         assert result.status == ExecucaoStatus.CANCELADO
 
     def test_cancelar_aguardando(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.AGUARDANDO)
-        cancelled = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.CANCELADO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.AGUARDANDO
+        )
+        cancelled = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.CANCELADO
+        )
         mock_repo.get_by_id.return_value = fake_exec
         mock_repo.update.return_value = cancelled
 
@@ -246,8 +260,9 @@ class TestCancelarExecucao:
         assert result.status == ExecucaoStatus.CANCELADO
 
     def test_cancelar_ja_concluido(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.CONCLUIDO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.CONCLUIDO
+        )
         mock_repo.get_by_id.return_value = fake_exec
 
         with pytest.raises(ConflictError):
@@ -267,10 +282,12 @@ class TestCancelarExecucao:
 
 class TestPausarRetomar:
     def test_pausar_em_execucao(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.EM_EXECUCAO)
-        paused = make_fake_execucao(execucao_id=execucao_id,
-                                    status=ExecucaoStatus.PAUSADO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.EM_EXECUCAO
+        )
+        paused = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.PAUSADO
+        )
         mock_repo.get_by_id.return_value = fake_exec
         mock_repo.update.return_value = paused
 
@@ -278,18 +295,21 @@ class TestPausarRetomar:
         assert result.status == ExecucaoStatus.PAUSADO
 
     def test_pausar_ja_pausado_invalido(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.PAUSADO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.PAUSADO
+        )
         mock_repo.get_by_id.return_value = fake_exec
 
         with pytest.raises(ConflictError):
             service.pausar_execucao(MagicMock(), execucao_id)
 
     def test_retomar_pausado(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.PAUSADO)
-        resumed = make_fake_execucao(execucao_id=execucao_id,
-                                     status=ExecucaoStatus.EM_EXECUCAO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.PAUSADO
+        )
+        resumed = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.EM_EXECUCAO
+        )
         mock_repo.get_by_id.return_value = fake_exec
         mock_repo.update.return_value = resumed
 
@@ -297,8 +317,9 @@ class TestPausarRetomar:
         assert result.status == ExecucaoStatus.EM_EXECUCAO
 
     def test_retomar_nao_pausado_invalido(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.AGUARDANDO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.AGUARDANDO
+        )
         mock_repo.get_by_id.return_value = fake_exec
 
         with pytest.raises(ConflictError):
@@ -334,7 +355,9 @@ class TestGetProgresso:
 
 class TestGetExecucaoMetricas:
     def test_metricas_sem_duracao(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id, paginas=5, taxa_erro=10.0)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, paginas=5, taxa_erro=10.0
+        )
         mock_repo.get_by_id.return_value = fake_exec
 
         result = service.get_execucao_metricas(MagicMock(), execucao_id)
@@ -358,8 +381,9 @@ class TestGetExecucaoMetricas:
 
 class TestDeleteExecucao:
     def test_delete_sucesso(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.CONCLUIDO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.CONCLUIDO
+        )
         mock_repo.get_by_id.return_value = fake_exec
         mock_repo.delete.return_value = True
 
@@ -367,8 +391,9 @@ class TestDeleteExecucao:
         assert result is True
 
     def test_delete_em_execucao_bloqueado(self, service, mock_repo, execucao_id):
-        fake_exec = make_fake_execucao(execucao_id=execucao_id,
-                                       status=ExecucaoStatus.EM_EXECUCAO)
+        fake_exec = make_fake_execucao(
+            execucao_id=execucao_id, status=ExecucaoStatus.EM_EXECUCAO
+        )
         mock_repo.get_by_id.return_value = fake_exec
 
         with pytest.raises(ConflictError):
@@ -446,9 +471,7 @@ class TestListExecucoes:
         fake_exec = make_fake_execucao(status=ExecucaoStatus.CONCLUIDO)
         mock_repo.get_all.return_value = ([fake_exec], 1)
 
-        result = service.list_execucoes(
-            MagicMock(), status=ExecucaoStatus.CONCLUIDO
-        )
+        result = service.list_execucoes(MagicMock(), status=ExecucaoStatus.CONCLUIDO)
         assert result.meta.total == 1
 
 
@@ -512,7 +535,7 @@ class TestCalcularMetricas:
 
 class TestGetTotalPaginas:
     def test_com_configuracao_com_urls(self, service):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         mock_config = MagicMock()
         mock_config.urls = ["https://a.com", "https://b.com"]
@@ -541,7 +564,7 @@ class TestGetTotalPaginas:
             assert total == 0
 
     def test_config_sem_urls(self, service):
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
 
         mock_config = MagicMock()
         mock_config.urls = None
@@ -608,7 +631,6 @@ class TestRevogarTask:
             ExecucaoService._revogar_task(execucao)
 
 
-
 # ---------------------------------------------------------------------------
 # Testes: get_progresso com iniciado_em
 # ---------------------------------------------------------------------------
@@ -616,11 +638,10 @@ class TestRevogarTask:
 
 class TestGetProgressoComInicio:
     def test_progresso_com_inicio_e_paginas(self, service, mock_repo, execucao_id):
-        from toninho.models.enums import ExecucaoStatus
-        from datetime import timezone
-
         fake_exec = make_fake_execucao(execucao_id=execucao_id, paginas=5)
-        fake_exec.iniciado_em = datetime.datetime.now(timezone.utc) - datetime.timedelta(seconds=60)
+        fake_exec.iniciado_em = datetime.datetime.now(
+            datetime.UTC
+        ) - datetime.timedelta(seconds=60)
         mock_repo.get_by_id.return_value = fake_exec
 
         with patch.object(service, "_get_total_paginas", return_value=10):

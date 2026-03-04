@@ -4,9 +4,7 @@ Testes de integração Models↔Schemas.
 Valida que a conversão entre models e schemas funciona perfeitamente,
 incluindo relacionamentos e computed fields.
 """
-import uuid
 
-import pytest
 from sqlalchemy.orm import Session
 
 from toninho.models import (
@@ -132,7 +130,7 @@ def test_full_workflow_model_to_schema(db: Session) -> None:
 
     # Converter páginas para schemas
     pagina1_schema = PaginaExtraidaResponse.model_validate(pagina1)
-    pagina2_schema = PaginaExtraidaResponse.model_validate(pagina2)
+    _pagina2_schema = PaginaExtraidaResponse.model_validate(pagina2)
     assert pagina1_schema.execucao_id == execucao.id
     assert "KB" in pagina1_schema.tamanho_legivel  # computed field
 

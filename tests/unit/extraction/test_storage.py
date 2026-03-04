@@ -6,7 +6,6 @@ import pytest
 
 from toninho.extraction.storage import (
     LocalFileSystemStorage,
-    StorageInterface,
     get_storage,
 )
 

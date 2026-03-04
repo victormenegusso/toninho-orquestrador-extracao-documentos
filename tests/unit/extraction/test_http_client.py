@@ -2,12 +2,10 @@
 Testes unitários para o HTTPClient.
 """
 
-import pytest
 import httpx
-import pytest_asyncio
+import pytest
 
 from toninho.extraction.http_client import HTTPClient
-
 
 SAMPLE_URL = "https://example.com/page"
 SAMPLE_HTML = b"<html><body><h1>Test</h1></body></html>"
@@ -86,9 +84,7 @@ class TestHTTPClientErrors:
     @pytest.mark.asyncio
     async def test_404_raises_immediately(self, respx_mock):
         """404 não deve fazer retry — deve levantar imediatamente."""
-        respx_mock.get(SAMPLE_URL).mock(
-            return_value=httpx.Response(404)
-        )
+        respx_mock.get(SAMPLE_URL).mock(return_value=httpx.Response(404))
 
         async with HTTPClient(max_retries=3, cache_enabled=False) as client:
             with pytest.raises(httpx.HTTPStatusError) as exc_info:
@@ -99,9 +95,7 @@ class TestHTTPClientErrors:
     @pytest.mark.asyncio
     async def test_403_raises_immediately(self, respx_mock):
         """403 não deve fazer retry."""
-        respx_mock.get(SAMPLE_URL).mock(
-            return_value=httpx.Response(403)
-        )
+        respx_mock.get(SAMPLE_URL).mock(return_value=httpx.Response(403))
 
         async with HTTPClient(max_retries=3, cache_enabled=False) as client:
             with pytest.raises(httpx.HTTPStatusError) as exc_info:
@@ -112,9 +106,7 @@ class TestHTTPClientErrors:
     @pytest.mark.asyncio
     async def test_500_retries_and_eventually_raises(self, respx_mock):
         """500 deve fazer retry e levantar após esgotar tentativas."""
-        respx_mock.get(SAMPLE_URL).mock(
-            return_value=httpx.Response(500)
-        )
+        respx_mock.get(SAMPLE_URL).mock(return_value=httpx.Response(500))
 
         async with HTTPClient(max_retries=2, cache_enabled=False) as client:
             with pytest.raises(httpx.HTTPStatusError):
@@ -123,9 +115,7 @@ class TestHTTPClientErrors:
     @pytest.mark.asyncio
     async def test_timeout_retries_and_raises(self, respx_mock):
         """Timeout deve fazer retry e levantar após esgotar tentativas."""
-        respx_mock.get(SAMPLE_URL).mock(
-            side_effect=httpx.TimeoutException("timeout")
-        )
+        respx_mock.get(SAMPLE_URL).mock(side_effect=httpx.TimeoutException("timeout"))
 
         async with HTTPClient(max_retries=2, cache_enabled=False) as client:
             with pytest.raises(httpx.TimeoutException):
@@ -211,7 +201,9 @@ class TestHTTPClientRateLimit:
         respx_mock.get(url2).mock(return_value=httpx.Response(200, content=b"p2"))
 
         delay = 0.1  # 100ms para o teste ser rápido
-        async with HTTPClient(cache_enabled=False, delay_between_requests=delay) as client:
+        async with HTTPClient(
+            cache_enabled=False, delay_between_requests=delay
+        ) as client:
             t0 = time.monotonic()
             await client.get(url1)
             await client.get(url2)
@@ -232,7 +224,9 @@ class TestHTTPClientRateLimit:
         respx_mock.get(url_b).mock(return_value=httpx.Response(200, content=b"b"))
 
         delay = 1.0  # 1 segundo — mas domínios diferentes, então não deve esperar
-        async with HTTPClient(cache_enabled=False, delay_between_requests=delay) as client:
+        async with HTTPClient(
+            cache_enabled=False, delay_between_requests=delay
+        ) as client:
             t0 = time.monotonic()
             await client.get(url_a)
             await client.get(url_b)

@@ -1,6 +1,5 @@
 """Repository para operações de banco de dados da entidade Execucao."""
 
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import func, select, update
@@ -34,7 +33,7 @@ class ExecucaoRepository:
         db: Session,
         execucao_id: UUID,
         with_relations: bool = False,
-    ) -> Optional[Execucao]:
+    ) -> Execucao | None:
         """
         Busca uma execução por ID.
 
@@ -61,8 +60,8 @@ class ExecucaoRepository:
         processo_id: UUID,
         skip: int = 0,
         limit: int = 20,
-        status: Optional[ExecucaoStatus] = None,
-    ) -> Tuple[List[Execucao], int]:
+        status: ExecucaoStatus | None = None,
+    ) -> tuple[list[Execucao], int]:
         """
         Lista execuções de um processo com paginação.
 
@@ -92,9 +91,9 @@ class ExecucaoRepository:
         db: Session,
         skip: int = 0,
         limit: int = 20,
-        status: Optional[ExecucaoStatus] = None,
+        status: ExecucaoStatus | None = None,
         ordem: str = "desc",
-    ) -> Tuple[List[Execucao], int]:
+    ) -> tuple[list[Execucao], int]:
         """
         Lista todas as execuções com paginação e filtros.
 
@@ -145,7 +144,7 @@ class ExecucaoRepository:
         db: Session,
         execucao_id: UUID,
         novo_status: ExecucaoStatus,
-    ) -> Optional[Execucao]:
+    ) -> Execucao | None:
         """
         Atualiza apenas o status de uma execução.
 
@@ -173,7 +172,7 @@ class ExecucaoRepository:
         paginas: int = 0,
         bytes_inc: int = 0,
         errors: int = 0,
-    ) -> Optional[Execucao]:
+    ) -> Execucao | None:
         """
         Incrementa métricas de forma atômica.
 
@@ -199,9 +198,7 @@ class ExecucaoRepository:
         db.commit()
         return self.get_by_id(db, execucao_id)
 
-    def get_em_execucao(
-        self, db: Session, processo_id: UUID
-    ) -> Optional[Execucao]:
+    def get_em_execucao(self, db: Session, processo_id: UUID) -> Execucao | None:
         """
         Retorna a execução EM_EXECUCAO de um processo, se houver.
 

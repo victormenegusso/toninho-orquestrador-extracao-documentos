@@ -7,7 +7,6 @@ Abstrai o acesso a diferentes backends de armazenamento
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List
 
 
 class StorageInterface(ABC):
@@ -29,7 +28,7 @@ class StorageInterface(ABC):
         ...
 
     @abstractmethod
-    async def list_files(self, directory: str) -> List[str]:
+    async def list_files(self, directory: str) -> list[str]:
         """Lista arquivos em um diretório (caminhos relativos ao base_dir)."""
         ...
 
@@ -91,7 +90,7 @@ class LocalFileSystemStorage(StorageInterface):
             return True
         return False
 
-    async def list_files(self, directory: str) -> List[str]:
+    async def list_files(self, directory: str) -> list[str]:
         """
         Lista todos os arquivos dentro de um diretório.
 

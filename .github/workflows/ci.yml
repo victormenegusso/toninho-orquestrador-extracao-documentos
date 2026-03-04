@@ -7,7 +7,8 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  lint:
+  quality:
+    name: Code Quality
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -20,13 +21,13 @@ jobs:
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
-        version: 1.7.1
+        version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
 
     - name: Load cached venv
       id: cached-poetry-dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -38,21 +39,26 @@ jobs:
     - name: Install project
       run: poetry install --no-interaction
 
-    - name: Check formatting with black
-      run: poetry run black --check toninho tests
+    - name: Lint with ruff
+      run: poetry run ruff check toninho tests
 
-    - name: Check imports with isort
-      run: poetry run isort --check toninho tests
-
-    - name: Lint with flake8
-      run: poetry run flake8 toninho tests
+    - name: Check formatting with ruff
+      run: poetry run ruff format --check toninho tests
 
     - name: Type check with mypy
       run: poetry run mypy toninho
 
+    - name: Security scan with bandit
+      run: poetry run bandit -c pyproject.toml -r toninho
+
+    - name: Audit dependencies with pip-audit
+      run: poetry run pip-audit
+
   test:
+    name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
 
@@ -67,13 +73,13 @@ jobs:
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
-        version: 1.7.1
+        version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
 
     - name: Load cached venv
       id: cached-poetry-dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -89,7 +95,7 @@ jobs:
       run: poetry run pytest -v --cov=toninho --cov-report=xml --cov-report=term-missing
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         fail_ci_if_error: false

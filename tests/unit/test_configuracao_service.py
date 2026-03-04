@@ -1,11 +1,11 @@
 """Testes unitários para ConfiguracaoService."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
 
-from toninho.core.exceptions import NotFoundError, ValidationError
+from toninho.core.exceptions import NotFoundError
 from toninho.models.configuracao import Configuracao
 from toninho.models.enums import AgendamentoTipo, FormatoSaida
 from toninho.models.processo import Processo
@@ -83,8 +83,16 @@ def config_create():
 
 
 class TestCreateConfiguracao:
-    def test_create_sucesso(self, service, mock_repo, mock_processo_repo,
-                            fake_processo, fake_config, processo_id, config_create):
+    def test_create_sucesso(
+        self,
+        service,
+        mock_repo,
+        mock_processo_repo,
+        fake_processo,
+        fake_config,
+        processo_id,
+        config_create,
+    ):
         mock_processo_repo.get_by_id.return_value = fake_processo
         mock_repo.create.return_value = fake_config
 
@@ -93,15 +101,17 @@ class TestCreateConfiguracao:
         assert result.id == fake_config.id
         mock_repo.create.assert_called_once()
 
-    def test_create_processo_nao_existe(self, service, mock_processo_repo,
-                                        processo_id, config_create):
+    def test_create_processo_nao_existe(
+        self, service, mock_processo_repo, processo_id, config_create
+    ):
         mock_processo_repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
             service.create_configuracao(MagicMock(), processo_id, config_create)
 
-    def test_create_invalida_urls_invalidas(self, service, mock_processo_repo,
-                                            fake_processo, processo_id):
+    def test_create_invalida_urls_invalidas(
+        self, service, mock_processo_repo, fake_processo, processo_id
+    ):
         mock_processo_repo.get_by_id.return_value = fake_processo
 
         with pytest.raises(Exception):
@@ -111,8 +121,9 @@ class TestCreateConfiguracao:
                 agendamento_tipo=AgendamentoTipo.MANUAL,
             )
 
-    def test_create_urls_duplicadas(self, service, mock_processo_repo,
-                                    fake_processo, processo_id):
+    def test_create_urls_duplicadas(
+        self, service, mock_processo_repo, fake_processo, processo_id
+    ):
         mock_processo_repo.get_by_id.return_value = fake_processo
 
         with pytest.raises(Exception):
@@ -131,9 +142,9 @@ class TestCreateConfiguracao:
                 agendamento_tipo=AgendamentoTipo.MANUAL,
             )
 
-    def test_create_cron_obrigatorio_se_recorrente(self, service,
-                                                    mock_processo_repo,
-                                                    fake_processo, processo_id):
+    def test_create_cron_obrigatorio_se_recorrente(
+        self, service, mock_processo_repo, fake_processo, processo_id
+    ):
         mock_processo_repo.get_by_id.return_value = fake_processo
 
         with pytest.raises(Exception):
@@ -180,16 +191,24 @@ class TestGetConfiguracao:
 
 
 class TestGetConfiguracaoByProcesso:
-    def test_retorna_mais_recente(self, service, mock_repo, mock_processo_repo,
-                                  fake_processo, fake_config, processo_id):
+    def test_retorna_mais_recente(
+        self,
+        service,
+        mock_repo,
+        mock_processo_repo,
+        fake_processo,
+        fake_config,
+        processo_id,
+    ):
         mock_processo_repo.get_by_id.return_value = fake_processo
         mock_repo.get_by_processo_id.return_value = fake_config
 
         result = service.get_configuracao_by_processo(MagicMock(), processo_id)
         assert result.id == fake_config.id
 
-    def test_processo_sem_configuracao(self, service, mock_repo,
-                                       mock_processo_repo, fake_processo, processo_id):
+    def test_processo_sem_configuracao(
+        self, service, mock_repo, mock_processo_repo, fake_processo, processo_id
+    ):
         mock_processo_repo.get_by_id.return_value = fake_processo
         mock_repo.get_by_processo_id.return_value = None
 
@@ -204,8 +223,15 @@ class TestGetConfiguracaoByProcesso:
 
 
 class TestListConfiguracoesByProcesso:
-    def test_lista_historico(self, service, mock_repo, mock_processo_repo,
-                             fake_processo, fake_config, processo_id):
+    def test_lista_historico(
+        self,
+        service,
+        mock_repo,
+        mock_processo_repo,
+        fake_processo,
+        fake_config,
+        processo_id,
+    ):
         mock_processo_repo.get_by_id.return_value = fake_processo
         mock_repo.get_all_by_processo_id.return_value = [fake_config, fake_config]
 

@@ -3,11 +3,12 @@ Schemas para a entidade Log.
 
 Define schemas de entrada, saída e variações para operações com Logs.
 """
+
 import uuid
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from toninho.models.enums import LogNivel
 from toninho.schemas.base import BaseSchema
@@ -38,7 +39,7 @@ class LogCreate(BaseSchema):
         description="Mensagem do log",
         examples=["Página extraída com sucesso", "Erro ao acessar URL"],
     )
-    contexto: Optional[Dict[str, Any]] = Field(
+    contexto: dict[str, Any] | None = Field(
         None,
         description="Dados adicionais estruturados (JSON)",
         examples=[{"url": "https://exemplo.com", "status_code": 200}],
@@ -63,7 +64,7 @@ class LogResponse(BaseSchema):
     nivel: LogNivel = Field(..., description="Nível do log")
     mensagem: str = Field(..., description="Mensagem do log")
     timestamp: datetime = Field(..., description="Data/hora do log")
-    contexto: Optional[Dict[str, Any]] = Field(None, description="Dados adicionais")
+    contexto: dict[str, Any] | None = Field(None, description="Dados adicionais")
 
 
 class LogSummary(BaseSchema):
@@ -104,19 +105,19 @@ class LogFilter(BaseSchema):
         busca: Busca textual na mensagem
     """
 
-    nivel: Optional[LogNivel] = Field(
+    nivel: LogNivel | None = Field(
         None,
         description="Filtrar por nível de log",
     )
-    desde: Optional[datetime] = Field(
+    desde: datetime | None = Field(
         None,
         description="Filtrar logs após esta data/hora",
     )
-    ate: Optional[datetime] = Field(
+    ate: datetime | None = Field(
         None,
         description="Filtrar logs antes desta data/hora",
     )
-    busca: Optional[str] = Field(
+    busca: str | None = Field(
         None,
         description="Busca textual na mensagem (case-insensitive)",
         examples=["erro", "sucesso"],
@@ -138,10 +139,10 @@ class LogEstatisticas(BaseSchema):
 
     execucao_id: uuid.UUID = Field(..., description="ID da execução")
     total: int = Field(..., ge=0, description="Total de logs")
-    por_nivel: Dict[str, int] = Field(..., description="Contagem por nível")
+    por_nivel: dict[str, int] = Field(..., description="Contagem por nível")
     percentual_erros: float = Field(..., description="Percentual de logs de erro")
-    primeiro_log: Optional[datetime] = Field(None, description="Primeiro log registrado")
-    ultimo_log: Optional[datetime] = Field(None, description="Último log registrado")
+    primeiro_log: datetime | None = Field(None, description="Primeiro log registrado")
+    ultimo_log: datetime | None = Field(None, description="Último log registrado")
 
 
 # Aliases

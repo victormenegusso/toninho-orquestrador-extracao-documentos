@@ -1,14 +1,13 @@
 """Testes para ProcessoService."""
 
 from datetime import datetime
-from unittest.mock import Mock, PropertyMock, patch
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
 
 from toninho.core.exceptions import ConflictError, NotFoundError, ValidationError
 from toninho.models.enums import ExecucaoStatus, ProcessoStatus
-from toninho.models.execucao import Execucao
 from toninho.models.processo import Processo
 from toninho.schemas.processo import ProcessoCreate, ProcessoUpdate
 from toninho.services.processo_service import ProcessoService
@@ -65,9 +64,7 @@ class TestProcessoService:
         )
         mock_repository.create.assert_called_once()
 
-    def test_create_processo_nome_duplicado(
-        self, service, mock_repository, db_mock
-    ):
+    def test_create_processo_nome_duplicado(self, service, mock_repository, db_mock):
         """Testa criação com nome duplicado."""
         processo_create = ProcessoCreate(
             nome="Processo Duplicado",
@@ -221,9 +218,7 @@ class TestProcessoService:
         assert result.nome == "Nome Atualizado"
         mock_repository.update.assert_called_once()
 
-    def test_update_processo_nao_encontrado(
-        self, service, mock_repository, db_mock
-    ):
+    def test_update_processo_nao_encontrado(self, service, mock_repository, db_mock):
         """Testa atualização de processo inexistente."""
         processo_id = uuid4()
         mock_repository.get_by_id.return_value = None
@@ -233,9 +228,7 @@ class TestProcessoService:
         with pytest.raises(NotFoundError):
             service.update_processo(db_mock, processo_id, processo_update)
 
-    def test_update_processo_nome_duplicado(
-        self, service, mock_repository, db_mock
-    ):
+    def test_update_processo_nome_duplicado(self, service, mock_repository, db_mock):
         """Testa atualização com nome já existente."""
         processo_id = uuid4()
 
@@ -297,9 +290,7 @@ class TestProcessoService:
         assert result is True
         mock_repository.delete.assert_called_once_with(db_mock, processo_id)
 
-    def test_delete_processo_nao_encontrado(
-        self, service, mock_repository, db_mock
-    ):
+    def test_delete_processo_nao_encontrado(self, service, mock_repository, db_mock):
         """Testa deleção de processo inexistente."""
         processo_id = uuid4()
         mock_repository.get_by_id_with_details.return_value = None

@@ -1,7 +1,6 @@
 """Service para lógica de negócio de Execucao."""
 
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -51,7 +50,9 @@ TRANSICOES_PERMITIDAS: dict[ExecucaoStatus, list[ExecucaoStatus]] = {
 }
 
 
-def validar_transicao(status_atual: ExecucaoStatus, status_novo: ExecucaoStatus) -> bool:
+def validar_transicao(
+    status_atual: ExecucaoStatus, status_novo: ExecucaoStatus
+) -> bool:
     """Verifica se a transição de status é permitida."""
     return status_novo in TRANSICOES_PERMITIDAS.get(status_atual, [])
 
@@ -82,7 +83,7 @@ class ExecucaoService:
         self,
         db: Session,
         processo_id: UUID,
-        execucao_create: Optional[ExecucaoCreate] = None,
+        execucao_create: ExecucaoCreate | None = None,
     ) -> ExecucaoResponse:
         """
         Cria e enfileira uma nova execução para um processo.
@@ -206,8 +207,8 @@ class ExecucaoService:
         db: Session,
         page: int = 1,
         per_page: int = 20,
-        processo_id: Optional[UUID] = None,
-        status: Optional[ExecucaoStatus] = None,
+        processo_id: UUID | None = None,
+        status: ExecucaoStatus | None = None,
         ordem: str = "desc",
     ) -> SuccessListResponse:
         """
@@ -317,7 +318,7 @@ class ExecucaoService:
         self._revogar_task(execucao)
 
         execucao.status = ExecucaoStatus.CANCELADO
-        execucao.finalizado_em = datetime.now(timezone.utc)
+        execucao.finalizado_em = datetime.now(UTC)
         execucao = self.repository.update(db, execucao)
         return ExecucaoResponse.model_validate(execucao)
 
@@ -381,9 +382,7 @@ class ExecucaoService:
     # Métricas e progresso
     # ------------------------------------------------------------------
 
-    def get_execucao_metricas(
-        self, db: Session, execucao_id: UUID
-    ) -> ExecucaoMetricas:
+    def get_execucao_metricas(self, db: Session, execucao_id: UUID) -> ExecucaoMetricas:
         """
         Retorna métricas detalhadas de uma execução.
 
@@ -427,14 +426,13 @@ class ExecucaoService:
         progresso = (paginas / total_paginas * 100) if total_paginas > 0 else 0.0
 
         # Calcular tempo decorrido
-        tempo_decorrido: Optional[int] = None
-        tempo_estimado: Optional[int] = None
+        tempo_decorrido: int | None = None
+        tempo_estimado: int | None = None
         if execucao.iniciado_em:
-            agora = datetime.now(timezone.utc)
+            agora = datetime.now(UTC)
             iniciado = execucao.iniciado_em
             if iniciado.tzinfo is None:
-                from datetime import timezone as tz
-                iniciado = iniciado.replace(tzinfo=tz.utc)
+                iniciado = iniciado.replace(tzinfo=UTC)
             tempo_decorrido = int((agora - iniciado).total_seconds())
             if paginas > 0 and total_paginas > 0:
                 segundos_por_pagina = tempo_decorrido / paginas
@@ -476,9 +474,7 @@ class ExecucaoService:
             raise NotFoundError("Execucao", str(execucao_id))
 
         if execucao.status == ExecucaoStatus.EM_EXECUCAO:
-            raise ConflictError(
-                "Não é possível deletar uma execução em andamento"
-            )
+            raise ConflictError("Não é possível deletar uma execução em andamento")
 
         return self.repository.delete(db, execucao_id)
 
@@ -489,8 +485,8 @@ class ExecucaoService:
     @staticmethod
     def _calcular_metricas(execucao: Execucao) -> ExecucaoMetricas:
         """Calcula métricas a partir do model de execução."""
-        duracao: Optional[int] = None
-        tempo_medio: Optional[float] = None
+        duracao: int | None = None
+        tempo_medio: float | None = None
 
         if execucao.iniciado_em and execucao.finalizado_em:
             ini = execucao.iniciado_em

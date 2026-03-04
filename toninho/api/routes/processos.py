@@ -1,6 +1,5 @@
 """Rotas da API para gerenciamento de Processos."""
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -23,7 +22,6 @@ from toninho.schemas.responses import (
     ErrorResponse,
     SuccessListResponse,
     SuccessResponse,
-    error_response,
     success_response,
 )
 from toninho.services.processo_service import ProcessoService
@@ -70,7 +68,7 @@ def create_processo(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except IntegrityError as e:
+    except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Violação de integridade de dados",
@@ -91,8 +89,8 @@ def create_processo(
 def list_processos(
     page: int = Query(1, ge=1, description="Número da página (1-indexed)"),
     per_page: int = Query(20, ge=1, le=100, description="Registros por página"),
-    status: Optional[ProcessoStatus] = Query(None, description="Filtrar por status"),
-    busca: Optional[str] = Query(None, description="Buscar por nome"),
+    status: ProcessoStatus | None = Query(None, description="Filtrar por status"),
+    busca: str | None = Query(None, description="Buscar por nome"),
     order_by: str = Query("created_at", description="Campo para ordenação"),
     order_dir: str = Query(
         "desc", pattern="^(asc|desc)$", description="Direção da ordenação"

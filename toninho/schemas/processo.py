@@ -3,14 +3,19 @@ Schemas para a entidade Processo.
 
 Define schemas de entrada, saída e variações para operações com Processos.
 """
+
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import Field, field_validator
 
 from toninho.models.enums import ProcessoStatus
 from toninho.schemas.base import BaseSchema
+
+if TYPE_CHECKING:
+    from toninho.schemas.configuracao import ConfiguracaoResponse
+    from toninho.schemas.execucao import ExecucaoResponse
 
 
 class ProcessoCreate(BaseSchema):
@@ -30,7 +35,7 @@ class ProcessoCreate(BaseSchema):
         description="Nome do processo (único no sistema)",
         examples=["Extração Site Principal"],
     )
-    descricao: Optional[str] = Field(
+    descricao: str | None = Field(
         None,
         description="Descrição opcional do processo",
         examples=["Processo para extrair dados do site principal da empresa"],
@@ -61,24 +66,24 @@ class ProcessoUpdate(BaseSchema):
         status: Novo status
     """
 
-    nome: Optional[str] = Field(
+    nome: str | None = Field(
         None,
         min_length=1,
         max_length=200,
         description="Novo nome do processo",
     )
-    descricao: Optional[str] = Field(
+    descricao: str | None = Field(
         None,
         description="Nova descrição",
     )
-    status: Optional[ProcessoStatus] = Field(
+    status: ProcessoStatus | None = Field(
         None,
         description="Novo status",
     )
 
     @field_validator("nome")
     @classmethod
-    def validate_nome_not_empty(cls, v: Optional[str]) -> Optional[str]:
+    def validate_nome_not_empty(cls, v: str | None) -> str | None:
         """Valida que nome não é vazio se fornecido."""
         if v is not None and not v.strip():
             raise ValueError("Nome não pode ser vazio")
@@ -102,7 +107,7 @@ class ProcessoResponse(BaseSchema):
 
     id: uuid.UUID = Field(..., description="Identificador único do processo")
     nome: str = Field(..., description="Nome do processo")
-    descricao: Optional[str] = Field(None, description="Descrição do processo")
+    descricao: str | None = Field(None, description="Descrição do processo")
     status: ProcessoStatus = Field(..., description="Status atual")
     created_at: datetime = Field(..., description="Data/hora de criação")
     updated_at: datetime = Field(..., description="Data/hora da última atualização")
@@ -140,14 +145,14 @@ class ProcessoDetail(ProcessoResponse):
         ultima_execucao_em: Data/hora da última execução
     """
 
-    configuracoes: List["ConfiguracaoResponse"] = Field(
+    configuracoes: list["ConfiguracaoResponse"] = Field(
         default_factory=list, description="Configurações do processo"
     )
-    execucoes_recentes: List["ExecucaoResponse"] = Field(
+    execucoes_recentes: list["ExecucaoResponse"] = Field(
         default_factory=list, description="Últimas execuções"
     )
     total_execucoes: int = Field(default=0, description="Total de execuções")
-    ultima_execucao_em: Optional[datetime] = Field(
+    ultima_execucao_em: datetime | None = Field(
         None, description="Data/hora da última execução"
     )
 
@@ -175,18 +180,15 @@ class ProcessoMetricas(BaseSchema):
     taxa_sucesso: float = Field(
         default=0.0, description="Taxa de sucesso (%)", ge=0, le=100
     )
-    tempo_medio_execucao_segundos: Optional[float] = Field(
+    tempo_medio_execucao_segundos: float | None = Field(
         None, description="Tempo médio de execução (segundos)"
     )
     total_paginas_extraidas: int = Field(default=0, description="Total de páginas")
     total_bytes_extraidos: int = Field(default=0, description="Total de bytes")
-    ultima_execucao_em: Optional[datetime] = Field(
-        None, description="Última execução"
-    )
+    ultima_execucao_em: datetime | None = Field(None, description="Última execução")
 
 
 # Aliases para manter compatibilidade e clareza
 ProcessoInCreate = ProcessoCreate
 ProcessoInUpdate = ProcessoUpdate
 ProcessoOut = ProcessoResponse
-

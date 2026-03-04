@@ -12,7 +12,6 @@ from toninho.models.configuracao import Configuracao
 from toninho.models.enums import AgendamentoTipo, FormatoSaida
 from toninho.models.processo import Processo
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -166,6 +165,7 @@ class TestConfiguracaoAPI:
         c1 = config_factory(timeout=1111)
         # Força c1 a ser mais antigo para garantir ordenação
         from datetime import datetime, timedelta
+
         c1.created_at = datetime.now() - timedelta(seconds=10)
         db.add(c1)
         db.commit()

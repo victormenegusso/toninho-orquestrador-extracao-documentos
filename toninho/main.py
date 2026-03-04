@@ -7,16 +7,17 @@ middlewares e dependências necessárias.
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
-from toninho.api.routes import health
-from toninho.api.routes import processos
-from toninho.api.routes import configuracoes
-from toninho.api.routes import execucoes
-from toninho.api.routes import logs
-from toninho.api.routes import paginas_extraidas
-from toninho.api.routes import monitoring
 from toninho.api import frontend
+from toninho.api.routes import (
+    configuracoes,
+    execucoes,
+    health,
+    logs,
+    monitoring,
+    paginas_extraidas,
+    processos,
+)
 from toninho.core.config import settings
 from toninho.core.logging import setup_logging
 

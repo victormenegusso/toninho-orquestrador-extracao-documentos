@@ -1,7 +1,5 @@
 """Service para lógica de negócio de Processo."""
 
-from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, case, func
@@ -56,7 +54,9 @@ class ProcessoService:
         """
         # Validar nome único
         if self.repository.exists_by_nome(db, processo_create.nome):
-            raise ConflictError(f"Já existe um processo com o nome '{processo_create.nome}'")
+            raise ConflictError(
+                f"Já existe um processo com o nome '{processo_create.nome}'"
+            )
 
         # Criar model
         processo = Processo(
@@ -121,18 +121,19 @@ class ProcessoService:
 
         # Adicionar últimas 5 execuções ordenadas por data (mais recentes primeiro)
         execucoes_ordenadas = sorted(
-            processo.execucoes,
-            key=lambda e: e.created_at,
-            reverse=True
+            processo.execucoes, key=lambda e: e.created_at, reverse=True
         )[:5]
         execucoes_recentes = [
-            ExecucaoResponse.model_validate(exec)
-            for exec in execucoes_ordenadas
+            ExecucaoResponse.model_validate(exec) for exec in execucoes_ordenadas
         ]
 
         # Calcular métricas básicas
         total_execucoes = len(processo.execucoes)
-        ultima_execucao_em = max(e.created_at for e in processo.execucoes) if processo.execucoes else None
+        ultima_execucao_em = (
+            max(e.created_at for e in processo.execucoes)
+            if processo.execucoes
+            else None
+        )
 
         # Criar ProcessoDetail manualmente
         detail = ProcessoDetail(
@@ -155,8 +156,8 @@ class ProcessoService:
         db: Session,
         page: int = 1,
         per_page: int = 20,
-        status: Optional[ProcessoStatus] = None,
-        busca: Optional[str] = None,
+        status: ProcessoStatus | None = None,
+        busca: str | None = None,
         order_by: str = "created_at",
         order_dir: str = "desc",
     ) -> SuccessListResponse:
@@ -244,13 +245,16 @@ class ProcessoService:
             raise ValidationError("Nenhum campo fornecido para atualização")
 
         # Validar nome único se foi alterado
-        if processo_update.nome and processo_update.nome != processo.nome:
-            if self.repository.exists_by_nome(
+        if (
+            processo_update.nome
+            and processo_update.nome != processo.nome
+            and self.repository.exists_by_nome(
                 db, processo_update.nome, exclude_id=processo_id
-            ):
-                raise ConflictError(
-                    f"Já existe um processo com o nome '{processo_update.nome}'"
-                )
+            )
+        ):
+            raise ConflictError(
+                f"Já existe um processo com o nome '{processo_update.nome}'"
+            )
 
         # Aplicar mudanças
         for field, value in update_data.items():
@@ -296,9 +300,7 @@ class ProcessoService:
         # Deletar
         return self.repository.delete(db, processo_id)
 
-    def get_processo_metricas(
-        self, db: Session, processo_id: UUID
-    ) -> ProcessoMetricas:
+    def get_processo_metricas(self, db: Session, processo_id: UUID) -> ProcessoMetricas:
         """
         Calcula métricas agregadas de um processo.
 
@@ -386,7 +388,9 @@ class ProcessoService:
             execucoes_sucesso=execucoes_sucesso,
             execucoes_falha=execucoes_falha,
             taxa_sucesso=round(taxa_sucesso, 2),
-            tempo_medio_execucao_segundos=round(tempo_medio, 2) if tempo_medio else None,
+            tempo_medio_execucao_segundos=round(tempo_medio, 2)
+            if tempo_medio
+            else None,
             total_paginas_extraidas=total_paginas,
             total_bytes_extraidos=total_bytes,
             ultima_execucao_em=ultima_execucao_em,

@@ -5,8 +5,8 @@ Verifica saúde de database, Redis e Celery workers.
 """
 
 import time
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from loguru import logger
 from sqlalchemy import text
@@ -26,7 +26,7 @@ class HealthCheckService:
         self.celery_app = celery_app
         self.redis_client = redis_client
 
-    def check_all(self) -> Dict[str, Any]:
+    def check_all(self) -> dict[str, Any]:
         """
         Executa todos os health checks disponíveis.
 
@@ -41,7 +41,7 @@ class HealthCheckService:
                 }
             }
         """
-        checks: Dict[str, Any] = {}
+        checks: dict[str, Any] = {}
 
         # Database check (sempre executado)
         checks["database"] = self._check_database()
@@ -67,11 +67,11 @@ class HealthCheckService:
 
         return {
             "status": overall_status,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": checks,
         }
 
-    def _check_database(self) -> Dict[str, Any]:
+    def _check_database(self) -> dict[str, Any]:
         """Verifica conexão com database."""
         try:
             start = time.time()
@@ -89,7 +89,7 @@ class HealthCheckService:
                 "error": str(e),
             }
 
-    def _check_redis(self) -> Dict[str, Any]:
+    def _check_redis(self) -> dict[str, Any]:
         """Verifica conexão com Redis."""
         try:
             start = time.time()
@@ -111,7 +111,7 @@ class HealthCheckService:
                 "error": str(e),
             }
 
-    def _check_celery_workers(self) -> Dict[str, Any]:
+    def _check_celery_workers(self) -> dict[str, Any]:
         """Verifica workers Celery."""
         try:
             inspect = self.celery_app.control.inspect(timeout=2.0)
@@ -127,9 +127,7 @@ class HealthCheckService:
                 }
 
             worker_count = len(stats)
-            active_tasks = (
-                sum(len(tasks) for tasks in active.values()) if active else 0
-            )
+            active_tasks = sum(len(tasks) for tasks in active.values()) if active else 0
 
             return {
                 "status": "healthy",

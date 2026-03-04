@@ -1,7 +1,8 @@
 """Testes unitários para PaginaExtraidaRepository."""
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from toninho.models.enums import ExecucaoStatus, PaginaStatus
 from toninho.models.execucao import Execucao
@@ -125,7 +126,9 @@ class TestPaginaExtraidaRepository:
     # get_by_execucao_id
     # ------------------------------------------------------------------
 
-    def test_get_by_execucao_id_sem_filtro(self, db, repository, pagina_factory, execucao):
+    def test_get_by_execucao_id_sem_filtro(
+        self, db, repository, pagina_factory, execucao
+    ):
         pagina_factory()
         pagina_factory()
 
@@ -133,7 +136,9 @@ class TestPaginaExtraidaRepository:
         assert total == 2
         assert len(result) == 2
 
-    def test_get_by_execucao_id_com_filtro_status(self, db, repository, pagina_factory, execucao):
+    def test_get_by_execucao_id_com_filtro_status(
+        self, db, repository, pagina_factory, execucao
+    ):
         pagina_factory(status=PaginaStatus.SUCESSO)
         pagina_factory(status=PaginaStatus.FALHOU, erro_mensagem="Erro 404")
 
@@ -143,7 +148,9 @@ class TestPaginaExtraidaRepository:
         assert total == 1
         assert result[0].status == PaginaStatus.SUCESSO
 
-    def test_get_by_execucao_id_paginacao(self, db, repository, pagina_factory, execucao):
+    def test_get_by_execucao_id_paginacao(
+        self, db, repository, pagina_factory, execucao
+    ):
         for _ in range(5):
             pagina_factory()
 
@@ -157,7 +164,9 @@ class TestPaginaExtraidaRepository:
 
     def test_get_by_url_encontrado(self, db, repository, pagina_factory, execucao):
         pagina_factory(url_original="https://exemplo.com/especifica")
-        result = repository.get_by_url(db, execucao.id, "https://exemplo.com/especifica")
+        result = repository.get_by_url(
+            db, execucao.id, "https://exemplo.com/especifica"
+        )
 
         assert result is not None
         assert result.url_original == "https://exemplo.com/especifica"

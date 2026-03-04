@@ -1,7 +1,8 @@
 """Testes unitários para ConfiguracaoRepository."""
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from toninho.models.configuracao import Configuracao
 from toninho.models.enums import AgendamentoTipo, FormatoSaida
@@ -71,7 +72,9 @@ class TestConfiguracaoRepository:
     # get_by_processo_id (mais recente)
     # ------------------------------------------------------------------
 
-    def test_get_by_processo_id_retorna_mais_recente(self, db, repository, config_data, processo):
+    def test_get_by_processo_id_retorna_mais_recente(
+        self, db, repository, config_data, processo
+    ):
         """Deve retornar a configuração mais recente."""
         from datetime import datetime, timedelta
 
@@ -100,9 +103,11 @@ class TestConfiguracaoRepository:
     # get_all_by_processo_id
     # ------------------------------------------------------------------
 
-    def test_get_all_by_processo_id_retorna_historico(self, db, repository, config_data, processo):
-        c1 = repository.create(db, Configuracao(**config_data))
-        c2 = repository.create(db, Configuracao(**config_data))
+    def test_get_all_by_processo_id_retorna_historico(
+        self, db, repository, config_data, processo
+    ):
+        repository.create(db, Configuracao(**config_data))
+        repository.create(db, Configuracao(**config_data))
 
         result = repository.get_all_by_processo_id(db, processo.id)
 

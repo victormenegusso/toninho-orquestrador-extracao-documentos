@@ -4,7 +4,7 @@ Módulo de métricas do Toninho.
 Calcula métricas operacionais e do dashboard.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from loguru import logger
 from sqlalchemy import func
@@ -22,7 +22,7 @@ class MetricsService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_dashboard_metrics(self) -> Dict[str, Any]:
+    def get_dashboard_metrics(self) -> dict[str, Any]:
         """
         Métricas para o dashboard.
 
@@ -56,7 +56,7 @@ class MetricsService:
             logger.error(f"Error calculating dashboard metrics: {e}")
             raise
 
-    def _count_executions_by_status(self) -> Dict[str, int]:
+    def _count_executions_by_status(self) -> dict[str, int]:
         """Conta execuções por status."""
         rows = (
             self.db.query(Execucao.status, func.count(Execucao.id).label("count"))
@@ -64,7 +64,7 @@ class MetricsService:
             .all()
         )
 
-        counts: Dict[str, int] = {row.status.value: row.count for row in rows}
+        counts: dict[str, int] = {row.status.value: row.count for row in rows}
 
         active_statuses = [
             ExecucaoStatus.AGUARDANDO.value,
@@ -85,7 +85,7 @@ class MetricsService:
             "pending": counts.get(ExecucaoStatus.AGUARDANDO.value, 0),
         }
 
-    def _count_processes(self) -> Dict[str, int]:
+    def _count_processes(self) -> dict[str, int]:
         """Conta processos e processos com agendamento recorrente."""
         total = self.db.query(func.count(Processo.id)).scalar() or 0
 
@@ -114,9 +114,7 @@ class MetricsService:
         if not rows:
             return 0.0
 
-        succeeded = sum(
-            1 for row in rows if row.status == ExecucaoStatus.CONCLUIDO
-        )
+        succeeded = sum(1 for row in rows if row.status == ExecucaoStatus.CONCLUIDO)
         rate = (succeeded / len(rows)) * 100
         return round(rate, 2)
 
@@ -146,7 +144,7 @@ class MetricsService:
         avg_seconds = sum(durations) / len(durations)
         return round(avg_seconds / 60, 2)
 
-    def _get_recent_activity(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def _get_recent_activity(self, limit: int = 10) -> list[dict[str, Any]]:
         """Retorna as últimas N execuções."""
         execucoes = (
             self.db.query(Execucao)

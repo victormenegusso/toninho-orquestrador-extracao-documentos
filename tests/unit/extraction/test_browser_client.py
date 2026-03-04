@@ -71,6 +71,7 @@ class TestBrowserClientInPageExtractor:
     def test_page_extractor_default_no_browser(self):
         """PageExtractor deve usar HTTP simples por padrão (use_browser=False)."""
         from unittest.mock import MagicMock
+
         from toninho.extraction.extractor import PageExtractor
 
         storage = MagicMock()
@@ -93,12 +94,16 @@ class TestBrowserClientInPageExtractor:
             if "browser_client" in mod:
                 del sys.modules[mod]
 
-        from toninho.extraction.browser_client import BrowserClient
         from unittest.mock import patch
+
+        from toninho.extraction.browser_client import BrowserClient
         from toninho.extraction.extractor import PageExtractor
 
-        storage = MagicMock()
-        with patch("toninho.extraction.extractor.PageExtractor.__init__", wraps=lambda s, *a, **kw: None):
+        _storage = MagicMock()
+        with patch(
+            "toninho.extraction.extractor.PageExtractor.__init__",
+            wraps=lambda s, *a, **kw: None,
+        ):
             extractor = PageExtractor.__new__(PageExtractor)
             extractor.use_browser = True
             extractor._browser_client = BrowserClient()

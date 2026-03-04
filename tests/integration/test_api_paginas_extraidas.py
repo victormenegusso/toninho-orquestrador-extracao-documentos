@@ -16,7 +16,6 @@ from toninho.models.execucao import Execucao
 from toninho.models.pagina_extraida import PaginaExtraida
 from toninho.models.processo import Processo
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -107,7 +106,6 @@ def temp_md_file():
 
 
 class TestPaginasExtraidasAPI:
-
     # ------------------------------------------------------------------
     # POST /api/v1/paginas
     # ------------------------------------------------------------------
@@ -223,9 +221,7 @@ class TestPaginasExtraidasAPI:
             erro_mensagem="Erro 404",
         )
 
-        response = client.get(
-            f"/api/v1/execucoes/{execucao.id}/paginas?status=sucesso"
-        )
+        response = client.get(f"/api/v1/execucoes/{execucao.id}/paginas?status=sucesso")
         assert response.status_code == 200
         data = response.json()
         assert data["meta"]["total"] == 1
@@ -259,9 +255,7 @@ class TestPaginasExtraidasAPI:
             tamanho_bytes=0,
         )
 
-        response = client.get(
-            f"/api/v1/execucoes/{execucao.id}/paginas/estatisticas"
-        )
+        response = client.get(f"/api/v1/execucoes/{execucao.id}/paginas/estatisticas")
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
@@ -271,9 +265,7 @@ class TestPaginasExtraidasAPI:
         assert data["data"]["taxa_sucesso"] == 50.0
 
     def test_get_estatisticas_execucao_inexistente(self, client):
-        response = client.get(
-            f"/api/v1/execucoes/{uuid4()}/paginas/estatisticas"
-        )
+        response = client.get(f"/api/v1/execucoes/{uuid4()}/paginas/estatisticas")
         assert response.status_code == 404
 
     # ------------------------------------------------------------------

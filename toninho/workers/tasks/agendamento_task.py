@@ -4,7 +4,7 @@ Task de agendamento: verifica configurações com cron e cria execuções.
 Executada periodicamente pelo Celery Beat (a cada 60 segundos).
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from croniter import croniter
 from loguru import logger
@@ -28,8 +28,8 @@ def verificar_agendamentos() -> dict:
     """
     from toninho.core.database import SessionLocal
     from toninho.models.configuracao import Configuracao
-    from toninho.models.execucao import Execucao
     from toninho.models.enums import AgendamentoTipo, ExecucaoStatus
+    from toninho.models.execucao import Execucao
     from toninho.workers.tasks.execucao_task import executar_processo_task
 
     db = SessionLocal()
@@ -46,7 +46,7 @@ def verificar_agendamentos() -> dict:
             .all()
         )
 
-        agora = datetime.now(timezone.utc)
+        agora = datetime.now(UTC)
         janela = timedelta(seconds=60)
 
         for config in configuracoes:

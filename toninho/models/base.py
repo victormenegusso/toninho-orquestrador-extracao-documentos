@@ -4,6 +4,7 @@ Classes base e mixins para os models do Toninho.
 Fornece funcionalidades compartilhadas como timestamps automáticos
 e geração de UUIDs para primary keys.
 """
+
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -33,9 +34,7 @@ class UUIDMixin:
     """
 
     id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True,
-        default=uuid.uuid4,
-        doc="Identificador único do registro"
+        primary_key=True, default=uuid.uuid4, doc="Identificador único do registro"
     )
 
 
@@ -53,7 +52,7 @@ class TimestampMixin:
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
-        doc="Data/hora de criação do registro"
+        doc="Data/hora de criação do registro",
     )
 
     updated_at: Mapped[datetime] = mapped_column(
@@ -61,7 +60,7 @@ class TimestampMixin:
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
-        doc="Data/hora da última atualização do registro"
+        doc="Data/hora da última atualização do registro",
     )
 
 

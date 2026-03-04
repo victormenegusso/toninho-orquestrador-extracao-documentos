@@ -3,10 +3,19 @@ Model Configuracao.
 
 Representa as configurações de extração de um processo.
 """
-import uuid
-from typing import TYPE_CHECKING, List
 
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, JSON, String
+import uuid
+from typing import TYPE_CHECKING
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from toninho.models.base import Base, TimestampMixin, UUIDMixin
@@ -44,65 +53,59 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
     processo_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("processos.id", ondelete="CASCADE"),
         nullable=False,
-        doc="ID do processo ao qual esta configuração pertence"
+        doc="ID do processo ao qual esta configuração pertence",
     )
 
     # Campos
-    urls: Mapped[List[str]] = mapped_column(
-        JSON,
-        nullable=False,
-        doc="Lista de URLs para extração"
+    urls: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, doc="Lista de URLs para extração"
     )
 
     timeout: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         default=3600,
-        doc="Timeout em segundos para a extração completa"
+        doc="Timeout em segundos para a extração completa",
     )
 
     max_retries: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         default=3,
-        doc="Número máximo de retentativas em caso de falha"
+        doc="Número máximo de retentativas em caso de falha",
     )
 
     formato_saida: Mapped[FormatoSaida] = mapped_column(
         nullable=False,
         default=FormatoSaida.MULTIPLOS_ARQUIVOS,
-        doc="Formato de saída dos arquivos extraídos"
+        doc="Formato de saída dos arquivos extraídos",
     )
 
     output_dir: Mapped[str] = mapped_column(
-        String(500),
-        nullable=False,
-        doc="Diretório de saída dos arquivos extraídos"
+        String(500), nullable=False, doc="Diretório de saída dos arquivos extraídos"
     )
 
     agendamento_cron: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
-        doc="Expressão cron para agendamento recorrente"
+        String(100), nullable=True, doc="Expressão cron para agendamento recorrente"
     )
 
     agendamento_tipo: Mapped[AgendamentoTipo] = mapped_column(
         nullable=False,
         default=AgendamentoTipo.MANUAL,
-        doc="Tipo de agendamento da execução"
+        doc="Tipo de agendamento da execução",
     )
 
     use_browser: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
-        doc="Se True, usa Playwright (navegador headless) para renderizar páginas JS"
+        doc="Se True, usa Playwright (navegador headless) para renderizar páginas JS",
     )
 
     # Relacionamentos
     processo: Mapped["Processo"] = relationship(
         back_populates="configuracoes",
-        doc="Processo ao qual esta configuração pertence"
+        doc="Processo ao qual esta configuração pertence",
     )
 
     # Constraints

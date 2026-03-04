@@ -1,7 +1,6 @@
 """Testes para o MetricsService."""
 
-import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy.orm import Session
@@ -11,7 +10,6 @@ from toninho.models.enums import (
     AgendamentoTipo,
     ExecucaoStatus,
     FormatoSaida,
-    ProcessoStatus,
 )
 from toninho.models.execucao import Execucao
 from toninho.models.processo import Processo
@@ -29,7 +27,7 @@ def processo(db: Session) -> Processo:
 
 @pytest.fixture
 def execucao_concluida(db: Session, processo: Processo) -> Execucao:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     e = Execucao(
         processo_id=processo.id,
         status=ExecucaoStatus.CONCLUIDO,
@@ -160,9 +158,7 @@ class TestMetricsService:
 
         assert result == 0.0
 
-    def test_success_rate_all_success(
-        self, db: Session, execucao_concluida: Execucao
-    ):
+    def test_success_rate_all_success(self, db: Session, execucao_concluida: Execucao):
         """Taxa de sucesso é 100% quando tudo concluiu."""
         service = MetricsService(db=db)
         result = service._calculate_success_rate()
@@ -185,9 +181,7 @@ class TestMetricsService:
 
         assert result == 0.0
 
-    def test_avg_duration_with_data(
-        self, db: Session, execucao_concluida: Execucao
-    ):
+    def test_avg_duration_with_data(self, db: Session, execucao_concluida: Execucao):
         """Duração média calculada corretamente."""
         service = MetricsService(db=db)
         result = service._calculate_avg_duration()
@@ -213,9 +207,7 @@ class TestMetricsService:
 
         assert result == []
 
-    def test_recent_activity_structure(
-        self, db: Session, execucao_concluida: Execucao
-    ):
+    def test_recent_activity_structure(self, db: Session, execucao_concluida: Execucao):
         """Atividade recente retorna estrutura correta."""
         service = MetricsService(db=db)
         result = service._get_recent_activity()

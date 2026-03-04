@@ -1,6 +1,5 @@
 """Repository para operações de banco de dados da entidade Configuracao."""
 
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -28,7 +27,7 @@ class ConfiguracaoRepository:
         db.refresh(configuracao)
         return configuracao
 
-    def get_by_id(self, db: Session, config_id: UUID) -> Optional[Configuracao]:
+    def get_by_id(self, db: Session, config_id: UUID) -> Configuracao | None:
         """
         Busca uma configuração por ID.
 
@@ -42,7 +41,7 @@ class ConfiguracaoRepository:
         stmt = select(Configuracao).where(Configuracao.id == config_id)
         return db.execute(stmt).scalar_one_or_none()
 
-    def get_by_processo_id(self, db: Session, processo_id: UUID) -> Optional[Configuracao]:
+    def get_by_processo_id(self, db: Session, processo_id: UUID) -> Configuracao | None:
         """
         Retorna a configuração mais recente de um processo.
 
@@ -63,7 +62,7 @@ class ConfiguracaoRepository:
 
     def get_all_by_processo_id(
         self, db: Session, processo_id: UUID
-    ) -> List[Configuracao]:
+    ) -> list[Configuracao]:
         """
         Retorna o histórico de configurações de um processo (mais recentes primeiro).
 

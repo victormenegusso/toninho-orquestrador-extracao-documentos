@@ -1,7 +1,6 @@
 """Repository para operações de banco de dados da entidade Log."""
 
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -30,7 +29,7 @@ class LogRepository:
         db.refresh(log)
         return log
 
-    def create_batch(self, db: Session, logs: List[Log]) -> List[Log]:
+    def create_batch(self, db: Session, logs: list[Log]) -> list[Log]:
         """
         Inserção em lote de logs.
 
@@ -47,7 +46,7 @@ class LogRepository:
             db.refresh(log)
         return logs
 
-    def get_by_id(self, db: Session, log_id: UUID) -> Optional[Log]:
+    def get_by_id(self, db: Session, log_id: UUID) -> Log | None:
         """
         Busca um log por ID.
 
@@ -67,11 +66,11 @@ class LogRepository:
         execucao_id: UUID,
         skip: int = 0,
         limit: int = 100,
-        nivel: Optional[LogNivel] = None,
-        desde: Optional[datetime] = None,
-        ate: Optional[datetime] = None,
-        busca: Optional[str] = None,
-    ) -> Tuple[List[Log], int]:
+        nivel: LogNivel | None = None,
+        desde: datetime | None = None,
+        ate: datetime | None = None,
+        busca: str | None = None,
+    ) -> tuple[list[Log], int]:
         """
         Lista logs de uma execução com filtros e paginação.
 
@@ -106,7 +105,7 @@ class LogRepository:
         logs = list(db.execute(stmt).scalars().all())
         return logs, total
 
-    def get_recent(self, db: Session, execucao_id: UUID, limit: int = 20) -> List[Log]:
+    def get_recent(self, db: Session, execucao_id: UUID, limit: int = 20) -> list[Log]:
         """
         Retorna os últimos N logs de uma execução.
 
@@ -126,7 +125,7 @@ class LogRepository:
         )
         return list(db.execute(stmt).scalars().all())
 
-    def count_by_nivel(self, db: Session, execucao_id: UUID) -> Dict[LogNivel, int]:
+    def count_by_nivel(self, db: Session, execucao_id: UUID) -> dict[LogNivel, int]:
         """
         Conta logs por nível de uma execução.
 
@@ -143,7 +142,7 @@ class LogRepository:
             .group_by(Log.nivel)
         )
         rows = db.execute(stmt).all()
-        result: Dict[LogNivel, int] = {nivel: 0 for nivel in LogNivel}
+        result: dict[LogNivel, int] = {nivel: 0 for nivel in LogNivel}
         for nivel, total in rows:
             result[nivel] = total
         return result

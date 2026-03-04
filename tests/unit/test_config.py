@@ -2,7 +2,6 @@
 Testes para o módulo de configuração.
 """
 
-import pytest
 from toninho.core.config import Settings, get_settings
 
 
@@ -23,9 +22,9 @@ def test_sql_echo_defaults_to_false():
     em log de todas as queries SQL nos containers.
     """
     settings = Settings()
-    assert settings.SQL_ECHO is False, (
-        "SQL_ECHO deve ser False por padrão; use SQL_ECHO=true apenas para debugging pontual"
-    )
+    assert (
+        settings.SQL_ECHO is False
+    ), "SQL_ECHO deve ser False por padrão; use SQL_ECHO=true apenas para debugging pontual"
 
 
 def test_sql_echo_can_be_enabled(monkeypatch):

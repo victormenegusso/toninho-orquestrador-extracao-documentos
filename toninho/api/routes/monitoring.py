@@ -1,6 +1,6 @@
 """Rotas de monitoramento, health checks e métricas."""
 
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/v1/monitoring", tags=["Monitoramento"])
     summary="Health check completo",
     description="Verifica saúde de todos os componentes: database, Redis e Celery workers.",
 )
-def health_check(db: Session = Depends(get_db)) -> Dict[str, Any]:
+def health_check(db: Session = Depends(get_db)) -> dict[str, Any]:
     """Retorna status de saúde de todos os componentes."""
     service = HealthCheckService(db=db)
     return service.check_all()
@@ -33,7 +33,7 @@ def health_check(db: Session = Depends(get_db)) -> Dict[str, Any]:
     summary="Liveness probe",
     description="Liveness probe — retorna 200 se a API está em execução.",
 )
-def liveness() -> Dict[str, str]:
+def liveness() -> dict[str, str]:
     """Liveness probe: sempre retorna 200 se a API está up."""
     return {"status": "alive"}
 
@@ -65,7 +65,7 @@ def readiness(db: Session = Depends(get_db)):
     summary="Métricas do sistema",
     description="Retorna métricas agregadas: execuções por status, taxa de sucesso, duração média e atividade recente.",
 )
-def get_metrics(db: Session = Depends(get_db)) -> Dict[str, Any]:
+def get_metrics(db: Session = Depends(get_db)) -> dict[str, Any]:
     """Retorna métricas do dashboard."""
     service = MetricsService(db=db)
     return service.get_dashboard_metrics()

@@ -7,10 +7,8 @@ registrando logs, páginas extraídas e métricas da execução.
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
-from typing import Dict
+from datetime import UTC, datetime
 
-from loguru import logger
 from sqlalchemy.orm import Session
 
 from toninho.extraction.extractor import PageExtractor
@@ -34,7 +32,7 @@ class ExtractionOrchestrator:
         self.db = db
         self.storage = storage
 
-    def run(self, execucao_id: uuid.UUID) -> Dict:
+    def run(self, execucao_id: uuid.UUID) -> dict:
         """
         Executa a extração completa para a execucao indicada.
 
@@ -51,7 +49,6 @@ class ExtractionOrchestrator:
         """
         from toninho.models.configuracao import Configuracao
         from toninho.models.execucao import Execucao
-        from toninho.models.log import Log
         from toninho.models.pagina_extraida import PaginaExtraida
 
         db = self.db
@@ -63,7 +60,7 @@ class ExtractionOrchestrator:
 
         # 2. Atualizar status → EM_EXECUCAO
         execucao.status = ExecucaoStatus.EM_EXECUCAO
-        execucao.iniciado_em = datetime.now(timezone.utc)
+        execucao.iniciado_em = datetime.now(UTC)
         db.commit()
 
         # 3. Buscar configuração mais recente do processo
@@ -76,11 +73,19 @@ class ExtractionOrchestrator:
 
         if configuracao is None:
             # Registrar erro e encerrar
-            self._add_log(db, execucao_id, LogNivel.ERROR, "Processo sem configuração de extração")
+            self._add_log(
+                db, execucao_id, LogNivel.ERROR, "Processo sem configuração de extração"
+            )
             execucao.status = ExecucaoStatus.FALHOU
-            execucao.finalizado_em = datetime.now(timezone.utc)
+            execucao.finalizado_em = datetime.now(UTC)
             db.commit()
-            return {"status": ExecucaoStatus.FALHOU, "paginas_sucesso": 0, "paginas_falha": 0, "total": 0, "bytes_extraidos": 0}
+            return {
+                "status": ExecucaoStatus.FALHOU,
+                "paginas_sucesso": 0,
+                "paginas_falha": 0,
+                "total": 0,
+                "bytes_extraidos": 0,
+            }
 
         urls = configuracao.urls or []
         total = len(urls)
@@ -99,7 +104,9 @@ class ExtractionOrchestrator:
 
         # 5. Log inicial
         self._add_log(
-            db, execucao_id, LogNivel.INFO,
+            db,
+            execucao_id,
+            LogNivel.INFO,
             f"Iniciando extração de {total} URLs",
             contexto={"total_urls": total, "urls": urls},
         )
@@ -107,7 +114,9 @@ class ExtractionOrchestrator:
         # 6. Extrair cada URL
         for idx, url in enumerate(urls, 1):
             self._add_log(
-                db, execucao_id, LogNivel.INFO,
+                db,
+                execucao_id,
+                LogNivel.INFO,
                 f"[{idx}/{total}] Extraindo: {url}",
                 contexto={"url": url, "indice": idx, "total": total},
             )
@@ -134,7 +143,9 @@ class ExtractionOrchestrator:
                 erro_msg = resultado.get("error")
                 caminho = output_path
                 self._add_log(
-                    db, execucao_id, LogNivel.ERROR,
+                    db,
+                    execucao_id,
+                    LogNivel.ERROR,
                     f"Erro ao extrair {url}: {erro_msg}",
                     contexto={"url": url, "indice": idx, "erro": erro_msg},
                 )
@@ -168,11 +179,13 @@ class ExtractionOrchestrator:
             status_final = ExecucaoStatus.FALHOU
 
         execucao.status = status_final
-        execucao.finalizado_em = datetime.now(timezone.utc)
+        execucao.finalizado_em = datetime.now(UTC)
         db.commit()
 
         self._add_log(
-            db, execucao_id, LogNivel.INFO,
+            db,
+            execucao_id,
+            LogNivel.INFO,
             f"Extração finalizada: {sucesso} sucesso, {falha} falhas — status={status_final.value}",
             contexto={
                 "status": status_final.value,
@@ -195,9 +208,13 @@ class ExtractionOrchestrator:
     # ──────────────────────────────────────────────── helpers ────────────
 
     @staticmethod
-    async def _extract_url(storage: StorageInterface, url: str, output_path: str, use_browser: bool = False) -> Dict:
+    async def _extract_url(
+        storage: StorageInterface, url: str, output_path: str, use_browser: bool = False
+    ) -> dict:
         """Executa extração async de uma URL."""
-        extractor = PageExtractor(storage, timeout=60, max_retries=3, use_browser=use_browser)
+        extractor = PageExtractor(
+            storage, timeout=60, max_retries=3, use_browser=use_browser
+        )
         try:
             return await extractor.extract(url, output_path)
         finally:
@@ -209,10 +226,11 @@ class ExtractionOrchestrator:
         execucao_id: uuid.UUID,
         nivel: LogNivel,
         mensagem: str,
-        contexto: Dict | None = None,
+        contexto: dict | None = None,
     ) -> None:
         """Adiciona log à execução no banco."""
         from toninho.models.log import Log
+
         log = Log(
             execucao_id=execucao_id,
             nivel=nivel,

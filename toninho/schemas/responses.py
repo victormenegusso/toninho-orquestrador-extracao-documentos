@@ -3,9 +3,10 @@ Response wrappers padrão para APIs.
 
 Define estruturas de resposta consistentes para sucesso, listas e erros.
 """
-from typing import Any, Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, Field
+from typing import Generic, TypeVar
+
+from pydantic import Field
 
 from toninho.schemas.base import BaseSchema
 
@@ -70,7 +71,7 @@ class SuccessListResponse(BaseSchema, Generic[T]):
         ```
     """
 
-    data: List[T] = Field(..., description="Lista de itens")
+    data: list[T] = Field(..., description="Lista de itens")
     meta: PaginationMeta = Field(..., description="Metadados de paginação")
 
 
@@ -88,7 +89,7 @@ class ErrorDetail(BaseSchema):
         ```
     """
 
-    field: Optional[str] = Field(None, description="Campo que causou o erro")
+    field: str | None = Field(None, description="Campo que causou o erro")
     message: str = Field(..., description="Mensagem descritiva do erro")
 
 
@@ -104,9 +105,8 @@ class ErrorInfo(BaseSchema):
 
     code: str = Field(..., description="Código do erro")
     message: str = Field(..., description="Mensagem principal do erro")
-    details: Optional[List[ErrorDetail]] = Field(
-        None,
-        description="Detalhes adicionais do erro"
+    details: list[ErrorDetail] | None = Field(
+        None, description="Detalhes adicionais do erro"
     )
 
 
@@ -136,6 +136,7 @@ class ErrorResponse(BaseSchema):
 
 # Helpers para criar responses facilmente
 
+
 def success_response(data: T) -> SuccessResponse[T]:
     """
     Helper para criar SuccessResponse.
@@ -150,7 +151,7 @@ def success_response(data: T) -> SuccessResponse[T]:
 
 
 def success_list_response(
-    data: List[T],
+    data: list[T],
     page: int,
     per_page: int,
     total: int,
@@ -176,14 +177,14 @@ def success_list_response(
             per_page=per_page,
             total=total,
             total_pages=total_pages,
-        )
+        ),
     )
 
 
 def error_response(
     code: str,
     message: str,
-    details: Optional[List[ErrorDetail]] = None,
+    details: list[ErrorDetail] | None = None,
 ) -> ErrorResponse:
     """
     Helper para criar ErrorResponse.

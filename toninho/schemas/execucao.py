@@ -3,9 +3,9 @@ Schemas para a entidade Execucao.
 
 Define schemas de entrada, saída e variações para operações com Execuções.
 """
+
 import uuid
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import Field, computed_field
 
@@ -23,7 +23,7 @@ class DuracaoMixin:
 
     @computed_field  # type: ignore[misc]
     @property
-    def duracao_segundos(self) -> Optional[float]:
+    def duracao_segundos(self) -> float | None:
         """
         Calcula duração da execução em segundos com precisão de milissegundos.
 
@@ -65,21 +65,21 @@ class ExecucaoUpdate(BaseSchema):
         taxa_erro: Taxa de erro percentual
     """
 
-    status: Optional[ExecucaoStatus] = Field(
+    status: ExecucaoStatus | None = Field(
         None,
         description="Novo status da execução",
     )
-    paginas_processadas: Optional[int] = Field(
+    paginas_processadas: int | None = Field(
         None,
         ge=0,
         description="Número de páginas processadas",
     )
-    bytes_extraidos: Optional[int] = Field(
+    bytes_extraidos: int | None = Field(
         None,
         ge=0,
         description="Total de bytes extraídos",
     )
-    taxa_erro: Optional[float] = Field(
+    taxa_erro: float | None = Field(
         None,
         ge=0.0,
         le=100.0,
@@ -110,8 +110,8 @@ class ExecucaoResponse(DuracaoMixin, BaseSchema):
     id: uuid.UUID = Field(..., description="Identificador único")
     processo_id: uuid.UUID = Field(..., description="ID do processo")
     status: ExecucaoStatus = Field(..., description="Status atual")
-    iniciado_em: Optional[datetime] = Field(None, description="Data/hora de início")
-    finalizado_em: Optional[datetime] = Field(None, description="Data/hora de finalização")
+    iniciado_em: datetime | None = Field(None, description="Data/hora de início")
+    finalizado_em: datetime | None = Field(None, description="Data/hora de finalização")
     paginas_processadas: int = Field(..., description="Número de páginas processadas")
     bytes_extraidos: int = Field(..., description="Total de bytes extraídos")
     taxa_erro: float = Field(..., description="Taxa de erro percentual")
@@ -149,8 +149,8 @@ class ExecucaoSummary(DuracaoMixin, BaseSchema):
 
     id: uuid.UUID = Field(..., description="Identificador único")
     status: ExecucaoStatus = Field(..., description="Status atual")
-    iniciado_em: Optional[datetime] = Field(None, description="Data/hora de início")
-    finalizado_em: Optional[datetime] = Field(None, description="Data/hora de finalização")
+    iniciado_em: datetime | None = Field(None, description="Data/hora de início")
+    finalizado_em: datetime | None = Field(None, description="Data/hora de finalização")
     paginas_processadas: int = Field(..., description="Número de páginas processadas")
 
 
@@ -196,10 +196,10 @@ class ProgressoResponse(BaseSchema):
     paginas_processadas: int = Field(..., description="Páginas processadas")
     total_paginas: int = Field(..., description="Total de páginas da configuração")
     progresso_percentual: float = Field(..., description="Percentual concluído (0-100)")
-    tempo_decorrido_segundos: Optional[int] = Field(
+    tempo_decorrido_segundos: int | None = Field(
         None, description="Segundos desde o início"
     )
-    tempo_estimado_restante_segundos: Optional[int] = Field(
+    tempo_estimado_restante_segundos: int | None = Field(
         None, description="Estimativa de segundos restantes"
     )
     ultima_atualizacao: datetime = Field(..., description="Última atualização")
@@ -223,11 +223,13 @@ class ExecucaoMetricas(BaseSchema):
     paginas_processadas: int = Field(..., description="Total de páginas processadas")
     bytes_extraidos: int = Field(..., description="Total de bytes extraídos")
     taxa_erro: float = Field(..., description="Taxa de erro percentual (0-100)")
-    duracao_segundos: Optional[int] = Field(None, description="Duração total em segundos")
-    tempo_medio_por_pagina_segundos: Optional[float] = Field(
+    duracao_segundos: int | None = Field(None, description="Duração total em segundos")
+    tempo_medio_por_pagina_segundos: float | None = Field(
         None, description="Tempo médio por página em segundos"
     )
-    taxa_sucesso: float = Field(..., description="Percentual de páginas com sucesso (0-100)")
+    taxa_sucesso: float = Field(
+        ..., description="Percentual de páginas com sucesso (0-100)"
+    )
 
 
 class ExecucaoDetail(DuracaoMixin, BaseSchema):
@@ -252,13 +254,12 @@ class ExecucaoDetail(DuracaoMixin, BaseSchema):
     id: uuid.UUID
     processo_id: uuid.UUID
     status: ExecucaoStatus
-    iniciado_em: Optional[datetime]
-    finalizado_em: Optional[datetime]
+    iniciado_em: datetime | None
+    finalizado_em: datetime | None
     paginas_processadas: int
     bytes_extraidos: int
     taxa_erro: float
     tentativa_atual: int
     created_at: datetime
     updated_at: datetime
-    metricas: Optional[ExecucaoMetricas] = None
-
+    metricas: ExecucaoMetricas | None = None

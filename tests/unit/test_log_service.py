@@ -1,8 +1,8 @@
 """Testes unitários para LogService."""
 
-import pytest
-from unittest.mock import MagicMock, patch
 from uuid import uuid4
+
+import pytest
 
 from toninho.core.exceptions import NotFoundError
 from toninho.models.enums import ExecucaoStatus, LogNivel
@@ -55,6 +55,7 @@ class TestLogService:
             db.commit()
             db.refresh(log)
             return log
+
         return _create
 
     # ------------------------------------------------------------------
@@ -139,7 +140,9 @@ class TestLogService:
         assert result.meta.total == 2
         assert len(result.data) == 2
 
-    def test_list_logs_by_execucao_com_filtro_nivel(self, db, service, log_factory, execucao):
+    def test_list_logs_by_execucao_com_filtro_nivel(
+        self, db, service, log_factory, execucao
+    ):
         log_factory(nivel=LogNivel.INFO)
         log_factory(nivel=LogNivel.ERROR)
 
