@@ -65,8 +65,14 @@ class ConfiguracaoCreate(BaseSchema):
     )
     output_dir: str = Field(
         ...,
-        description="Diretório de saída dos arquivos",
-        examples=["/tmp/output", "./output"],
+        description=(
+            "Diretório de saída dos arquivos extraídos. "
+            "Caminhos relativos com `./` são normalizados automaticamente "
+            "(ex: `./output` → `output`). "
+            "Os arquivos gerados seguem a estrutura: "
+            "`{output_dir}/{processo_id}/{execucao_id}/{slug}.md`."
+        ),
+        examples=["/tmp/output", "./output", "output"],
     )
     agendamento_cron: Optional[str] = Field(
         None,
@@ -93,7 +99,7 @@ class ConfiguracaoCreate(BaseSchema):
     @field_validator("output_dir")
     @classmethod
     def validate_output_dir(cls, v: str) -> str:
-        """Valida e normaliza output_dir."""
+        """Valida e normaliza output_dir (remove ./ inicial se presente)."""
         return validate_path(v)
 
     @field_validator("agendamento_cron")
@@ -216,7 +222,14 @@ class ConfiguracaoResponse(BaseSchema):
     timeout: int = Field(..., description="Timeout em segundos")
     max_retries: int = Field(..., description="Número máximo de retentativas")
     formato_saida: FormatoSaida = Field(..., description="Formato de saída")
-    output_dir: str = Field(..., description="Diretório de saída")
+    output_dir: str = Field(
+        ...,
+        description=(
+            "Diretório de saída (normalizado). "
+            "Os arquivos extraídos são salvos em: "
+            "`{output_dir}/{processo_id}/{execucao_id}/{slug}.md`."
+        ),
+    )
     agendamento_cron: Optional[str] = Field(None, description="Expressão cron")
     agendamento_tipo: AgendamentoTipo = Field(..., description="Tipo de agendamento")
     created_at: datetime = Field(..., description="Data/hora de criação")
