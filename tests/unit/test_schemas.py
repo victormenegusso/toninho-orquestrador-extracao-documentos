@@ -27,6 +27,7 @@ from toninho.schemas import (
     ConfiguracaoResponse,
     ExecucaoCreate,
     ExecucaoResponse,
+    ExecucaoSummary,
     LogCreate,
     LogResponse,
     PaginaExtraidaCreate,
@@ -215,6 +216,41 @@ class TestExecucaoSchemas:
 
         assert schema.duracao_segundos is not None
         assert schema.duracao_segundos >= 60
+
+    def test_duracao_segundos_retorna_float(self, db, execucao_factory) -> None:
+        """Testa que duracao_segundos retorna float (BUG-002)."""
+        from datetime import timedelta
+
+        execucao = execucao_factory(
+            iniciado_em=datetime.now(UTC),
+            finalizado_em=datetime.now(UTC) + timedelta(seconds=60),
+        )
+
+        schema = ExecucaoResponse.model_validate(execucao)
+
+        assert isinstance(schema.duracao_segundos, float)
+
+    def test_duracao_segundos_precisao_sub_segundo(self, db, execucao_factory) -> None:
+        """Testa precisão de milissegundos em duracao_segundos (BUG-002)."""
+        from datetime import timedelta
+
+        execucao = execucao_factory(
+            iniciado_em=datetime.now(UTC),
+            finalizado_em=datetime.now(UTC) + timedelta(milliseconds=1500),
+        )
+
+        schema = ExecucaoResponse.model_validate(execucao)
+
+        assert schema.duracao_segundos is not None
+        assert schema.duracao_segundos == pytest.approx(1.5, abs=0.1)
+
+    def test_duracao_mixin_compartilhado_nos_schemas(self, db, execucao_factory) -> None:
+        """Testa que DuracaoMixin é compartilhado por ExecucaoResponse e ExecucaoSummary (TD-002)."""
+        from datetime import timedelta
+        from toninho.schemas.execucao import DuracaoMixin
+
+        assert issubclass(ExecucaoResponse, DuracaoMixin)
+        assert issubclass(ExecucaoSummary, DuracaoMixin)
 
     def test_execucao_response_computed_em_andamento(self, db, execucao_factory) -> None:
         """Testa computed field em_andamento."""

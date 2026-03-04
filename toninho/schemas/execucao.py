@@ -13,6 +13,28 @@ from toninho.models.enums import ExecucaoStatus
 from toninho.schemas.base import BaseSchema
 
 
+class DuracaoMixin:
+    """
+    Mixin que adiciona o computed field duracao_segundos.
+
+    Deve ser usado em conjunto com BaseSchema e requer que a classe
+    concreta declare os campos iniciado_em e finalizado_em.
+    """
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def duracao_segundos(self) -> Optional[float]:
+        """
+        Calcula duração da execução em segundos com precisão de milissegundos.
+
+        Returns:
+            float | None: Duração em segundos (e.g. 1.5 = 1500ms), ou None se não finalizada
+        """
+        if self.iniciado_em and self.finalizado_em:
+            return round((self.finalizado_em - self.iniciado_em).total_seconds(), 3)
+        return None
+
+
 class ExecucaoCreate(BaseSchema):
     """
     Schema para criação de execução.
@@ -65,7 +87,7 @@ class ExecucaoUpdate(BaseSchema):
     )
 
 
-class ExecucaoResponse(BaseSchema):
+class ExecucaoResponse(DuracaoMixin, BaseSchema):
     """
     Schema de resposta para execução.
 
@@ -99,19 +121,6 @@ class ExecucaoResponse(BaseSchema):
 
     @computed_field
     @property
-    def duracao_segundos(self) -> Optional[int]:
-        """
-        Calcula duração da execução em segundos.
-
-        Returns:
-            int | None: Duração em segundos, ou None se não finalizada
-        """
-        if self.iniciado_em and self.finalizado_em:
-            return int((self.finalizado_em - self.iniciado_em).total_seconds())
-        return None
-
-    @computed_field
-    @property
     def em_andamento(self) -> bool:
         """
         Verifica se execução está em andamento.
@@ -125,7 +134,7 @@ class ExecucaoResponse(BaseSchema):
         )
 
 
-class ExecucaoSummary(BaseSchema):
+class ExecucaoSummary(DuracaoMixin, BaseSchema):
     """
     Schema resumido de execução para listagens.
 
@@ -143,14 +152,6 @@ class ExecucaoSummary(BaseSchema):
     iniciado_em: Optional[datetime] = Field(None, description="Data/hora de início")
     finalizado_em: Optional[datetime] = Field(None, description="Data/hora de finalização")
     paginas_processadas: int = Field(..., description="Número de páginas processadas")
-
-    @computed_field
-    @property
-    def duracao_segundos(self) -> Optional[int]:
-        """Calcula duração em segundos."""
-        if self.iniciado_em and self.finalizado_em:
-            return int((self.finalizado_em - self.iniciado_em).total_seconds())
-        return None
 
 
 class ExecucaoStatusUpdate(BaseSchema):
@@ -229,7 +230,7 @@ class ExecucaoMetricas(BaseSchema):
     taxa_sucesso: float = Field(..., description="Percentual de páginas com sucesso (0-100)")
 
 
-class ExecucaoDetail(BaseSchema):
+class ExecucaoDetail(DuracaoMixin, BaseSchema):
     """
     Detalhes completos de uma execução incluindo processo e métricas.
 
@@ -261,10 +262,3 @@ class ExecucaoDetail(BaseSchema):
     updated_at: datetime
     metricas: Optional[ExecucaoMetricas] = None
 
-    @computed_field
-    @property
-    def duracao_segundos(self) -> Optional[int]:
-        """Duração em segundos."""
-        if self.iniciado_em and self.finalizado_em:
-            return int((self.finalizado_em - self.iniciado_em).total_seconds())
-        return None
