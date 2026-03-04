@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-# from toninho.api.routes import health
+from toninho.api.routes import health
 from toninho.api.routes import processos
 from toninho.api.routes import configuracoes
 from toninho.api.routes import execucoes
@@ -36,7 +36,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
 # Registrar rotas da API
-# app.include_router(health.router, prefix="/api/v1", tags=["health"])
+app.include_router(health.router)
 app.include_router(processos.router)
 app.include_router(configuracoes.router_processos)
 app.include_router(configuracoes.router)
@@ -50,23 +50,6 @@ app.include_router(monitoring.router)
 
 # Registrar rotas do frontend (devem ser incluídas após as rotas da API)
 app.include_router(frontend.router)
-
-
-@app.get("/api/v1/info", tags=["Info"])
-async def api_info():
-    """Informações básicas da API (JSON)."""
-    return {
-        "name": "Toninho",
-        "version": "0.1.0",
-        "status": "operational",
-        "docs": "/docs",
-    }
-
-
-@app.get("/api/v1/health")
-async def health_check():
-    """Health check endpoint para Docker e monitoramento."""
-    return {"status": "healthy", "service": "toninho"}
 
 
 if __name__ == "__main__":
