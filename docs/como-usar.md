@@ -49,7 +49,7 @@ POST /processos → POST /processos/{id}/configuracoes → POST /processos/{id}/
 curl -s -X POST http://localhost:8000/api/v1/processos \
   -H "Content-Type: application/json" \
   -d '{
-    "nome": "Spring Cloud GCP Docs",
+    "nome": "Spring Cloud GCP Docs - teste de extração",
     "descricao": "Documentação oficial Spring Cloud GCP 7.4.5"
   }' | jq .
 ```

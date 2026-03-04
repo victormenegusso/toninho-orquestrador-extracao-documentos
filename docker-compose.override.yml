@@ -6,6 +6,7 @@ services:
     volumes:
       # Hot-reload: montar código fonte
       - ./toninho:/app/toninho:ro
+      - ./frontend:/app/frontend:ro
       - ./output:/app/output
     environment:
       - DEBUG=true

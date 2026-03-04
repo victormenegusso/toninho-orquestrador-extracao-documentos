@@ -3,11 +3,30 @@
 {% block title %}{% if processo %}Editar Processo{% else %}Novo Processo{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-6">
-    <!-- Header -->
+{% set initial_processo = {
+    'id': (processo.id|string) if processo else None,
+    'nome': processo.nome if processo else '',
+    'descricao': processo.descricao if processo and processo.descricao else '',
+    'status': processo.status if processo else 'ativo',
+    'is_edit': true if processo else false,
+} %}
+{% set initial_config = {
+    'id': (processo.configuracoes[0].id|string) if processo and processo.configuracoes else None,
+    'urls': (processo.configuracoes[0].urls|join('\n')) if processo and processo.configuracoes else '',
+    'timeout': processo.configuracoes[0].timeout if processo and processo.configuracoes else 3600,
+    'max_retries': processo.configuracoes[0].max_retries if processo and processo.configuracoes else 3,
+    'formato_saida': processo.configuracoes[0].formato_saida.value if processo and processo.configuracoes else 'multiplos_arquivos',
+    'output_dir': processo.configuracoes[0].output_dir if processo and processo.configuracoes else './output',
+    'agendamento_tipo': processo.configuracoes[0].agendamento_tipo.value if processo and processo.configuracoes else 'manual',
+    'agendamento_cron': processo.configuracoes[0].agendamento_cron if processo and processo.configuracoes and processo.configuracoes[0].agendamento_cron else '',
+    'use_browser': processo.configuracoes[0].use_browser if processo and processo.configuracoes else false,
+} %}
+
+<div class="max-w-3xl mx-auto space-y-6"
+    x-data='processoForm({{ initial_processo|tojson }}, {{ initial_config|tojson }})'
+     x-init="init()">
     <div class="flex items-center space-x-4">
-        <a href="/processos"
-           class="text-gray-500 hover:text-gray-700 flex items-center">
+        <a href="/processos" class="text-gray-500 hover:text-gray-700 flex items-center">
             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
@@ -19,121 +38,467 @@
         </h1>
     </div>
 
-    <!-- Form -->
     <div class="bg-white rounded-lg shadow-md">
-        <form
-            method="post"
-            action="{% if processo %}/api/v1/processos/{{ processo.id }}{% else %}/api/v1/processos{% endif %}"
-            class="p-6 space-y-6">
+        <form class="p-6 space-y-6" @submit.prevent>
+            <div x-show="globalError" x-text="globalError"
+                 class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
 
-            {% if processo %}
-            <!-- Hidden field para indicar PATCH/PUT via htmx ou API -->
-            <input type="hidden" name="_method" value="PUT">
-            {% endif %}
-
-            <!-- Informações Básicas -->
             <div class="space-y-4">
                 <h2 class="text-base font-semibold text-gray-900 border-b pb-2">Informações Básicas</h2>
 
-                <!-- Nome -->
                 <div>
-                    <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">
-                        Nome <span class="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        id="nome"
-                        name="nome"
-                        value="{{ processo.nome if processo else '' }}"
-                        class="w-full px-3 py-2 border {% if errors.nome %}border-red-300 focus:ring-red-500{% else %}border-gray-300 focus:ring-blue-500{% endif %} rounded-md focus:outline-none focus:ring-2"
-                        placeholder="Ex: Extração Site Principal"
-                        required>
-                    {% if errors.nome %}
-                    <p class="text-sm text-red-600 mt-1">{{ errors.nome }}</p>
-                    {% endif %}
+                    <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">Nome <span class="text-red-500">*</span></label>
+                    <input id="nome" type="text" x-model="form.nome"
+                           class="w-full px-3 py-2 border border-gray-300 focus:ring-blue-500 rounded-md focus:outline-none focus:ring-2"
+                           placeholder="Ex: Extração Site Principal" required>
+                    <p x-show="errors.nome" x-text="errors.nome" class="text-sm text-red-600 mt-1"></p>
                 </div>
 
-                <!-- Descrição -->
                 <div>
-                    <label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">
-                        Descrição
-                    </label>
-                    <textarea
-                        id="descricao"
-                        name="descricao"
-                        rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Descreva o propósito deste processo de extração...">{{ processo.descricao if processo and processo.descricao else '' }}</textarea>
-                    {% if errors.descricao %}
-                    <p class="text-sm text-red-600 mt-1">{{ errors.descricao }}</p>
-                    {% endif %}
+                    <label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                    <textarea id="descricao" rows="3" x-model="form.descricao"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Descreva o propósito deste processo de extração..."></textarea>
+                    <p x-show="errors.descricao" x-text="errors.descricao" class="text-sm text-red-600 mt-1"></p>
                 </div>
 
-                <!-- Status -->
                 <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
-                        Status <span class="text-red-500">*</span>
-                    </label>
-                    <select
-                        id="status"
-                        name="status"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required>
-                        <option value="ativo"
-                            {% if not processo or processo.status == 'ativo' %}selected{% endif %}>
-                            Ativo
-                        </option>
-                        <option value="inativo"
-                            {% if processo and processo.status == 'inativo' %}selected{% endif %}>
-                            Inativo
-                        </option>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status <span class="text-red-500">*</span></label>
+                    <select id="status" x-model="form.status"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <option value="ativo">Ativo</option>
+                        <option value="inativo">Inativo</option>
                     </select>
-                    {% if errors.status %}
-                    <p class="text-sm text-red-600 mt-1">{{ errors.status }}</p>
-                    {% endif %}
+                    <p x-show="errors.status" x-text="errors.status" class="text-sm text-red-600 mt-1"></p>
                 </div>
             </div>
 
-            <!-- Configuração (Info) -->
-            {% if processo and processo.configuracoes %}
             <div class="space-y-4">
-                <h2 class="text-base font-semibold text-gray-900 border-b pb-2">Configuração Atual</h2>
-                <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
-                    <p>
-                        <span class="font-medium">URLs configuradas:</span>
-                        {{ processo.configuracoes[0].urls | length }} URL(s)
-                    </p>
-                    <p class="mt-1 text-gray-500 text-xs">
-                        Para editar configurações de extração (URLs, timeout, agendamento),
-                        use a <a href="/docs#/Configurações" target="_blank" class="text-blue-600 hover:underline">API de Configurações</a>.
-                    </p>
+                <div class="border border-gray-100 rounded-lg p-4 space-y-4 bg-gray-50/40">
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <h2 class="text-base font-semibold text-gray-900">Configuração de Extração</h2>
+                        <span class="text-xs text-gray-500">Opcional na criação</span>
+                    </div>
+
+                    <div>
+                        <label for="urls" class="block text-sm font-medium text-gray-700 mb-1">URLs</label>
+                        <textarea id="urls" rows="5" x-model="config.urls"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="https://site.com/pagina-1&#10;https://site.com/pagina-2"></textarea>
+                        <div class="mt-1 flex items-center justify-between text-xs text-gray-500">
+                            <p>Uma URL por linha.</p>
+                            <p><span x-text="parseUrls().length"></span> URL(s)</p>
+                        </div>
+                        <p x-show="errors.urls" x-text="errors.urls" class="text-sm text-red-600 mt-1"></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="timeout" class="block text-sm font-medium text-gray-700 mb-1">Timeout (segundos)</label>
+                            <input id="timeout" type="number" min="1" max="86400" x-model.number="config.timeout"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <p class="mt-1 text-xs text-gray-500">Sugestão: 60 a 3600</p>
+                            <p x-show="errors.timeout" x-text="errors.timeout" class="text-sm text-red-600 mt-1"></p>
+                        </div>
+                        <div>
+                            <label for="max_retries" class="block text-sm font-medium text-gray-700 mb-1">Tentativas máximas</label>
+                            <input id="max_retries" type="number" min="0" max="10" x-model.number="config.max_retries"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <p class="mt-1 text-xs text-gray-500">Sugestão: 2 ou 3</p>
+                            <p x-show="errors.max_retries" x-text="errors.max_retries" class="text-sm text-red-600 mt-1"></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="formato_saida" class="block text-sm font-medium text-gray-700 mb-1">Formato de saída</label>
+                            <select id="formato_saida" x-model="config.formato_saida"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="multiplos_arquivos">Múltiplos arquivos</option>
+                                <option value="arquivo_unico">Arquivo único</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="output_dir" class="block text-sm font-medium text-gray-700 mb-1">Diretório de saída</label>
+                            <input id="output_dir" type="text" x-model="config.output_dir"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="./output">
+                            <div class="mt-1 flex flex-wrap gap-2 text-xs">
+                                <button type="button" @click="config.output_dir = './output'" class="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200">./output</button>
+                                <button type="button" @click="config.output_dir = '/tmp/output'" class="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200">/tmp/output</button>
+                            </div>
+                            <p x-show="errors.output_dir" x-text="errors.output_dir" class="text-sm text-red-600 mt-1"></p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-medium text-gray-800">Agendamento</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="agendamento_tipo" class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                <select id="agendamento_tipo" x-model="config.agendamento_tipo"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="manual">Manual</option>
+                                    <option value="recorrente">Recorrente</option>
+                                    <option value="one_time">Data/hora única</option>
+                                </select>
+                            </div>
+
+                            <div x-show="config.agendamento_tipo === 'one_time'">
+                                <label for="agendamento_datetime" class="block text-sm font-medium text-gray-700 mb-1">Data/hora da execução</label>
+                                <input id="agendamento_datetime" type="datetime-local" x-model="config.agendamento_datetime"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <p class="mt-1 text-xs text-gray-500">Será convertido automaticamente para cron.</p>
+                                <p x-show="errors.agendamento_datetime" x-text="errors.agendamento_datetime" class="text-sm text-red-600 mt-1"></p>
+                            </div>
+                        </div>
+
+                        <div x-show="config.agendamento_tipo === 'recorrente'" class="space-y-2">
+                            <label for="agendamento_cron" class="block text-sm font-medium text-gray-700 mb-1">Expressão cron</label>
+                            <input id="agendamento_cron" type="text" x-model="config.agendamento_cron"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="0 */6 * * *">
+                            <div class="flex flex-wrap gap-2 text-xs">
+                                <button type="button" @click="config.agendamento_cron = '0 */6 * * *'" class="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200">Cada 6h</button>
+                                <button type="button" @click="config.agendamento_cron = '0 0 * * *'" class="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200">Diário 00:00</button>
+                                <button type="button" @click="config.agendamento_cron = '0 8 * * 1-5'" class="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200">Dias úteis 08:00</button>
+                            </div>
+                            <p x-show="errors.agendamento_cron" x-text="errors.agendamento_cron" class="text-sm text-red-600 mt-1"></p>
+                        </div>
+                    </div>
+
+                    <label class="inline-flex items-center space-x-2 text-sm text-gray-700">
+                        <input type="checkbox" x-model="config.use_browser" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span>Usar navegador (Playwright) para páginas com JavaScript</span>
+                    </label>
                 </div>
             </div>
-            {% endif %}
 
-            <!-- Actions -->
             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
                 <a href="/processos"
                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     Cancelar
                 </a>
-                <button
-                    type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                    {% if processo %}Salvar Alterações{% else %}Criar Processo{% endif %}
+
+                <template x-if="!isEdit">
+                    <button type="button" @click="submit(false)" :disabled="isSubmitting"
+                            class="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-60">
+                        Salvar sem configuração
+                    </button>
+                </template>
+
+                <button type="button" @click="submit(true)" :disabled="isSubmitting"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60">
+                    <span x-show="!isSubmitting">{% if processo %}Salvar Alterações{% else %}Salvar e criar configuração{% endif %}</span>
+                    <span x-show="isSubmitting">Salvando...</span>
                 </button>
             </div>
         </form>
     </div>
-
-    <!-- Note about API usage -->
-    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-700">
-        <p class="font-medium mb-1">💡 Dica</p>
-        <p>
-            Para operações avançadas (configurar URLs, timeout, agendamento),
-            utilize a <a href="/docs" target="_blank" class="underline font-medium">API REST</a> diretamente.
-            Este formulário gerencia apenas as informações básicas do processo.
-        </p>
-    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function processoForm(initialProcesso, initialConfig) {
+    return {
+        processoId: initialProcesso.id,
+        configId: initialConfig.id,
+        isEdit: initialProcesso.is_edit,
+        isSubmitting: false,
+        globalError: '',
+        errors: {},
+        form: {
+            nome: initialProcesso.nome || '',
+            descricao: initialProcesso.descricao || '',
+            status: initialProcesso.status || 'ativo',
+        },
+        config: {
+            urls: initialConfig.urls || '',
+            timeout: Number(initialConfig.timeout || 3600),
+            max_retries: Number(initialConfig.max_retries || 3),
+            formato_saida: initialConfig.formato_saida || 'multiplos_arquivos',
+            output_dir: initialConfig.output_dir || './output',
+            agendamento_tipo: initialConfig.agendamento_tipo || 'manual',
+            agendamento_cron: initialConfig.agendamento_cron || '',
+            agendamento_datetime: '',
+            use_browser: Boolean(initialConfig.use_browser),
+        },
+
+        async init() {
+            if (this.isEdit) {
+                await this.loadCurrentConfig();
+                this.tryParseOneTimeFromCron();
+            }
+        },
+
+        async loadCurrentConfig() {
+            try {
+                const response = await fetch(`/api/v1/processos/${this.processoId}/configuracao`);
+                if (!response.ok) {
+                    return;
+                }
+                const payload = await response.json();
+                const data = payload.data;
+
+                this.configId = data.id;
+                this.config.urls = (data.urls || []).join('\n');
+                this.config.timeout = data.timeout;
+                this.config.max_retries = data.max_retries;
+                this.config.formato_saida = data.formato_saida;
+                this.config.output_dir = data.output_dir;
+                this.config.agendamento_tipo = data.agendamento_tipo;
+                this.config.agendamento_cron = data.agendamento_cron || '';
+                this.config.use_browser = Boolean(data.use_browser);
+            } catch (_) {
+                return;
+            }
+        },
+
+        tryParseOneTimeFromCron() {
+            if (this.config.agendamento_tipo !== 'one_time' || !this.config.agendamento_cron) {
+                return;
+            }
+            const parts = this.config.agendamento_cron.split(' ');
+            if (parts.length !== 5) {
+                return;
+            }
+
+            const [min, hour, day, month, week] = parts;
+            if (week !== '*') {
+                return;
+            }
+            if ([min, hour, day, month].some((part) => part.includes('*') || part.includes('/'))) {
+                return;
+            }
+
+            const now = new Date();
+            let year = now.getFullYear();
+            let candidate = new Date(year, Number(month) - 1, Number(day), Number(hour), Number(min));
+            if (candidate < now) {
+                year += 1;
+                candidate = new Date(year, Number(month) - 1, Number(day), Number(hour), Number(min));
+            }
+
+            const pad = (value) => String(value).padStart(2, '0');
+            this.config.agendamento_datetime = `${candidate.getFullYear()}-${pad(candidate.getMonth() + 1)}-${pad(candidate.getDate())}T${pad(candidate.getHours())}:${pad(candidate.getMinutes())}`;
+        },
+
+        clearErrors() {
+            this.errors = {};
+            this.globalError = '';
+        },
+
+        setError(field, message) {
+            this.errors[field] = message;
+        },
+
+        parseUrls() {
+            return this.config.urls
+                .split('\n')
+                .map((item) => item.trim())
+                .filter((item) => item.length > 0);
+        },
+
+        convertDateTimeToCron() {
+            if (!this.config.agendamento_datetime) {
+                return '';
+            }
+
+            const date = new Date(this.config.agendamento_datetime);
+            if (Number.isNaN(date.getTime())) {
+                return '';
+            }
+
+            return `${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth() + 1} *`;
+        },
+
+        validateBasic() {
+            if (!this.form.nome || !this.form.nome.trim()) {
+                this.setError('nome', 'Nome é obrigatório.');
+            }
+            if (!['ativo', 'inativo'].includes(this.form.status)) {
+                this.setError('status', 'Status inválido.');
+            }
+            return Object.keys(this.errors).length === 0;
+        },
+
+        validateConfig() {
+            const urls = this.parseUrls();
+            if (urls.length === 0) {
+                this.setError('urls', 'Informe ao menos uma URL.');
+            }
+            if (urls.length > 100) {
+                this.setError('urls', 'Máximo de 100 URLs por configuração.');
+            }
+
+            for (const url of urls) {
+                try {
+                    const parsed = new URL(url);
+                    if (!['http:', 'https:'].includes(parsed.protocol)) {
+                        this.setError('urls', 'As URLs devem usar http ou https.');
+                        break;
+                    }
+                } catch (_) {
+                    this.setError('urls', 'Existe URL inválida na lista.');
+                    break;
+                }
+            }
+
+            if (this.config.timeout < 1 || this.config.timeout > 86400) {
+                this.setError('timeout', 'Timeout deve estar entre 1 e 86400.');
+            }
+            if (this.config.max_retries < 0 || this.config.max_retries > 10) {
+                this.setError('max_retries', 'Tentativas deve estar entre 0 e 10.');
+            }
+            if (!this.config.output_dir || !this.config.output_dir.trim()) {
+                this.setError('output_dir', 'Diretório de saída é obrigatório.');
+            }
+
+            if (this.config.agendamento_tipo === 'recorrente' && !this.config.agendamento_cron.trim()) {
+                this.setError('agendamento_cron', 'Cron é obrigatório para agendamento recorrente.');
+            }
+            if (this.config.agendamento_tipo === 'one_time' && !this.config.agendamento_datetime) {
+                this.setError('agendamento_datetime', 'Data/hora é obrigatória para execução única.');
+            }
+
+            return Object.keys(this.errors).length === 0;
+        },
+
+        async submit(withConfig) {
+            this.clearErrors();
+            if (!this.validateBasic()) {
+                return;
+            }
+            if (withConfig && !this.validateConfig()) {
+                return;
+            }
+
+            this.isSubmitting = true;
+            try {
+                await this.saveProcess();
+                if (withConfig) {
+                    await this.upsertConfig();
+                }
+                window.location.href = `/processos/${this.processoId}`;
+            } catch (error) {
+                this.handleApiError(error);
+            } finally {
+                this.isSubmitting = false;
+            }
+        },
+
+        async saveProcess() {
+            const payload = {
+                nome: this.form.nome.trim(),
+                descricao: this.form.descricao ? this.form.descricao.trim() : null,
+                status: this.form.status,
+            };
+
+            const endpoint = this.isEdit ? `/api/v1/processos/${this.processoId}` : '/api/v1/processos';
+            const method = this.isEdit ? 'PUT' : 'POST';
+            const response = await fetch(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw await this.buildError(response);
+            }
+
+            const data = await response.json();
+            this.processoId = data.data.id;
+        },
+
+        async upsertConfig() {
+            let cron = null;
+            if (this.config.agendamento_tipo === 'recorrente') {
+                cron = this.config.agendamento_cron.trim();
+            }
+            if (this.config.agendamento_tipo === 'one_time') {
+                cron = this.convertDateTimeToCron();
+                if (!cron) {
+                    this.setError('agendamento_datetime', 'Não foi possível converter data/hora para cron.');
+                    throw { payload: { detail: 'Data/hora inválida para agendamento único.' } };
+                }
+            }
+
+            const payload = {
+                urls: this.parseUrls(),
+                timeout: Number(this.config.timeout),
+                max_retries: Number(this.config.max_retries),
+                formato_saida: this.config.formato_saida,
+                output_dir: this.config.output_dir.trim(),
+                agendamento_tipo: this.config.agendamento_tipo,
+                agendamento_cron: cron,
+                use_browser: Boolean(this.config.use_browser),
+            };
+
+            if (!this.configId) {
+                const currentResponse = await fetch(`/api/v1/processos/${this.processoId}/configuracao`);
+                if (currentResponse.ok) {
+                    const currentPayload = await currentResponse.json();
+                    this.configId = currentPayload.data.id;
+                }
+            }
+
+            const endpoint = this.configId
+                ? `/api/v1/configuracoes/${this.configId}`
+                : `/api/v1/processos/${this.processoId}/configuracoes`;
+            const method = this.configId ? 'PUT' : 'POST';
+            const response = await fetch(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw await this.buildError(response);
+            }
+
+            const data = await response.json();
+            this.configId = data.data.id;
+        },
+
+        async buildError(response) {
+            let payload;
+            try {
+                payload = await response.json();
+            } catch (_) {
+                payload = null;
+            }
+            return { status: response.status, payload };
+        },
+
+        handleApiError(error) {
+            const payload = error && error.payload ? error.payload : null;
+            const detail = payload ? payload.detail : null;
+
+            if (Array.isArray(detail)) {
+                detail.forEach((item) => {
+                    const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : null;
+                    const message = item.msg || 'Valor inválido.';
+                    if (field) {
+                        this.setError(field, message);
+                    }
+                });
+                if (Object.keys(this.errors).length > 0) {
+                    this.globalError = 'Revise os campos destacados e tente novamente.';
+                    return;
+                }
+            }
+
+            if (typeof detail === 'string' && detail.length > 0) {
+                this.globalError = detail;
+                return;
+            }
+
+            this.globalError = 'Não foi possível salvar. Tente novamente.';
+        },
+    };
+}
+</script>
 {% endblock %}

@@ -147,10 +147,15 @@
         <h2 class="text-base font-semibold text-gray-900 mb-3">Configurações de Extração</h2>
         <div class="text-center py-6 text-gray-500">
             <p class="text-sm">Nenhuma configuração cadastrada.</p>
-            <a href="/docs#/Configurações" target="_blank"
+            <a href="/processos/{{ processo.id }}/editar"
                class="mt-2 inline-block text-sm text-blue-600 hover:underline">
-                Adicionar configuração via API →
+                Configurar agora →
             </a>
+        </div>
+
+        <div class="mt-4 rounded-md border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            Este processo pode rodar sem configuração, mas você terá melhores resultados definindo URLs,
+            timeout, tipo de agendamento e opções de extração.
         </div>
     </div>
     {% endif %}
