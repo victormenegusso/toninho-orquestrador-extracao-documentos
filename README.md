@@ -1,6 +1,6 @@
-# Toninho - Sistema de Extração de Processos
+# Toninho - Sistema de Extração de Documentos
 
-Sistema de extração de dados de processos judiciais, desenvolvido com FastAPI, Celery e Docker.
+Sistema de extração de dados de documentos, desenvolvido com FastAPI, Celery e Docker.
 
 ## 🚀 Características
 
@@ -190,7 +190,3 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 ## 👥 Autores
 
 - Victor Menegusso
-
-## 🙏 Agradecimentos
-
-Projeto desenvolvido como parte de um sistema de automação de extração de dados judiciais.
