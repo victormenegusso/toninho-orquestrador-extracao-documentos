@@ -137,7 +137,7 @@ class ExecucaoService:
             Execucao atualizada
         """
         try:
-            from toninho.workers.celery_app import executar_processo_task  # type: ignore
+            from toninho.workers.tasks.execucao_task import executar_processo_task
 
             task = executar_processo_task.delay(str(execucao.id))
             execucao.celery_task_id = str(task.id) if hasattr(task, "id") else None

@@ -1,8 +1,8 @@
 # PRD-017: Detalhes e Downloads
 
 **Status**: ✅ Concluído
-**Prioridade**: 🟢 Baixa - Frontend (Prioridade 4)  
-**Categoria**: Frontend - Features  
+**Prioridade**: 🟢 Baixa - Frontend (Prioridade 4)
+**Categoria**: Frontend - Features
 **Estimativa**: 6-8 horas
 
 ---
@@ -68,7 +68,7 @@ async def paginas_search(request: Request, q: str):
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Páginas Extraídas</h1>
             <p class="text-gray-600 mt-1">
-                <a href="{{ url_for('execucoes_detail', id=execucao.id) }}" 
+                <a href="{{ url_for('execucoes_detail', id=execucao.id) }}"
                    class="text-blue-600 hover:text-blue-800">
                     ← Voltar para execução
                 </a>
@@ -76,7 +76,7 @@ async def paginas_search(request: Request, q: str):
         </div>
         <div class="flex space-x-2">
             <!-- Download All -->
-            <a 
+            <a
                 href="{{ url_for('api_download_all_paginas', id=execucao.id) }}"
                 class="btn-primary flex items-center"
                 {% if not paginas.items %}disabled{% endif %}>
@@ -117,8 +117,8 @@ async def paginas_search(request: Request, q: str):
             <!-- Search -->
             <div class="md:col-span-2">
                 <label class="form-label">Buscar</label>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     name="search"
                     class="form-input"
                     placeholder="URL ou título..."
@@ -132,8 +132,8 @@ async def paginas_search(request: Request, q: str):
             <!-- Status Filter -->
             <div>
                 <label class="form-label">Status</label>
-                <select 
-                    name="status" 
+                <select
+                    name="status"
                     class="form-input"
                     hx-get="{{ url_for('execucao_paginas', id=execucao.id) }}"
                     hx-target="#paginas-grid"
@@ -197,7 +197,7 @@ async def paginas_search(request: Request, q: str):
         <!-- Actions -->
         <div class="flex space-x-2 pt-3 border-t">
             <!-- Preview -->
-            <button 
+            <button
                 @click="$dispatch('open-preview', { id: '{{ pagina.id }}' })"
                 class="flex-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
                 <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +208,7 @@ async def paginas_search(request: Request, q: str):
             </button>
 
             <!-- Download -->
-            <a 
+            <a
                 href="{{ url_for('api_download_pagina', id=pagina.id) }}"
                 download
                 class="flex-1 text-sm text-green-600 hover:text-green-800 font-medium text-center">
@@ -246,9 +246,9 @@ async def paginas_search(request: Request, q: str):
 
 ```html
 <!-- Incluir no base.html ou na página de paginas -->
-<div 
-    x-data="{ 
-        open: false, 
+<div
+    x-data="{
+        open: false,
         paginaId: null,
         loading: false,
         content: '',
@@ -272,26 +272,26 @@ async def paginas_search(request: Request, q: str):
     x-cloak
     class="fixed inset-0 z-50 overflow-y-auto"
     style="display: none;">
-    
+
     <!-- Backdrop -->
-    <div 
+    <div
         class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         @click="open = false">
     </div>
 
     <!-- Modal -->
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div 
+        <div
             class="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
             @click.away="open = false">
-            
+
             <!-- Header -->
             <div class="flex items-start justify-between p-4 border-b">
                 <div class="flex-1 min-w-0">
                     <h3 class="text-lg font-medium text-gray-900 truncate" x-text="title"></h3>
                     <p class="text-sm text-gray-500 truncate mt-1" x-text="url"></p>
                 </div>
-                <button 
+                <button
                     @click="open = false"
                     class="ml-4 text-gray-400 hover:text-gray-500">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -318,12 +318,12 @@ async def paginas_search(request: Request, q: str):
 
             <!-- Footer -->
             <div class="flex justify-end p-4 border-t space-x-2">
-                <button 
+                <button
                     @click="open = false"
                     class="btn-secondary">
                     Fechar
                 </button>
-                <a 
+                <a
                     :href="`/api/v1/paginas/${paginaId}/download`"
                     download
                     class="btn-primary">
@@ -361,20 +361,20 @@ async def download_pagina(
     """
     repo = PaginaExtraidaRepository(db)
     pagina = await repo.buscar_por_id(id)
-    
+
     if not pagina:
         raise HTTPException(status_code=404, detail="Página não encontrada")
-    
+
     file_path = Path(pagina.caminho_arquivo)
-    
+
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
-    
+
     # Generate safe filename
     from urllib.parse import urlparse
     parsed = urlparse(pagina.url)
     filename = f"{parsed.netloc}_{parsed.path.replace('/', '_')}.md"
-    
+
     return FileResponse(
         path=str(file_path),
         filename=filename,
@@ -394,34 +394,34 @@ async def download_all_paginas(
         select(Execucao).where(Execucao.id == execucao_id)
     )
     execucao = result.scalar_one_or_none()
-    
+
     if not execucao:
         raise HTTPException(status_code=404, detail="Execução não encontrada")
-    
+
     # Buscar páginas
     repo = PaginaExtraidaRepository(db)
     paginas = await repo.listar_por_execucao(execucao_id, filtros={"status": "sucesso"})
-    
+
     if not paginas:
         raise HTTPException(status_code=404, detail="Nenhuma página para baixar")
-    
+
     # Create ZIP in memory
     zip_buffer = io.BytesIO()
-    
+
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for pagina in paginas:
             file_path = Path(pagina.caminho_arquivo)
-            
+
             if file_path.exists():
                 # Add to ZIP with safe filename
                 arcname = f"{pagina.id}.md"
                 zip_file.write(file_path, arcname=arcname)
-    
+
     zip_buffer.seek(0)
-    
+
     # Return as streaming response
     filename = f"execucao_{execucao_id}_paginas.zip"
-    
+
     return StreamingResponse(
         zip_buffer,
         media_type="application/zip",
@@ -437,7 +437,7 @@ async def download_all_paginas(
 <nav class="flex items-center justify-between">
     <!-- Info -->
     <div class="text-sm text-gray-700">
-        Mostrando 
+        Mostrando
         <span class="font-medium">{{ (pagination.page - 1) * pagination.size + 1 }}</span>
         até
         <span class="font-medium">{{ min(pagination.page * pagination.size, pagination.total) }}</span>
@@ -459,8 +459,8 @@ async def download_all_paginas(
 
         <!-- Page numbers -->
         {% for page_num in range(1, pagination.pages + 1) %}
-            {% if page_num == pagination.page or 
-                   page_num == 1 or 
+            {% if page_num == pagination.page or
+                   page_num == 1 or
                    page_num == pagination.pages or
                    (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
             <button
@@ -603,7 +603,7 @@ html = markdown.markdown(content, extensions=['tables', 'fenced_code'])
 
 ---
 
-**PRD Anterior**: PRD-016 - Interface de Monitoramento  
+**PRD Anterior**: PRD-016 - Interface de Monitoramento
 **Próximo PRD**: N/A (último PRD)
 
 **STATUS DO PROJETO**: ✅ Todos os 17 PRDs foram criados com sucesso!

@@ -1,8 +1,8 @@
 # PRD-016: Interface de Monitoramento
 
 **Status**: ✅ Concluído
-**Prioridade**: 🟢 Baixa - Frontend (Prioridade 4)  
-**Categoria**: Frontend - Features  
+**Prioridade**: 🟢 Baixa - Frontend (Prioridade 4)
+**Categoria**: Frontend - Features
 **Estimativa**: 8-10 horas
 
 ---
@@ -68,7 +68,7 @@ async def execucao_progress(request: Request, id: UUID):
     </div>
 
     <!-- Stats Cards -->
-    <div 
+    <div
         id="stats-cards"
         hx-get="{{ url_for('dashboard_stats') }}"
         hx-trigger="every 5s"
@@ -92,12 +92,12 @@ async def execucao_progress(request: Request, id: UUID):
             </div>
 
             <!-- Workers Status -->
-            <div 
+            <div
                 hx-get="{{ url_for('health_workers') }}"
                 hx-trigger="every 10s"
                 class="flex items-center space-x-3 p-3 bg-gray-50 rounded">
                 <div class="flex-shrink-0">
-                    <div class="w-3 h-3 rounded-full" 
+                    <div class="w-3 h-3 rounded-full"
                          :class="workers_online ? 'bg-green-500' : 'bg-red-500'">
                     </div>
                 </div>
@@ -131,7 +131,7 @@ async def execucao_progress(request: Request, id: UUID):
             </a>
         </div>
 
-        <div 
+        <div
             id="execucoes-ativas"
             hx-get="{{ url_for('execucoes_ativas_partial') }}"
             hx-trigger="every 3s"
@@ -255,7 +255,7 @@ async def execucao_progress(request: Request, id: UUID):
         </div>
 
         <!-- Progress Bar -->
-        <div 
+        <div
             hx-get="{{ url_for('execucao_progress', id=exec.id) }}"
             hx-trigger="every 2s"
             hx-swap="innerHTML">
@@ -264,20 +264,20 @@ async def execucao_progress(request: Request, id: UUID):
 
         <!-- Actions -->
         <div class="flex space-x-2 mt-3">
-            <a href="{{ url_for('execucoes_detail', id=exec.id) }}" 
+            <a href="{{ url_for('execucoes_detail', id=exec.id) }}"
                class="text-sm text-blue-600 hover:text-blue-800">
                 Ver detalhes
             </a>
 
             {% if exec.status == 'EM_EXECUCAO' %}
-            <button 
+            <button
                 hx-post="{{ url_for('api_pausar_execucao', id=exec.id) }}"
                 hx-swap="none"
                 class="text-sm text-yellow-600 hover:text-yellow-800">
                 Pausar
             </button>
             {% elif exec.status == 'PAUSADO' %}
-            <button 
+            <button
                 hx-post="{{ url_for('api_retomar_execucao', id=exec.id) }}"
                 hx-swap="none"
                 class="text-sm text-green-600 hover:text-green-800">
@@ -285,7 +285,7 @@ async def execucao_progress(request: Request, id: UUID):
             </button>
             {% endif %}
 
-            <button 
+            <button
                 hx-post="{{ url_for('api_cancelar_execucao', id=exec.id) }}"
                 hx-confirm="Tem certeza que deseja cancelar?"
                 hx-swap="none"
@@ -310,7 +310,7 @@ async def execucao_progress(request: Request, id: UUID):
         <span>{{ execucao.urls_processadas }} / {{ execucao.total_urls }} URLs</span>
     </div>
     <div class="w-full bg-gray-200 rounded-full h-2">
-        <div 
+        <div
             class="bg-blue-600 h-2 rounded-full transition-all duration-300"
             style="width: {{ execucao.progress_percentage }}%">
         </div>
@@ -341,14 +341,14 @@ async def execucao_progress(request: Request, id: UUID):
         </div>
         <div class="flex space-x-2">
             {% if execucao.status == 'EM_EXECUCAO' %}
-            <button 
+            <button
                 hx-post="{{ url_for('api_pausar_execucao', id=execucao.id) }}"
                 hx-swap="none"
                 class="btn-secondary">
                 Pausar
             </button>
             {% elif execucao.status == 'PAUSADO' %}
-            <button 
+            <button
                 hx-post="{{ url_for('api_retomar_execucao', id=execucao.id) }}"
                 hx-swap="none"
                 class="btn-success">
@@ -356,7 +356,7 @@ async def execucao_progress(request: Request, id: UUID):
             </button>
             {% endif %}
 
-            <button 
+            <button
                 hx-post="{{ url_for('api_cancelar_execucao', id=execucao.id) }}"
                 hx-confirm="Tem certeza?"
                 hx-swap="none"
@@ -394,7 +394,7 @@ async def execucao_progress(request: Request, id: UUID):
     </div>
 
     <!-- Progress Bar -->
-    <div 
+    <div
         class="card"
         hx-get="{{ url_for('execucao_progress', id=execucao.id) }}"
         hx-trigger="every 2s"
@@ -409,8 +409,8 @@ async def execucao_progress(request: Request, id: UUID):
             <div class="flex items-center space-x-2">
                 <!-- Auto-scroll toggle -->
                 <label class="flex items-center text-sm">
-                    <input 
-                        type="checkbox" 
+                    <input
+                        type="checkbox"
                         id="auto-scroll"
                         checked
                         class="mr-2">
@@ -428,7 +428,7 @@ async def execucao_progress(request: Request, id: UUID):
         </div>
 
         <!-- Log Container -->
-        <div 
+        <div
             id="logs-container"
             class="bg-gray-900 text-gray-100 rounded p-4 font-mono text-sm h-96 overflow-y-auto">
             <div id="logs-content"></div>
@@ -454,17 +454,17 @@ const eventSource = new EventSource("{{ url_for('api_logs_stream', execucao_id=e
 
 eventSource.onmessage = function(event) {
     const log = JSON.parse(event.data);
-    
+
     // Filter by level
     const levelFilter = document.getElementById('log-level-filter').value;
     if (levelFilter && log.nivel !== levelFilter) {
         return;
     }
-    
+
     // Create log line
     const logLine = document.createElement('div');
     logLine.className = 'mb-1';
-    
+
     const timestamp = new Date(log.timestamp).toLocaleTimeString();
     const levelColor = {
         'INFO': 'text-blue-400',
@@ -472,15 +472,15 @@ eventSource.onmessage = function(event) {
         'ERROR': 'text-red-400',
         'DEBUG': 'text-gray-400'
     }[log.nivel] || 'text-gray-400';
-    
+
     logLine.innerHTML = `
         <span class="text-gray-500">${timestamp}</span>
         <span class="${levelColor}">[${log.nivel}]</span>
         <span>${log.mensagem}</span>
     `;
-    
+
     logsContent.appendChild(logLine);
-    
+
     // Auto-scroll
     if (autoScrollCheckbox.checked) {
         logsContainer.scrollTop = logsContainer.scrollHeight;
@@ -596,7 +596,7 @@ window.addEventListener('beforeunload', () => {
 ### 8.2. HTMX Polling Pattern
 
 ```html
-<div 
+<div
     hx-get="/api/stats"
     hx-trigger="every 5s"
     hx-swap="innerHTML">
@@ -627,5 +627,5 @@ window.addEventListener('beforeunload', () => {
 
 ---
 
-**PRD Anterior**: PRD-015 - Interface CRUD Processos  
+**PRD Anterior**: PRD-015 - Interface CRUD Processos
 **Próximo PRD**: PRD-017 - Detalhes e Downloads

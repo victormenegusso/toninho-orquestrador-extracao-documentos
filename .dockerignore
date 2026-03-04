@@ -69,5 +69,4 @@ Thumbs.db
 # Project specific
 tests/
 scripts/
-migrations/versions/
 poetry.lock
