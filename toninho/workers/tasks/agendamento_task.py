@@ -12,7 +12,7 @@ from loguru import logger
 from toninho.workers.celery_app import celery_app
 
 
-@celery_app.task(name="toninho.workers.verificar_agendamentos")
+@celery_app.task(name="toninho.workers.tasks.agendamento_task.verificar_agendamentos")
 def verificar_agendamentos() -> dict:
     """
     Verifica configurações com agendamento RECORRENTE e cria execuções

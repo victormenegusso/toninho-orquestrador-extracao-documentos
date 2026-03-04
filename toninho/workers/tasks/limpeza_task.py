@@ -11,7 +11,7 @@ from loguru import logger
 from toninho.workers.celery_app import celery_app
 
 
-@celery_app.task(name="toninho.workers.limpar_logs_antigos")
+@celery_app.task(name="toninho.workers.tasks.limpeza_task.limpar_logs_antigos")
 def limpar_logs_antigos(dias_retencao: int = 30) -> dict:
     """
     Remove logs com mais de `dias_retencao` dias.

@@ -151,6 +151,24 @@ class TestVerificarAgendamentos:
         task_names = list(celery_app.tasks.keys())
         assert any("verificar_agendamentos" in t for t in task_names)
 
+    def test_task_name_matches_beat_schedule(self):
+        """Nome da task deve corresponder EXATAMENTE ao definido no beat_schedule.
+
+        BUG-001: mismatch causava KeyError no worker a cada 60s.
+        """
+        from toninho.workers.celery_app import celery_app
+        from toninho.workers.tasks.agendamento_task import verificar_agendamentos
+
+        expected_name = "toninho.workers.tasks.agendamento_task.verificar_agendamentos"
+        beat_task_name = celery_app.conf.beat_schedule["verificar-agendamentos"]["task"]
+
+        assert verificar_agendamentos.name == expected_name, (
+            f"Task name '{verificar_agendamentos.name}' difere do esperado '{expected_name}'"
+        )
+        assert verificar_agendamentos.name == beat_task_name, (
+            f"Task name '{verificar_agendamentos.name}' difere do beat_schedule '{beat_task_name}'"
+        )
+
     def test_returns_execucoes_criadas(self, db, configuracao_recorrente):
         """Deve retornar contagem de execuções criadas."""
         from toninho.workers.tasks.agendamento_task import verificar_agendamentos
@@ -217,6 +235,20 @@ class TestLimparLogsAntigos:
         from toninho.workers.celery_app import celery_app
         task_names = list(celery_app.tasks.keys())
         assert any("limpar_logs_antigos" in t for t in task_names)
+
+    def test_task_name_matches_beat_schedule(self):
+        """Nome da task deve corresponder EXATAMENTE ao definido no beat_schedule.
+
+        Mesmo padrão do BUG-001: alinha nome do decorator com beat_schedule.
+        """
+        from toninho.workers.celery_app import celery_app
+        from toninho.workers.tasks.limpeza_task import limpar_logs_antigos
+
+        expected_name = "toninho.workers.tasks.limpeza_task.limpar_logs_antigos"
+        beat_task_name = celery_app.conf.beat_schedule["limpar-logs-antigos"]["task"]
+
+        assert limpar_logs_antigos.name == expected_name
+        assert limpar_logs_antigos.name == beat_task_name
 
     def test_limpar_logs_retorna_deleted_count(self, db, execucao):
         """Deve retornar logs_deletados e dias_retencao."""
