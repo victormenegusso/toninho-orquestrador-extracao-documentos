@@ -192,6 +192,23 @@ class TestConfiguracaoSchemas:
         assert schema.processo_id == config.processo_id
         assert schema.urls == config.urls
 
+    def test_configuracao_use_browser_default_false(self) -> None:
+        """use_browser deve ser False por padrão (MH-003)."""
+        schema = ConfiguracaoCreate(
+            urls=["https://exemplo.com"],
+            output_dir="/tmp",
+        )
+        assert schema.use_browser is False
+
+    def test_configuracao_use_browser_ativado(self) -> None:
+        """use_browser=True deve ser aceito (MH-003)."""
+        schema = ConfiguracaoCreate(
+            urls=["https://exemplo.com"],
+            output_dir="/tmp",
+            use_browser=True,
+        )
+        assert schema.use_browser is True
+
 
 class TestExecucaoSchemas:
     """Testes para schemas de Execucao."""

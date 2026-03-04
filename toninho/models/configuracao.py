@@ -6,7 +6,7 @@ Representa as configurações de extração de um processo.
 import uuid
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, JSON, String
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from toninho.models.base import Base, TimestampMixin, UUIDMixin
@@ -90,6 +90,13 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         default=AgendamentoTipo.MANUAL,
         doc="Tipo de agendamento da execução"
+    )
+
+    use_browser: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        doc="Se True, usa Playwright (navegador headless) para renderizar páginas JS"
     )
 
     # Relacionamentos

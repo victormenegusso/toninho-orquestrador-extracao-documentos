@@ -94,6 +94,9 @@ class ExtractionOrchestrator:
             base_dir=configuracao.output_dir or "./output",
         )
 
+        # 4b. Preparar extractor com modo browser se configurado
+        use_browser = getattr(configuracao, "use_browser", False)
+
         # 5. Log inicial
         self._add_log(
             db, execucao_id, LogNivel.INFO,
@@ -116,7 +119,7 @@ class ExtractionOrchestrator:
             )
 
             resultado = asyncio.run(
-                self._extract_url(storage, url, output_path)
+                self._extract_url(storage, url, output_path, use_browser=use_browser)
             )
 
             if resultado["status"] == "sucesso":
@@ -192,9 +195,9 @@ class ExtractionOrchestrator:
     # ──────────────────────────────────────────────── helpers ────────────
 
     @staticmethod
-    async def _extract_url(storage: StorageInterface, url: str, output_path: str) -> Dict:
+    async def _extract_url(storage: StorageInterface, url: str, output_path: str, use_browser: bool = False) -> Dict:
         """Executa extração async de uma URL."""
-        extractor = PageExtractor(storage, timeout=60, max_retries=3)
+        extractor = PageExtractor(storage, timeout=60, max_retries=3, use_browser=use_browser)
         try:
             return await extractor.extract(url, output_path)
         finally:

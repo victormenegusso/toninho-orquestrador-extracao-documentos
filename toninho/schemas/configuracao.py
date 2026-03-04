@@ -83,6 +83,14 @@ class ConfiguracaoCreate(BaseSchema):
         default=AgendamentoTipo.MANUAL,
         description="Tipo de agendamento",
     )
+    use_browser: bool = Field(
+        default=False,
+        description=(
+            "Se True, usa Playwright (navegador headless) para renderizar páginas JavaScript (SPAs). "
+            "Requer instalação de `playwright` e `playwright install chromium` no ambiente. "
+            "Se False (padrão), usa httpx para extração HTTP simples."
+        ),
+    )
 
     @field_validator("urls")
     @classmethod
@@ -232,6 +240,7 @@ class ConfiguracaoResponse(BaseSchema):
     )
     agendamento_cron: Optional[str] = Field(None, description="Expressão cron")
     agendamento_tipo: AgendamentoTipo = Field(..., description="Tipo de agendamento")
+    use_browser: bool = Field(..., description="Se usa Playwright para renderizar JS")
     created_at: datetime = Field(..., description="Data/hora de criação")
     updated_at: datetime = Field(..., description="Data/hora da última atualização")
 

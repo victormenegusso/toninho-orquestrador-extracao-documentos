@@ -3,6 +3,10 @@ Extrator principal de páginas web.
 
 Orquestra o fluxo de extração: HTTP fetch → parse HTML →
 converter markdown → adicionar metadados → salvar no storage.
+
+Suporta dois modos de extração:
+- HTTP simples via httpx (padrão, rápido, sem JS)
+- Navegador headless via Playwright (use_browser=True, suporta SPAs)
 """
 
 from datetime import datetime, timezone
@@ -29,14 +33,38 @@ class PageExtractor:
         max_retries: int = 3,
         cache_enabled: bool = True,
         user_agent: str = "Toninho/1.0",
+        use_browser: bool = False,
+        browser_wait_for: str = "networkidle",
     ):
+        """
+        Inicializa o extrator.
+
+        Args:
+            storage: Interface de armazenamento
+            timeout: Timeout em segundos para requisições
+            max_retries: Número máximo de tentativas (somente modo HTTP)
+            cache_enabled: Habilitar cache in-memory (somente modo HTTP)
+            user_agent: User-Agent enviado nas requisições
+            use_browser: Se True, usa Playwright para renderizar JS/SPAs.
+                Requer `playwright` instalado e `playwright install chromium`.
+            browser_wait_for: Evento Playwright a aguardar antes de capturar HTML.
+                Opções: "load", "domcontentloaded", "networkidle" (padrão), "commit".
+        """
         self.storage = storage
+        self.use_browser = use_browser
         self._http = HTTPClient(
             timeout=timeout,
             max_retries=max_retries,
             cache_enabled=cache_enabled,
             user_agent=user_agent,
         )
+        self._browser_client = None
+        if use_browser:
+            from toninho.extraction.browser_client import BrowserClient
+            self._browser_client = BrowserClient(
+                timeout=timeout * 1000,  # Playwright usa milissegundos
+                wait_for=browser_wait_for,
+            )
 
     async def extract(self, url: str, output_path: str | None = None) -> Dict:
         """
@@ -60,10 +88,17 @@ class PageExtractor:
             output_path = sanitize_filename(url)
 
         logger.info(f"Extraindo: {url}")
+        if self.use_browser:
+            logger.debug(f"[browser mode] Renderizando JS: {url}")
 
         try:
-            # 1. Buscar HTML
-            response = await self._http.get(url)
+            # 1. Buscar HTML (HTTP ou browser)
+            if self.use_browser and self._browser_client:
+                if self._browser_client._browser is None:
+                    await self._browser_client.start()
+                response = await self._browser_client.get(url)
+            else:
+                response = await self._http.get(url)
             html_content: bytes = response["content"]
 
             # 2. Extrair título e markdown
@@ -115,8 +150,10 @@ class PageExtractor:
         return sanitize_filename(url)
 
     async def close(self) -> None:
-        """Fecha recursos internos."""
+        """Fecha recursos internos (HTTP client e/ou navegador)."""
         await self._http.close()
+        if self._browser_client:
+            await self._browser_client.close()
 
     async def __aenter__(self) -> "PageExtractor":
         return self
