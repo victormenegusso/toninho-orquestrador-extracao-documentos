@@ -5,7 +5,7 @@ Representa uma execução de um processo de extração.
 """
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -15,6 +15,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    String,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -105,6 +106,13 @@ class Execucao(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         default=1,
         doc="Número da tentativa atual"
+    )
+
+    celery_task_id: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+        default=None,
+        doc="ID da task Celery associada (para revogação)"
     )
 
     # Relacionamentos
