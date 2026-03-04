@@ -95,11 +95,19 @@ class ExtractionOrchestrator:
         )
 
         # 5. Log inicial
-        self._add_log(db, execucao_id, LogNivel.INFO, f"Iniciando extração de {total} URLs")
+        self._add_log(
+            db, execucao_id, LogNivel.INFO,
+            f"Iniciando extração de {total} URLs",
+            contexto={"total_urls": total, "urls": urls},
+        )
 
         # 6. Extrair cada URL
         for idx, url in enumerate(urls, 1):
-            self._add_log(db, execucao_id, LogNivel.INFO, f"[{idx}/{total}] Extraindo: {url}")
+            self._add_log(
+                db, execucao_id, LogNivel.INFO,
+                f"[{idx}/{total}] Extraindo: {url}",
+                contexto={"url": url, "indice": idx, "total": total},
+            )
 
             output_path = build_output_path(
                 str(execucao.processo_id),
@@ -124,7 +132,8 @@ class ExtractionOrchestrator:
                 caminho = output_path
                 self._add_log(
                     db, execucao_id, LogNivel.ERROR,
-                    f"Erro ao extrair {url}: {erro_msg}"
+                    f"Erro ao extrair {url}: {erro_msg}",
+                    contexto={"url": url, "indice": idx, "erro": erro_msg},
                 )
 
             # Registrar PaginaExtraida
@@ -161,7 +170,14 @@ class ExtractionOrchestrator:
 
         self._add_log(
             db, execucao_id, LogNivel.INFO,
-            f"Extração finalizada: {sucesso} sucesso, {falha} falhas — status={status_final.value}"
+            f"Extração finalizada: {sucesso} sucesso, {falha} falhas — status={status_final.value}",
+            contexto={
+                "status": status_final.value,
+                "paginas_sucesso": sucesso,
+                "paginas_falha": falha,
+                "total": total,
+                "bytes_extraidos": bytes_total,
+            },
         )
         db.commit()
 
@@ -185,13 +201,20 @@ class ExtractionOrchestrator:
             await extractor.close()
 
     @staticmethod
-    def _add_log(db: Session, execucao_id: uuid.UUID, nivel: LogNivel, mensagem: str) -> None:
+    def _add_log(
+        db: Session,
+        execucao_id: uuid.UUID,
+        nivel: LogNivel,
+        mensagem: str,
+        contexto: Dict | None = None,
+    ) -> None:
         """Adiciona log à execução no banco."""
         from toninho.models.log import Log
         log = Log(
             execucao_id=execucao_id,
             nivel=nivel,
             mensagem=mensagem,
+            contexto=contexto,
         )
         db.add(log)
         db.flush()

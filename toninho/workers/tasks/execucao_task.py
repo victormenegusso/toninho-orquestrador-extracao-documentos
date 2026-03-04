@@ -103,7 +103,7 @@ def _marcar_falha(db, execucao_id: str, motivo: str) -> None:
             execucao.finalizado_em = datetime.now(timezone.utc)
             db.commit()
 
-        ExtractionOrchestrator._add_log(db, eid, LogNivel.ERROR, f"Task falhou: {motivo}")
+        ExtractionOrchestrator._add_log(db, eid, LogNivel.ERROR, f"Task falhou: {motivo}", contexto={"motivo": motivo})
         db.commit()
     except Exception as inner:
         logger.error(f"Erro ao marcar falha: {inner}")

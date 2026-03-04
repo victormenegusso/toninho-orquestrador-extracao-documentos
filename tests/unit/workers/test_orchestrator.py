@@ -290,3 +290,41 @@ class TestExtractionOrchestratorEdgeCases:
 
         db.refresh(execucao)
         assert execucao.taxa_erro == 0.0
+
+    def test_logs_tem_contexto_preenchido(self, db, processo, configuracao, mock_storage):
+        """Todos os logs de extração devem ter contexto preenchido (MH-001)."""
+        from toninho.models.log import Log
+
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+        db.refresh(execucao)
+
+        with patch.object(ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock) as mock_extract:
+            mock_extract.return_value = SUCESSO_RESULT
+            ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+
+        logs = db.query(Log).filter(Log.execucao_id == execucao.id).all()
+        assert len(logs) > 0, "Nenhum log criado"
+
+        logs_sem_contexto = [l for l in logs if l.contexto is None]
+        assert not logs_sem_contexto, (
+            f"Logs sem contexto: {[l.mensagem for l in logs_sem_contexto]}"
+        )
+
+    def test_add_log_aceita_contexto(self, db, processo, mock_storage):
+        """_add_log deve persistir o contexto fornecido (MH-001)."""
+        from toninho.models.log import Log
+
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+        db.refresh(execucao)
+
+        ctx = {"url": "https://example.com", "indice": 1, "total": 3}
+        ExtractionOrchestrator._add_log(db, execucao.id, LogNivel.INFO, "teste contexto", contexto=ctx)
+        db.commit()
+
+        log = db.query(Log).filter(Log.execucao_id == execucao.id).order_by(Log.timestamp.desc()).first()
+        assert log is not None
+        assert log.contexto == ctx
