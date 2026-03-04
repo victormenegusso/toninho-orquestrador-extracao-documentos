@@ -1,19 +1,20 @@
 """
-Cliente HTTP com retry, timeout e cache in-memory.
+Cliente HTTP com retry, timeout, cache in-memory e rate limiting.
 
 Responsável por buscar conteúdo de URLs de forma resiliente,
-com backoff exponencial e cache simples para evitar requests duplicados.
+com backoff exponencial, cache simples e controle de taxa por domínio.
 """
 
 import asyncio
 from typing import Dict, Optional
+from urllib.parse import urlparse
 
 import httpx
 from loguru import logger
 
 
 class HTTPClient:
-    """Cliente HTTP com retry, timeout e cache in-memory."""
+    """Cliente HTTP com retry, timeout, cache in-memory e rate limiting por domínio."""
 
     def __init__(
         self,
@@ -21,11 +22,25 @@ class HTTPClient:
         max_retries: int = 3,
         cache_enabled: bool = True,
         user_agent: str = "Toninho/1.0",
+        delay_between_requests: float = 0.0,
     ):
+        """
+        Inicializa o cliente HTTP.
+
+        Args:
+            timeout: Timeout em segundos para cada requisição
+            max_retries: Número máximo de tentativas
+            cache_enabled: Se True, usa cache in-memory para evitar requests duplicados
+            user_agent: User-Agent enviado nas requisições
+            delay_between_requests: Delay mínimo em segundos entre requisições
+                ao mesmo domínio. Use 1.0 para 1 req/s, 0.0 para sem limite.
+        """
         self.timeout = timeout
         self.max_retries = max_retries
         self.cache_enabled = cache_enabled
+        self.delay_between_requests = delay_between_requests
         self._cache: Dict[str, bytes] = {}
+        self._last_request_time: Dict[str, float] = {}  # domínio -> timestamp
 
         self._client = httpx.AsyncClient(
             timeout=httpx.Timeout(timeout),
@@ -58,6 +73,10 @@ class HTTPClient:
                 "headers": {},
                 "from_cache": True,
             }
+
+        # Rate limiting por domínio
+        if self.delay_between_requests > 0:
+            await self._apply_rate_limit(url)
 
         last_exc: Optional[Exception] = None
 
@@ -105,6 +124,29 @@ class HTTPClient:
         raise last_exc or Exception(
             f"Falha ao buscar {url} após {self.max_retries} tentativas"
         )
+
+    async def _apply_rate_limit(self, url: str) -> None:
+        """
+        Aplica rate limiting por domínio.
+
+        Garante que o intervalo mínimo entre requisições ao mesmo
+        domínio seja respeitado.
+
+        Args:
+            url: URL alvo (domínio é extraído automaticamente)
+        """
+        import time
+
+        domain = urlparse(url).netloc
+        last_time = self._last_request_time.get(domain, 0.0)
+        elapsed = time.monotonic() - last_time
+        remaining = self.delay_between_requests - elapsed
+
+        if remaining > 0:
+            logger.debug(f"Rate limit: aguardando {remaining:.2f}s antes de acessar {domain}")
+            await asyncio.sleep(remaining)
+
+        self._last_request_time[domain] = time.monotonic()
 
     def clear_cache(self) -> None:
         """Limpa o cache in-memory."""

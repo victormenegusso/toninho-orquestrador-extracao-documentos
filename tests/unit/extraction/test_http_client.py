@@ -184,3 +184,59 @@ class TestHTTPClientCache:
 
         assert result["from_cache"] is False
         assert result["content"] == b"fresh content"
+
+
+class TestHTTPClientRateLimit:
+    """Testes de rate limiting por domínio (MH-005)."""
+
+    def test_delay_between_requests_default_zero(self):
+        """delay_between_requests deve ser 0.0 por padrão (sem rate limit)."""
+        client = HTTPClient()
+        assert client.delay_between_requests == 0.0
+
+    def test_delay_between_requests_configured(self):
+        """delay_between_requests deve ser configurável."""
+        client = HTTPClient(delay_between_requests=1.5)
+        assert client.delay_between_requests == 1.5
+
+    @pytest.mark.asyncio
+    async def test_rate_limit_applies_delay(self, respx_mock):
+        """Com delay configurado, segunda request ao mesmo domínio deve esperar."""
+        import time
+
+        url1 = "https://example.com/page1"
+        url2 = "https://example.com/page2"
+
+        respx_mock.get(url1).mock(return_value=httpx.Response(200, content=b"p1"))
+        respx_mock.get(url2).mock(return_value=httpx.Response(200, content=b"p2"))
+
+        delay = 0.1  # 100ms para o teste ser rápido
+        async with HTTPClient(cache_enabled=False, delay_between_requests=delay) as client:
+            t0 = time.monotonic()
+            await client.get(url1)
+            await client.get(url2)
+            elapsed = time.monotonic() - t0
+
+        # O delay total deve ser >= delay (segunda request espera)
+        assert elapsed >= delay
+
+    @pytest.mark.asyncio
+    async def test_no_rate_limit_different_domains(self, respx_mock):
+        """Requests a domínios diferentes não devem aplicar delay entre si."""
+        import time
+
+        url_a = "https://domain-a.com/page"
+        url_b = "https://domain-b.com/page"
+
+        respx_mock.get(url_a).mock(return_value=httpx.Response(200, content=b"a"))
+        respx_mock.get(url_b).mock(return_value=httpx.Response(200, content=b"b"))
+
+        delay = 1.0  # 1 segundo — mas domínios diferentes, então não deve esperar
+        async with HTTPClient(cache_enabled=False, delay_between_requests=delay) as client:
+            t0 = time.monotonic()
+            await client.get(url_a)
+            await client.get(url_b)
+            elapsed = time.monotonic() - t0
+
+        # Sem delay entre domínios diferentes — deve ser bem mais rápido que 1s
+        assert elapsed < delay
