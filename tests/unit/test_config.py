@@ -16,6 +16,27 @@ def test_settings_default_values():
     assert settings.LOG_LEVEL == "INFO"
 
 
+def test_sql_echo_defaults_to_false():
+    """BUG-003: SQL_ECHO deve ser False por padrão para não poluir logs em produção.
+
+    DEBUG=True (útil para FastAPI hot-reload) não deve implicar
+    em log de todas as queries SQL nos containers.
+    """
+    settings = Settings()
+    assert settings.SQL_ECHO is False, (
+        "SQL_ECHO deve ser False por padrão; use SQL_ECHO=true apenas para debugging pontual"
+    )
+
+
+def test_sql_echo_can_be_enabled(monkeypatch):
+    """SQL_ECHO pode ser habilitado via variável de ambiente."""
+    monkeypatch.setenv("SQL_ECHO", "true")
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.SQL_ECHO is True
+    get_settings.cache_clear()
+
+
 def test_settings_singleton():
     """Testa se get_settings retorna sempre a mesma instância."""
     settings1 = get_settings()

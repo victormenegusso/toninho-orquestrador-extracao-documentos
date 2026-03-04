@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
+    SQL_ECHO: bool = False  # Log de queries SQL — False por padrao para nao poluir logs
 
     # Banco de Dados
     DATABASE_URL: str = "sqlite:///./toninho.db"

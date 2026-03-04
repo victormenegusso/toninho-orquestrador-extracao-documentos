@@ -18,7 +18,7 @@ engine = create_engine(
     settings.DATABASE_URL,
     connect_args={"check_same_thread": False},  # Necessário para FastAPI com SQLite
     pool_pre_ping=True,  # Detectar conexões fechadas
-    echo=settings.DEBUG,  # Log queries SQL em modo DEBUG
+    echo=settings.SQL_ECHO,  # Log queries SQL (controlado por SQL_ECHO, nao por DEBUG)
 )
 
 
