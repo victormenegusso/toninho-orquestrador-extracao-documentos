@@ -164,6 +164,39 @@ def create_processo_com_config(api_client: httpx.Client, create_processo):
     return _create
 
 
+@pytest.fixture
+def create_execucao(api_client: httpx.Client, create_processo_com_config):
+    """Cria uma execucao via API para um processo com configuracao valida."""
+
+    def _create(processo_id: str | None = None) -> dict:
+        if processo_id is None:
+            processo, _ = create_processo_com_config()
+            processo_id = processo["id"]
+
+        response = api_client.post(f"/api/v1/processos/{processo_id}/execucoes")
+        assert response.status_code == 201, f"Falha ao criar execucao: {response.text}"
+        return response.json()["data"]
+
+    return _create
+
+
+@pytest.fixture
+def update_execucao_status(api_client: httpx.Client):
+    """Atualiza status de execucao via endpoint PATCH da API."""
+
+    def _update(execucao_id: str, status: str) -> dict:
+        response = api_client.patch(
+            f"/api/v1/execucoes/{execucao_id}/status",
+            json={"status": status},
+        )
+        assert (
+            response.status_code == 200
+        ), f"Falha ao atualizar status da execucao: {response.text}"
+        return response.json()["data"]
+
+    return _update
+
+
 def _wait_for_server(url: str, timeout: int = 30) -> None:
     """Aguarda o servidor responder ao endpoint de health check."""
     deadline = time.monotonic() + timeout
