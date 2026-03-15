@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import time
 from collections.abc import Generator
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -98,6 +99,69 @@ def api_client(live_server: str) -> Generator[httpx.Client, None, None]:
     """Cliente HTTP para seeding de dados via API durante os testes E2E."""
     with httpx.Client(base_url=live_server, timeout=30.0) as client:
         yield client
+
+
+@pytest.fixture
+def create_processo(api_client: httpx.Client):
+    """Cria processos via API para seeding de cenarios E2E."""
+    counter = 0
+
+    def _create(**kwargs) -> dict:
+        nonlocal counter
+        counter += 1
+
+        payload = {
+            "nome": kwargs.pop("nome", f"Processo E2E {counter}-{uuid4().hex[:8]}"),
+            "descricao": kwargs.pop("descricao", "Processo criado para teste E2E"),
+            "status": kwargs.pop("status", "ativo"),
+        }
+        payload.update(kwargs)
+
+        response = api_client.post("/api/v1/processos", json=payload)
+        assert response.status_code == 201, f"Falha ao criar processo: {response.text}"
+        return response.json()["data"]
+
+    return _create
+
+
+@pytest.fixture
+def create_processo_com_config(api_client: httpx.Client, create_processo):
+    """Cria processo e configuracao padrao via API para testes E2E."""
+
+    def _create(
+        processo_kwargs: dict | None = None,
+        config_kwargs: dict | None = None,
+    ) -> tuple[dict, dict]:
+        processo_kwargs = processo_kwargs or {}
+        config_kwargs = config_kwargs or {}
+
+        processo = create_processo(**processo_kwargs)
+        processo_id = processo["id"]
+
+        config_payload = {
+            "urls": config_kwargs.pop("urls", ["https://example.com"]),
+            "timeout": config_kwargs.pop("timeout", 3600),
+            "max_retries": config_kwargs.pop("max_retries", 3),
+            "formato_saida": config_kwargs.pop("formato_saida", "multiplos_arquivos"),
+            "output_dir": config_kwargs.pop("output_dir", "./output"),
+            "agendamento_tipo": config_kwargs.pop("agendamento_tipo", "manual"),
+            "agendamento_cron": config_kwargs.pop("agendamento_cron", None),
+            "use_browser": config_kwargs.pop("use_browser", False),
+            "metodo_extracao": config_kwargs.pop("metodo_extracao", "html2text"),
+        }
+        config_payload.update(config_kwargs)
+
+        response = api_client.post(
+            f"/api/v1/processos/{processo_id}/configuracoes",
+            json=config_payload,
+        )
+        assert (
+            response.status_code == 201
+        ), f"Falha ao criar configuracao: {response.text}"
+
+        return processo, response.json()["data"]
+
+    return _create
 
 
 def _wait_for_server(url: str, timeout: int = 30) -> None:
