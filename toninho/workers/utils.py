@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from toninho.extraction.extractor import PageExtractor
 from toninho.extraction.storage import StorageInterface, get_storage
 from toninho.extraction.utils import build_output_path
-from toninho.models.enums import ExecucaoStatus, LogNivel, PaginaStatus
+from toninho.models.enums import ExecucaoStatus, LogNivel, MetodoExtracao, PaginaStatus
 
 
 class ExtractionOrchestrator:
@@ -101,14 +101,21 @@ class ExtractionOrchestrator:
 
         # 4b. Preparar extractor com modo browser se configurado
         use_browser = getattr(configuracao, "use_browser", False)
+        metodo_extracao = getattr(
+            configuracao, "metodo_extracao", MetodoExtracao.HTML2TEXT
+        )
 
         # 5. Log inicial
         self._add_log(
             db,
             execucao_id,
             LogNivel.INFO,
-            f"Iniciando extração de {total} URLs",
-            contexto={"total_urls": total, "urls": urls},
+            f"Iniciando extração de {total} URLs com motor={metodo_extracao.value}",
+            contexto={
+                "total_urls": total,
+                "urls": urls,
+                "metodo_extracao": metodo_extracao.value,
+            },
         )
 
         # 6. Extrair cada URL
@@ -128,7 +135,13 @@ class ExtractionOrchestrator:
             )
 
             resultado = asyncio.run(
-                self._extract_url(storage, url, output_path, use_browser=use_browser)
+                self._extract_url(
+                    storage,
+                    url,
+                    output_path,
+                    use_browser=use_browser,
+                    metodo_extracao=metodo_extracao,
+                )
             )
 
             if resultado["status"] == "sucesso":
@@ -209,16 +222,55 @@ class ExtractionOrchestrator:
 
     @staticmethod
     async def _extract_url(
-        storage: StorageInterface, url: str, output_path: str, use_browser: bool = False
+        storage: StorageInterface,
+        url: str,
+        output_path: str,
+        use_browser: bool = False,
+        metodo_extracao: MetodoExtracao = MetodoExtracao.HTML2TEXT,
     ) -> dict:
-        """Executa extração async de uma URL."""
-        extractor = PageExtractor(
-            storage, timeout=60, max_retries=3, use_browser=use_browser
-        )
-        try:
-            return await extractor.extract(url, output_path)
-        finally:
-            await extractor.close()
+        """Executa extração async de uma URL, escolhendo o motor correto.
+
+        Args:
+            storage: Interface de armazenamento.
+            url: URL a extrair.
+            output_path: Caminho relativo de saída.
+            use_browser: Se True, usa Playwright para pré-renderizar (ambos os motores).
+            metodo_extracao: Motor de conversão HTML→Markdown.
+
+        Returns:
+            Dict com status, url, path, bytes, title, from_cache, error.
+        """
+        if metodo_extracao == MetodoExtracao.DOCLING:
+            from toninho.extraction.docling_extractor import DoclingPageExtractor
+
+            extractor = DoclingPageExtractor(storage)
+
+            if use_browser:
+                # Playwright pré-renderiza → HTML bytes → Docling converte
+                from toninho.extraction.browser_client import BrowserClient
+
+                browser = BrowserClient(timeout=60_000)
+                await browser.start()
+                try:
+                    response = await browser.get(url)
+                finally:
+                    await browser.close()
+                return await extractor.extract_from_html(
+                    response["content"], url, output_path
+                )
+            else:
+                # Docling faz o fetch HTTP interno
+                return await extractor.extract(url, output_path)
+
+        else:
+            # Método padrão: PageExtractor (httpx + html2text)
+            extractor_h2t = PageExtractor(
+                storage, timeout=60, max_retries=3, use_browser=use_browser
+            )
+            try:
+                return await extractor_h2t.extract(url, output_path)
+            finally:
+                await extractor_h2t.close()
 
     @staticmethod
     def _add_log(

@@ -3,10 +3,10 @@
 ## 1. Arquitetura e Design
 
 ### 1.1 Arquitetura Geral
-- **P1.1.1**: Qual será a arquitetura do sistema? Monolítico, microsserviços, ou algo híbrido? 
+- **P1.1.1**: Qual será a arquitetura do sistema? Monolítico, microsserviços, ou algo híbrido?
   - Resposta: Monolito, separar so back e front.
 
-- **P1.1.2**: Como será a comunicação entre backend e frontend? REST puro, WebSockets para atualizações em tempo real, Server-Sent Events (SSE)? 
+- **P1.1.2**: Como será a comunicação entre backend e frontend? REST puro, WebSockets para atualizações em tempo real, Server-Sent Events (SSE)?
     - Resposta: REST para a maioria das operações, WebSockets ou SSE para atualizações em tempo real do progresso dos processos.
 
 - **P1.1.3**: O sistema terá camadas bem definidas (controller, service, repository)? Qual padrão arquitetural pretende seguir?
@@ -35,7 +35,7 @@
     - Resposta: A ideia é usar uma interface para no futuro ir plugando diferentes tipos de armazenamento, mas inicialmente vamos salvar os arquivos markdown gerados no sistema de arquivos local, em uma pasta configurável (por exemplo, "output/"). O caminho para essa pasta pode ser definido nas configurações do processo de extração. Para dados estruturados ou logs, podemos usar o banco de dados SQLite para armazenar metadados e informações sobre as extrações.
 - **P2.2.2**: Haverá versionamento dos dados extraídos? Se extrair o mesmo site duas vezes, mantém histórico?
     - Resposta: Inicialmente, não teremos versionamento dos dados extraídos. Se o usuário extrair o mesmo site duas vezes, o sistema pode sobrescrever os arquivos existentes ou criar uma nova versão com um sufixo de timestamp para evitar perda de dados. Podemos considerar a implementação de um sistema de versionamento mais robusto para uma versão futura, onde cada extração gera uma nova versão dos dados e mantém um histórico completo.
-   
+
 - **P2.2.3**: Qual o tamanho máximo esperado de dados por extração? GB? TB?
     - Resposta: O tamanho pode ser setado via variavel de ambiente, mas inicialmente podemos definir um limite de 1GB por extração para evitar sobrecarga do sistema. Esse limite pode ser ajustado conforme a necessidade e a capacidade do ambiente de execução.
 - **P2.2.4**: Os arquivos markdown gerados terão alguma estrutura padrão? Metadados no cabeçalho?
@@ -44,7 +44,7 @@
 ## 3. Configuração de Processos de Extração
 
 ### 3.1 Regras de Extração
-- **P3.1.1**: Como o usuário definirá as "regras" de extração? Interface visual, JSON, YAML, Python scripts? 
+- **P3.1.1**: Como o usuário definirá as "regras" de extração? Interface visual, JSON, YAML, Python scripts?
     - Resposta: nao entendi muito bem a pergunta, pois a extracao em si vai ser feita pela lib docling, entao as regras de extracao vao ser definidas seguindo a estrutura de configuracao da docling.
 - **P3.1.2**: Quais regras são necessárias? Profundidade máxima, padrões de URL a incluir/excluir, tipos de conteúdo (imagens, texto, código)?
     - Resposta: Nao entendi bem a pergunta poderia me dar um exemplo?
@@ -139,7 +139,7 @@
 ## 8. Interface do Usuário
 
 ### 8.1 Funcionalidades
-- **P8.1.1**: Quais são as telas principais? Dashboard, Lista de Processos, Criar/Editar Processo, Detalhes do Processo, Configurações? 
+- **P8.1.1**: Quais são as telas principais? Dashboard, Lista de Processos, Criar/Editar Processo, Detalhes do Processo, Configurações?
     - Resposta: sim.
 - **P8.1.2**: Haverá busca e filtros na lista de processos? Por status, data, tags?
     - Resposta: por enquanto nao
@@ -148,16 +148,16 @@
 
 ### 8.2 Visualização de Resultados
 - **P8.2.1**: O usuário poderá visualizar os dados extraídos diretamente na interface ou só fazer download?
-    - resposta: Inicialmente, o usuário poderá apenas fazer download dos arquivos markdown gerados. 
+    - resposta: Inicialmente, o usuário poderá apenas fazer download dos arquivos markdown gerados.
 - **P8.2.2**: Haverá preview dos arquivos markdown gerados?
-    - Resposta: No início, não teremos um preview integrado para os arquivos markdown gerados. 
+    - Resposta: No início, não teremos um preview integrado para os arquivos markdown gerados.
 - **P8.2.3**: Como será exibida a estrutura de páginas exploradas? Árvore hierárquica, lista, grafo?
     - Resposta: "A definir"
 
 ## 9. Usuários e Autenticação
 
 ### 9.1 Multi-usuário
-- **P9.1.1**: O sistema será multi-usuário ou single-user (uso local)? 
+- **P9.1.1**: O sistema será multi-usuário ou single-user (uso local)?
     - resposta: uso local, single-user.
 - **P9.1.2**: Se multi-usuário, haverá diferentes níveis de permissão? Admin, usuário comum?
 - **P9.1.3**: Cada usuário terá suas próprias configurações e processos isolados?
@@ -168,7 +168,7 @@
 - **P9.2.2**: Haverá necessidade de HTTPS obrigatório?
     - resposta: Não, como o sistema é voltado para uso local, não será necessário implementar HTTPS obrigatório.
 - **P9.2.3**: Como serão armazenadas credenciais sensíveis (senhas de sites, tokens de API)? Criptografia?
-    - resposta: Como o sistema é voltado para uso local e não terá autenticação, não haverá armazenamento de credenciais sensíveis. 
+    - resposta: Como o sistema é voltado para uso local e não terá autenticação, não haverá armazenamento de credenciais sensíveis.
 ## 10. Persistência e Banco de Dados
 
 ### 10.1 Modelo de Dados
@@ -184,12 +184,12 @@
 - **P10.2.2**: Haverá necessidade de transações complexas?
     - Resposta: Não, as operações de banco de dados serão relativamente simples, então não haverá necessidade de transações complexas.
 - **P10.2.3**: Considera-se usar ORM (SQLAlchemy, Peewee) ou queries SQL diretas?
-    - Resposta: Sim, podemos usar um ORM, qual você me recomenda para python? 
+    - Resposta: Sim, podemos usar um ORM, qual você me recomenda para python?
 
 ## 11. Performance e Escalabilidade
 
 ### 11.1 Limites
-- **P11.1.1**: Quantos usuários simultâneos o sistema deve suportar? 
+- **P11.1.1**: Quantos usuários simultâneos o sistema deve suportar?
     - Resposta: Como o sistema é voltado para uso local e single-user, não há necessidade de suportar múltiplos usuários simultâneos. O foco será garantir que o sistema funcione de forma eficiente para um único usuário, com a possibilidade de escalar para mais processos de extração simultâneos conforme necessário.
 - **P11.1.2**: Quantos processos simultâneos por usuário?
     - Resposta: O sistema deve suportar pelo menos 5 processos de extração simultâneos por usuário, com a possibilidade de escalar para mais conforme necessário. ( podemos deixar como variavel de ambiente, default 5, e o usuario pode configurar conforme a necessidade )
@@ -214,9 +214,9 @@
 
 ### 12.2 Recuperação
 - **P12.2.1**: Em caso de falha parcial (algumas páginas falharam), o que fazer? Salvar parcial, tentar novamente, alertar usuário?
-    - Resposta: Em caso de falha parcial, o sistema pode salvar os dados extraídos até o ponto da falha e marcar o processo como "Concluído com Erros". 
+    - Resposta: Em caso de falha parcial, o sistema pode salvar os dados extraídos até o ponto da falha e marcar o processo como "Concluído com Erros".
 - **P12.2.2**: Haverá checkpoint/savepoint durante extração longa?
-    - Resposta: Não, inicialmente não teremos checkpoint/savepoint durante extrações longas para simplificar a implementação. 
+    - Resposta: Não, inicialmente não teremos checkpoint/savepoint durante extrações longas para simplificar a implementação.
 - **P12.2.3**: Como lidar com mudanças na estrutura do site entre tentativas?
     - Resposta: "A definir"
 
@@ -225,7 +225,7 @@
 ### 13.1 Ambiente de Execução
 - **P13.1.1**: O sistema será executado onde? Localmente, servidor próprio, cloud?
     - Resposta: O sistema será executado localmente, voltado para uso em máquinas pessoais ou ambientes de desenvolvimento. A ideia é ser simples, mas seria legal ter uma imagem docker, para colocar na vps.
-- **P13.1.2**: Haverá containerização (Docker)? Docker Compose para orquestração local? 
+- **P13.1.2**: Haverá containerização (Docker)? Docker Compose para orquestração local?
     - Resposta: Sim, podemos criar uma imagem Docker para facilitar a execução do sistema em diferentes ambientes. O Docker Compose pode ser usado para orquestrar os serviços necessários, como o backend, frontend e o worker de extração, tornando mais fácil para os usuários configurarem e executarem o sistema localmente.
 - **P13.1.3**: Como será o processo de instalação? Pip install, clone + setup.py, imagem Docker?
     - Resposta: Oque voce me recomenda?
@@ -257,7 +257,7 @@
 - **P15.1.2**: Haverá templates pré-configurados para sites comuns? (GitHub docs, ReadTheDocs, etc)
     - Resposta: Não inicialmente.
 - **P15.1.3**: Como o sistema lidará com sites com estrutura muito diferente uns dos outros?
-    - Resposta: A lib docling tem uma estrutura de configuração flexível que pode ser adaptada para lidar com diferentes estruturas de sites. 
+    - Resposta: A lib docling tem uma estrutura de configuração flexível que pode ser adaptada para lidar com diferentes estruturas de sites.
 
 ### 15.2 Integração
 - **P15.2.1**: Os dados extraídos serão usados para quê depois? Análise, busca, processamento com IA?

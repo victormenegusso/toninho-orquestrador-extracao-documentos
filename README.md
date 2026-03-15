@@ -161,7 +161,8 @@ poetry run pre-commit run --all-files
 ## 📖 Documentação
 
 - [PRDs](docs/prd/) - Product Requirements Documents
-- [Arquitetura](docs/architecture/) - Diagramas e decisões arquiteturais
+- [Arquitetura](docs/architecture/) - Diagramas
+- [ADRs](docs/adr/) - Architecture Decision Records
 - [API](docs/api/) - Documentação da API
 
 ## 🤝 Contribuindo

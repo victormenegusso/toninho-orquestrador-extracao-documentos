@@ -24,6 +24,7 @@ from toninho.models import (
     Processo,
     ProcessoStatus,
 )
+from toninho.models.enums import MetodoExtracao
 
 
 class TestProcesso:
@@ -464,3 +465,101 @@ class TestRelacionamentos:
 
         assert db.query(Log).filter_by(id=log_id).first() is None
         assert db.query(PaginaExtraida).filter_by(id=pagina_id).first() is None
+
+
+# ── Passo 1 — MetodoExtracao + Configuracao.metodo_extracao ────────────────────────
+
+
+class TestMetodoExtracaoEnum:
+    """Testes do novo enum MetodoExtracao."""
+
+    def test_enum_possui_valor_html2text(self) -> None:
+        assert MetodoExtracao.HTML2TEXT == "html2text"
+
+    def test_enum_possui_valor_docling(self) -> None:
+        assert MetodoExtracao.DOCLING == "docling"
+
+    def test_enum_e_string(self) -> None:
+        assert isinstance(MetodoExtracao.HTML2TEXT, str)
+        assert isinstance(MetodoExtracao.DOCLING, str)
+
+    def test_enum_iteravel(self) -> None:
+        valores = {m.value for m in MetodoExtracao}
+        assert "html2text" in valores
+        assert "docling" in valores
+
+
+class TestConfiguracaoMetodoExtracao:
+    """Testes do campo metodo_extracao no model Configuracao."""
+
+    def test_cria_com_default_html2text(self, db: Session, processo_factory) -> None:
+        processo = processo_factory()
+        config = Configuracao(
+            processo_id=processo.id,
+            urls=["https://x.com"],
+            timeout=60,
+            max_retries=1,
+            formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
+            output_dir="/tmp",
+            agendamento_tipo=AgendamentoTipo.MANUAL,
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+        assert config.metodo_extracao == MetodoExtracao.HTML2TEXT
+
+    def test_cria_com_metodo_docling(self, db: Session, processo_factory) -> None:
+        processo = processo_factory()
+        config = Configuracao(
+            processo_id=processo.id,
+            urls=["https://x.com"],
+            timeout=60,
+            max_retries=1,
+            formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
+            output_dir="/tmp",
+            agendamento_tipo=AgendamentoTipo.MANUAL,
+            metodo_extracao=MetodoExtracao.DOCLING,
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+        assert config.metodo_extracao == MetodoExtracao.DOCLING
+
+    def test_metodo_extracao_salvo_como_string_no_banco(
+        self, db: Session, processo_factory
+    ) -> None:
+        """Garante que o enum é serializado como string (ADR-003)."""
+        processo = processo_factory()
+        config = Configuracao(
+            processo_id=processo.id,
+            urls=["https://x.com"],
+            timeout=60,
+            max_retries=1,
+            formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
+            output_dir="/tmp",
+            agendamento_tipo=AgendamentoTipo.MANUAL,
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+        # str enum deve serializar como string pura, não como "MetodoExtracao.html2text"
+        assert config.metodo_extracao.value == "html2text"
+        assert isinstance(config.metodo_extracao, str)
+
+    def test_atualiza_metodo_extracao(self, db: Session, processo_factory) -> None:
+        processo = processo_factory()
+        config = Configuracao(
+            processo_id=processo.id,
+            urls=["https://x.com"],
+            timeout=60,
+            max_retries=1,
+            formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
+            output_dir="/tmp",
+            agendamento_tipo=AgendamentoTipo.MANUAL,
+        )
+        db.add(config)
+        db.commit()
+        config.metodo_extracao = MetodoExtracao.DOCLING
+        db.commit()
+        db.refresh(config)
+        assert config.metodo_extracao == MetodoExtracao.DOCLING

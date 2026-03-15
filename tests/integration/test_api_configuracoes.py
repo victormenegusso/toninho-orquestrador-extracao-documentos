@@ -268,3 +268,66 @@ class TestConfiguracaoAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["data"]["valida"] is False
+
+
+# ── Passo 2 — API: metodo_extracao (UC-07, UC-08, UC-09) ─────────────────────
+
+
+class TestConfigMetodoExtracao:
+    """Testes de integração para metodo_extracao via API REST."""
+
+    def test_post_com_docling_persiste_e_retorna(self, client, processo):
+        payload = {
+            "urls": ["https://exemplo.com"],
+            "timeout": 3600,
+            "max_retries": 3,
+            "output_dir": "/tmp/output",
+            "agendamento_tipo": "manual",
+            "metodo_extracao": "docling",
+        }
+        resp = client.post(
+            f"/api/v1/processos/{processo.id}/configuracoes", json=payload
+        )
+        assert resp.status_code == 201
+        assert resp.json()["data"]["metodo_extracao"] == "docling"
+
+    def test_post_sem_metodo_usa_html2text(self, client, processo):
+        payload = {
+            "urls": ["https://exemplo.com"],
+            "timeout": 3600,
+            "max_retries": 3,
+            "output_dir": "/tmp/output",
+            "agendamento_tipo": "manual",
+        }
+        resp = client.post(
+            f"/api/v1/processos/{processo.id}/configuracoes", json=payload
+        )
+        assert resp.status_code == 201
+        assert resp.json()["data"]["metodo_extracao"] == "html2text"
+
+    def test_get_configuracao_retorna_metodo_extracao(self, client, config_factory):
+        from toninho.models.enums import MetodoExtracao
+
+        config = config_factory(metodo_extracao=MetodoExtracao.DOCLING)
+        resp = client.get(f"/api/v1/processos/{config.processo_id}/configuracao")
+        assert resp.status_code == 200
+        assert resp.json()["data"]["metodo_extracao"] == "docling"
+
+    def test_put_atualiza_metodo_de_html2text_para_docling(
+        self, client, config_factory
+    ):
+        config = config_factory()  # default: html2text
+        resp = client.put(
+            f"/api/v1/configuracoes/{config.id}",
+            json={"metodo_extracao": "docling"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["metodo_extracao"] == "docling"
+
+    def test_put_com_metodo_invalido_retorna_422(self, client, config_factory):
+        config = config_factory()
+        resp = client.put(
+            f"/api/v1/configuracoes/{config.id}",
+            json={"metodo_extracao": "nao_existe"},
+        )
+        assert resp.status_code == 422

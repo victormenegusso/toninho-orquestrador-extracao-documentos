@@ -20,6 +20,7 @@ from toninho.models import (
     PaginaStatus,
     ProcessoStatus,
 )
+from toninho.models.enums import MetodoExtracao
 from toninho.schemas import (
     ConfiguracaoCreate,
     ConfiguracaoResponse,
@@ -33,6 +34,7 @@ from toninho.schemas import (
     ProcessoCreate,
     ProcessoResponse,
 )
+from toninho.schemas.configuracao import ConfiguracaoUpdate
 
 
 class TestProcessoSchemas:
@@ -509,3 +511,78 @@ class TestResponses:
         assert response.error.code == "NOT_FOUND"
         assert response.error.message == "Recurso não encontrado"
         assert len(response.error.details) == 1
+
+
+# ── Passo 2 — Schemas: metodo_extracao ────────────────────────────────────────
+
+
+class TestConfiguracaoCreateMetodoExtracao:
+    """UC-07: ConfiguracaoCreate com metodo_extracao."""
+
+    def test_default_e_html2text(self) -> None:
+        schema = ConfiguracaoCreate(
+            urls=["https://x.com"],
+            output_dir="output",
+            agendamento_tipo="manual",
+        )
+        assert schema.metodo_extracao == MetodoExtracao.HTML2TEXT
+
+    def test_aceita_docling(self) -> None:
+        schema = ConfiguracaoCreate(
+            urls=["https://x.com"],
+            output_dir="output",
+            agendamento_tipo="manual",
+            metodo_extracao="docling",
+        )
+        assert schema.metodo_extracao == MetodoExtracao.DOCLING
+
+    def test_aceita_html2text_explicito(self) -> None:
+        schema = ConfiguracaoCreate(
+            urls=["https://x.com"],
+            output_dir="output",
+            agendamento_tipo="manual",
+            metodo_extracao="html2text",
+        )
+        assert schema.metodo_extracao == MetodoExtracao.HTML2TEXT
+
+    def test_rejeita_valor_invalido(self) -> None:
+        with pytest.raises(ValidationError):
+            ConfiguracaoCreate(
+                urls=["https://x.com"],
+                output_dir="output",
+                agendamento_tipo="manual",
+                metodo_extracao="invalido",
+            )
+
+
+class TestConfiguracaoUpdateMetodoExtracao:
+    """UC-08: ConfiguracaoUpdate com metodo_extracao."""
+
+    def test_campo_opcional_ausente(self) -> None:
+        schema = ConfiguracaoUpdate()
+        assert schema.metodo_extracao is None
+
+    def test_aceita_docling(self) -> None:
+        schema = ConfiguracaoUpdate(metodo_extracao="docling")
+        assert schema.metodo_extracao == MetodoExtracao.DOCLING
+
+    def test_aceita_html2text(self) -> None:
+        schema = ConfiguracaoUpdate(metodo_extracao="html2text")
+        assert schema.metodo_extracao == MetodoExtracao.HTML2TEXT
+
+    def test_rejeita_valor_invalido(self) -> None:
+        with pytest.raises(ValidationError):
+            ConfiguracaoUpdate(metodo_extracao="xpto")
+
+
+class TestConfiguracaoResponseMetodoExtracao:
+    """UC-09: ConfiguracaoResponse expõe metodo_extracao."""
+
+    def test_response_inclui_campo(self) -> None:
+        fields = ConfiguracaoResponse.model_fields
+        assert "metodo_extracao" in fields
+
+    def test_response_campo_obrigatorio(self) -> None:
+        field = ConfiguracaoResponse.model_fields["metodo_extracao"]
+        # Campo obrigatório não tem default
+        assert field.default is None or field.is_required()

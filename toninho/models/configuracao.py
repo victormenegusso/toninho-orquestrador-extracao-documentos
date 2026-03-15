@@ -19,7 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from toninho.models.base import Base, TimestampMixin, UUIDMixin
-from toninho.models.enums import AgendamentoTipo, FormatoSaida
+from toninho.models.enums import AgendamentoTipo, FormatoSaida, MetodoExtracao
 
 if TYPE_CHECKING:
     from toninho.models.processo import Processo
@@ -100,6 +100,16 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         default=False,
         doc="Se True, usa Playwright (navegador headless) para renderizar páginas JS",
+    )
+
+    metodo_extracao: Mapped[MetodoExtracao] = mapped_column(
+        nullable=False,
+        default=MetodoExtracao.HTML2TEXT,
+        doc=(
+            "Motor de extração de HTML para Markdown. "
+            "HTML2TEXT usa BeautifulSoup + html2text (atual). "
+            "DOCLING usa IBM Docling para saída semântica estruturada."
+        ),
     )
 
     # Relacionamentos

@@ -9,7 +9,7 @@ from datetime import datetime
 
 from pydantic import Field, field_validator
 
-from toninho.models.enums import AgendamentoTipo, FormatoSaida
+from toninho.models.enums import AgendamentoTipo, FormatoSaida, MetodoExtracao
 from toninho.schemas.base import BaseSchema
 from toninho.schemas.validators import (
     validate_cron_expression,
@@ -89,6 +89,14 @@ class ConfiguracaoCreate(BaseSchema):
             "Se True, usa Playwright (navegador headless) para renderizar páginas JavaScript (SPAs). "
             "Requer instalação de `playwright` e `playwright install chromium` no ambiente. "
             "Se False (padrão), usa httpx para extração HTTP simples."
+        ),
+    )
+    metodo_extracao: MetodoExtracao = Field(
+        default=MetodoExtracao.HTML2TEXT,
+        description=(
+            "Motor de extração. "
+            "'html2text': método atual (compatível com SPAs via use_browser). "
+            "'docling': IBM Docling, saída estruturada para RAG — não suporta SPAs."
         ),
     )
 
@@ -172,6 +180,10 @@ class ConfiguracaoUpdate(BaseSchema):
         None,
         description="Novo tipo de agendamento",
     )
+    metodo_extracao: MetodoExtracao | None = Field(
+        None,
+        description="Novo motor de extração (opcional).",
+    )
 
     @field_validator("urls")
     @classmethod
@@ -220,6 +232,8 @@ class ConfiguracaoResponse(BaseSchema):
         output_dir: Diretório de saída
         agendamento_cron: Expressão cron
         agendamento_tipo: Tipo de agendamento
+        use_browser: Se usa Playwright para renderizar JS
+        metodo_extracao: Motor de extração ativo
         created_at: Data/hora de criação
         updated_at: Data/hora da última atualização
     """
@@ -241,6 +255,7 @@ class ConfiguracaoResponse(BaseSchema):
     agendamento_cron: str | None = Field(None, description="Expressão cron")
     agendamento_tipo: AgendamentoTipo = Field(..., description="Tipo de agendamento")
     use_browser: bool = Field(..., description="Se usa Playwright para renderizar JS")
+    metodo_extracao: MetodoExtracao = Field(..., description="Motor de extração ativo")
     created_at: datetime = Field(..., description="Data/hora de criação")
     updated_at: datetime = Field(..., description="Data/hora da última atualização")
 

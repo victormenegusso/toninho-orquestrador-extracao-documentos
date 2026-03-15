@@ -8,6 +8,10 @@ services:
       - ./toninho:/app/toninho:ro
       - ./frontend:/app/frontend:ro
       - ./output:/app/output
+      # Garante que migrations e alembic.ini do host sobrescrevam o volume
+      # db_data:/app (que preserva conteúdo antigo mesmo após rebuild da imagem)
+      - ./migrations:/app/migrations:ro
+      - ./alembic.ini:/app/alembic.ini:ro
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG
@@ -18,6 +22,7 @@ services:
       # Hot-reload: montar código fonte
       - ./toninho:/app/toninho:ro
       - ./output:/app/output
+      - docling_cache:/root/.cache/docling
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG
@@ -31,3 +36,6 @@ services:
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG
+
+volumes:
+  docling_cache:

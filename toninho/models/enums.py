@@ -59,3 +59,12 @@ class PaginaStatus(str, Enum):
     SUCESSO = "sucesso"  # Página extraída com sucesso
     FALHOU = "falhou"  # Falha na extração
     IGNORADO = "ignorado"  # Página ignorada (filtros, duplicada, etc)
+
+
+class MetodoExtracao(str, Enum):
+    """Motor de extração de HTML para Markdown."""
+
+    HTML2TEXT = (
+        "html2text"  # Método atual: BeautifulSoup + html2text (rápido, suporta SPA)
+    )
+    DOCLING = "docling"  # IBM Docling: saída semântica estruturada (não suporta SPA)

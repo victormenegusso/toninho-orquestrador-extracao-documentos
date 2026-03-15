@@ -15,6 +15,7 @@ from toninho.models.enums import (
     ExecucaoStatus,
     FormatoSaida,
     LogNivel,
+    MetodoExtracao,
     PaginaStatus,
 )
 from toninho.workers.utils import ExtractionOrchestrator
@@ -376,3 +377,132 @@ class TestExtractionOrchestratorEdgeCases:
         )
         assert log is not None
         assert log.contexto == ctx
+
+
+# ──────────────────────────────────────── Passo 5 — roteamento de motor ────
+
+
+class TestExtractionOrchestratorMetodoExtracao:
+    """Passo 5 — testes de roteamento de motor."""
+
+    @pytest.mark.asyncio
+    async def test_extract_url_html2text_instancia_page_extractor(self, mock_storage):
+        """Deve usar PageExtractor quando metodo=HTML2TEXT."""
+        with patch("toninho.workers.utils.PageExtractor") as mock_cls:
+            mock_instance = AsyncMock()
+            mock_instance.extract.return_value = {
+                "status": "sucesso",
+                "url": "https://x.com",
+                "path": "out.md",
+                "bytes": 100,
+                "title": "T",
+                "from_cache": False,
+                "error": None,
+            }
+            mock_cls.return_value = mock_instance
+
+            await ExtractionOrchestrator._extract_url(
+                mock_storage,
+                "https://x.com",
+                "out.md",
+                use_browser=False,
+                metodo_extracao=MetodoExtracao.HTML2TEXT,
+            )
+
+            mock_cls.assert_called_once()
+            mock_instance.extract.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_extract_url_docling_sem_browser_chama_extract(self, mock_storage):
+        """DOCLING + use_browser=False deve chamar DoclingPageExtractor.extract()."""
+        with patch(
+            "toninho.extraction.docling_extractor.DoclingPageExtractor"
+        ) as mock_cls:
+            mock_instance = AsyncMock()
+            mock_instance.extract.return_value = {
+                "status": "sucesso",
+                "url": "https://x.com",
+                "path": "out.md",
+                "bytes": 200,
+                "title": "T",
+                "from_cache": False,
+                "error": None,
+            }
+            mock_cls.return_value = mock_instance
+
+            await ExtractionOrchestrator._extract_url(
+                mock_storage,
+                "https://x.com",
+                "out.md",
+                use_browser=False,
+                metodo_extracao=MetodoExtracao.DOCLING,
+            )
+
+            mock_instance.extract.assert_called_once_with("https://x.com", "out.md")
+            mock_instance.extract_from_html.assert_not_called()
+
+    def test_run_com_docling_inclui_motor_no_log(
+        self, db, processo, mock_storage, tmp_path
+    ):
+        """Log inicial deve identificar o motor docling."""
+        from toninho.models.log import Log
+
+        config = Configuracao(
+            processo_id=processo.id,
+            urls=["https://x.com"],
+            timeout=30,
+            max_retries=1,
+            formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
+            output_dir=str(tmp_path),
+            agendamento_tipo=AgendamentoTipo.MANUAL,
+            metodo_extracao=MetodoExtracao.DOCLING,
+        )
+        db.add(config)
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
+            mock_extract.return_value = {
+                "status": "sucesso",
+                "url": "https://x.com",
+                "path": "out.md",
+                "bytes": 100,
+                "title": "T",
+                "from_cache": False,
+                "error": None,
+            }
+            ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+
+        logs = db.query(Log).filter(Log.execucao_id == execucao.id).all()
+        log_inicial = next((log for log in logs if "Iniciando" in log.mensagem), None)
+        assert log_inicial is not None
+        assert "docling" in log_inicial.mensagem.lower()
+
+    def test_run_html2text_nao_quebra_comportamento_existente(
+        self, db, processo, configuracao, mock_storage
+    ):
+        """Configurações com HTML2TEXT devem funcionar igual ao anterior."""
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
+            mock_extract.return_value = {
+                "status": "sucesso",
+                "url": "https://x.com",
+                "path": "out.md",
+                "bytes": 100,
+                "title": "T",
+                "from_cache": False,
+                "error": None,
+            }
+            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(
+                execucao.id
+            )
+
+        assert resultado["status"] == ExecucaoStatus.CONCLUIDO

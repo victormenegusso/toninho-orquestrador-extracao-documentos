@@ -7,7 +7,7 @@ import pytest
 
 from toninho.core.exceptions import NotFoundError
 from toninho.models.configuracao import Configuracao
-from toninho.models.enums import AgendamentoTipo, FormatoSaida
+from toninho.models.enums import AgendamentoTipo, FormatoSaida, MetodoExtracao
 from toninho.models.processo import Processo
 from toninho.repositories.configuracao_repository import ConfiguracaoRepository
 from toninho.repositories.processo_repository import ProcessoRepository
@@ -66,6 +66,8 @@ def fake_config(config_id, processo_id):
     c.output_dir = "/tmp/output"
     c.agendamento_tipo = AgendamentoTipo.MANUAL
     c.agendamento_cron = None
+    c.use_browser = False
+    c.metodo_extracao = MetodoExtracao.HTML2TEXT
     c.created_at = __import__("datetime").datetime.now()
     c.updated_at = __import__("datetime").datetime.now()
     return c

@@ -128,7 +128,7 @@ toninho/
   - Celery Beat para agendamento (cron)
   - Monitoramento com Flower
   - Retry e error handling nativos
-  
+
   **Por que Redis?**
   - Celery precisa de um message broker (não funciona sozinho)
   - Redis serve como broker (fila de mensagens) e backend de resultados
@@ -166,7 +166,7 @@ toninho/
   - Zero configuração
   - Arquivo único
   - Suficiente para uso local single-user
-  
+
 - **Opção Futura**: PostgreSQL (se houver necessidade de multi-user)
 
 ### DevOps & Tooling
@@ -195,22 +195,22 @@ from typing import BinaryIO, List
 
 class StorageInterface(ABC):
     """Interface abstrata para diferentes tipos de armazenamento"""
-    
+
     @abstractmethod
     async def save_file(self, path: str, content: BinaryIO) -> str:
         """Salva arquivo e retorna o caminho/URL"""
         pass
-    
+
     @abstractmethod
     async def get_file(self, path: str) -> BinaryIO:
         """Recupera arquivo do storage"""
         pass
-    
+
     @abstractmethod
     async def delete_file(self, path: str) -> bool:
         """Deleta arquivo do storage"""
         pass
-    
+
     @abstractmethod
     async def list_files(self, directory: str) -> List[str]:
         """Lista arquivos em um diretório"""
@@ -243,7 +243,7 @@ class NotificationLevel(Enum):
 
 class NotificationInterface(ABC):
     """Interface abstrata para diferentes canais de notificação"""
-    
+
     @abstractmethod
     async def send(self, title: str, message: str, level: NotificationLevel) -> bool:
         """Envia notificação"""
@@ -273,7 +273,7 @@ from typing import Annotated
 def get_storage() -> StorageInterface:
     """Factory para criar instância de storage baseado em config"""
     storage_type = settings.STORAGE_TYPE  # 'local', 's3', etc
-    
+
     if storage_type == 'local':
         return LocalFileSystemStorage(settings.OUTPUT_DIR)
     elif storage_type == 's3':
@@ -477,7 +477,7 @@ INSERT INTO pagina_extraida VALUES
   ('550e8400-e29b-41d4-a716-446655440010', '550e8400-e29b-41d4-a716-446655440002', 'https://docs.github.com/en/copilot/get-started/what-is-github-copilot', './output/github-copilot/what-is-github-copilot.md', 'Sucesso', 122880, '2026-02-28 10:07:30', NULL);
 ```
 
-**Resultado**: 
+**Resultado**:
 - 1 Processo criado
 - 1 Configuração com 2 URLs e agendamento diário
 - 1 Execução concluída em ~2min30s
@@ -566,7 +566,7 @@ LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
 ### Tipos de Erro
 - **Recuperáveis**: Timeout, falha de rede, rate limiting
   - Ação: Retry com backoff exponencial (até 3 tentativas)
-  
+
 - **Irrecuperáveis**: 404, 403, conteúdo inválido, erro de parsing
   - Ação: Marcar como falho e alertar usuário
 
@@ -723,7 +723,3 @@ GET    /api/v1/health/workers                     - Status dos workers
 - FastAPI: https://fastapi.tiangolo.com/
 - Celery: https://docs.celeryproject.org/
 - SQLAlchemy: https://www.sqlalchemy.org/
-
-
-
-
