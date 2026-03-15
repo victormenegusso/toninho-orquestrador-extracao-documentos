@@ -97,12 +97,30 @@
                         <p class="font-medium mt-1">{{ config.timeout }}s</p>
                     </div>
                     <div>
+                        <p class="text-gray-500">Tentativas</p>
+                        <p class="font-medium mt-1">{{ config.max_retries }}</p>
+                    </div>
+                    <div>
                         <p class="text-gray-500">Formato de Saída</p>
-                        <p class="font-medium mt-1">{{ config.formato_saida.value | replace('_', ' ') | title }}</p>
+                        <p class="font-medium mt-1">{{ config.formato_saida | replace('_', ' ') | title }}</p>
                     </div>
                     <div>
                         <p class="text-gray-500">Tipo Agendamento</p>
-                        <p class="font-medium mt-1">{{ config.agendamento_tipo.value | title }}</p>
+                        <p class="font-medium mt-1">{{ config.agendamento_tipo | replace('_', ' ') | title }}</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-3">
+                    <div>
+                        <p class="text-gray-500">Motor de Extração</p>
+                        <p class="font-medium mt-1">{{ config.metodo_extracao | replace('_', ' ') | title }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Usar Navegador</p>
+                        <p class="font-medium mt-1">{{ 'Sim' if config.use_browser else 'Não' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Diretório de Saída</p>
+                        <p class="font-medium mt-1 font-mono text-xs">{{ config.output_dir }}</p>
                     </div>
                     <div>
                         <p class="text-gray-500">URLs</p>

@@ -15,11 +15,12 @@
     'urls': (processo.configuracoes[0].urls|join('\n')) if processo and processo.configuracoes else '',
     'timeout': processo.configuracoes[0].timeout if processo and processo.configuracoes else 3600,
     'max_retries': processo.configuracoes[0].max_retries if processo and processo.configuracoes else 3,
-    'formato_saida': processo.configuracoes[0].formato_saida.value if processo and processo.configuracoes else 'multiplos_arquivos',
+    'formato_saida': processo.configuracoes[0].formato_saida if processo and processo.configuracoes else 'multiplos_arquivos',
     'output_dir': processo.configuracoes[0].output_dir if processo and processo.configuracoes else './output',
-    'agendamento_tipo': processo.configuracoes[0].agendamento_tipo.value if processo and processo.configuracoes else 'manual',
+    'agendamento_tipo': processo.configuracoes[0].agendamento_tipo if processo and processo.configuracoes else 'manual',
     'agendamento_cron': processo.configuracoes[0].agendamento_cron if processo and processo.configuracoes and processo.configuracoes[0].agendamento_cron else '',
     'use_browser': processo.configuracoes[0].use_browser if processo and processo.configuracoes else false,
+    'metodo_extracao': processo.configuracoes[0].metodo_extracao if processo and processo.configuracoes else 'html2text',
 } %}
 
 <div class="max-w-3xl mx-auto space-y-6"
@@ -172,6 +173,29 @@
                         <input type="checkbox" x-model="config.use_browser" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                         <span>Usar navegador (Playwright) para páginas com JavaScript</span>
                     </label>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Motor de Extração
+                        </label>
+                        <select x-model="config.metodo_extracao"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md
+                                       focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="html2text">HTML2Text (padrão — compatível com SPAs)</option>
+                            <option value="docling">Docling — estruturado, ideal para RAG</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">
+                            Docling produz Markdown semântico com tabelas bem formatadas.
+                        </p>
+                    </div>
+
+                    <div x-show="config.metodo_extracao === 'docling'"
+                         x-cloak
+                         class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        <strong>⚠ Atenção:</strong> O Docling não suporta páginas que dependem de
+                        JavaScript para renderizar conteúdo (SPAs). Ative “Usar navegador (Playwright)”
+                        apenas como pré-renderizador opcional; a qualidade pode variar.
+                    </div>
                 </div>
             </div>
 
@@ -225,11 +249,11 @@ function processoForm(initialProcesso, initialConfig) {
             agendamento_cron: initialConfig.agendamento_cron || '',
             agendamento_datetime: '',
             use_browser: Boolean(initialConfig.use_browser),
+            metodo_extracao: initialConfig.metodo_extracao || 'html2text',
         },
 
         async init() {
             if (this.isEdit) {
-                await this.loadCurrentConfig();
                 this.tryParseOneTimeFromCron();
             }
         },
@@ -252,6 +276,7 @@ function processoForm(initialProcesso, initialConfig) {
                 this.config.agendamento_tipo = data.agendamento_tipo;
                 this.config.agendamento_cron = data.agendamento_cron || '';
                 this.config.use_browser = Boolean(data.use_browser);
+                this.config.metodo_extracao = data.metodo_extracao || 'html2text';
             } catch (_) {
                 return;
             }
@@ -435,6 +460,7 @@ function processoForm(initialProcesso, initialConfig) {
                 agendamento_tipo: this.config.agendamento_tipo,
                 agendamento_cron: cron,
                 use_browser: Boolean(this.config.use_browser),
+                metodo_extracao: this.config.metodo_extracao,
             };
 
             if (!this.configId) {
