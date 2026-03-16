@@ -197,6 +197,27 @@ def update_execucao_status(api_client: httpx.Client):
     return _update
 
 
+@pytest.fixture
+def create_logs_batch(api_client: httpx.Client):
+    """Cria logs em lote para uma execucao via API."""
+
+    def _create(execucao_id: str, logs: list[dict]) -> list[dict]:
+        payload = [
+            {
+                "execucao_id": execucao_id,
+                "nivel": log.get("nivel", "info"),
+                "mensagem": log.get("mensagem", "Log de teste E2E"),
+                "contexto": log.get("contexto"),
+            }
+            for log in logs
+        ]
+        response = api_client.post("/api/v1/logs/batch", json=payload)
+        assert response.status_code == 201, f"Falha ao criar logs: {response.text}"
+        return response.json()["data"]
+
+    return _create
+
+
 def _wait_for_server(url: str, timeout: int = 30) -> None:
     """Aguarda o servidor responder ao endpoint de health check."""
     deadline = time.monotonic() + timeout
