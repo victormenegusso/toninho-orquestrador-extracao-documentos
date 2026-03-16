@@ -1,6 +1,7 @@
 """Fixtures E2E para testes com Playwright."""
 
 import os
+import shutil
 import subprocess
 import tempfile
 import time
@@ -216,6 +217,67 @@ def create_logs_batch(api_client: httpx.Client):
         return response.json()["data"]
 
     return _create
+
+
+@pytest.fixture
+def create_paginas_extraidas(
+    api_client: httpx.Client,
+    create_execucao,
+    update_execucao_status,
+):
+    """Cria execucao concluida com paginas extraidas e arquivos fisicos."""
+
+    temp_dirs: list[str] = []
+
+    def _create(statuses: list[str] | None = None) -> dict:
+        execucao = create_execucao()
+        execucao_id = execucao["id"]
+
+        update_execucao_status(execucao_id, "em_execucao")
+        update_execucao_status(execucao_id, "concluido")
+
+        if statuses is None:
+            statuses = ["sucesso", "sucesso", "falhou", "ignorado"]
+
+        output_dir = tempfile.mkdtemp(prefix="toninho_e2e_paginas_")
+        temp_dirs.append(output_dir)
+
+        paginas: list[dict] = []
+        for idx, status in enumerate(statuses, start=1):
+            file_path = os.path.join(output_dir, f"pagina_{idx}.md")
+            content = f"# Pagina {idx}\n\nConteudo E2E da pagina {idx}."
+
+            if status == "sucesso":
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                tamanho_bytes = len(content.encode("utf-8"))
+            else:
+                file_path = os.path.join(output_dir, f"pagina_{idx}_{status}.md")
+                tamanho_bytes = 0
+
+            payload = {
+                "execucao_id": execucao_id,
+                "url_original": f"https://example.com/page-{idx}",
+                "caminho_arquivo": file_path,
+                "status": status,
+                "tamanho_bytes": tamanho_bytes,
+            }
+            if status == "falhou":
+                payload["erro_mensagem"] = "Falha de extracao simulada"
+
+            response = api_client.post("/api/v1/paginas", json=payload)
+            assert (
+                response.status_code == 201
+            ), f"Falha ao criar pagina: {response.text}"
+            paginas.append(response.json()["data"])
+
+        return {"execucao_id": execucao_id, "paginas": paginas}
+
+    yield _create
+
+    for path in temp_dirs:
+        if os.path.isdir(path):
+            shutil.rmtree(path, ignore_errors=True)
 
 
 def _wait_for_server(url: str, timeout: int = 30) -> None:
