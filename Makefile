@@ -1,10 +1,13 @@
-.PHONY: help install run test lint format check security audit quality clean pre-commit migrate shell docker-up docker-down check-poetry
+.PHONY: help install run test test-e2e test-e2e-headed test-e2e-debug lint format check security audit quality clean pre-commit migrate shell docker-up docker-down check-poetry
 
 help: ## Mostra esta mensagem de ajuda
 	@echo "Comandos disponíveis:"
 	@echo "  make install      - Instala dependências com Poetry"
 	@echo "  make run          - Executa aplicação em modo desenvolvimento"
 	@echo "  make test         - Executa testes com coverage"
+	@echo "  make test-e2e     - Executa testes E2E com Playwright (headless)"
+	@echo "  make test-e2e-headed - Executa testes E2E com browser visível"
+	@echo "  make test-e2e-debug TEST=<path> - Executa um teste E2E específico em modo debug"
 	@echo "  make lint         - Executa linters (ruff + mypy)"
 	@echo "  make format       - Formata código (ruff format)"
 	@echo "  make check        - Verifica linting e formatação sem alterar"
@@ -31,6 +34,15 @@ run: check-poetry ## Executa aplicação
 
 test: check-poetry ## Executa testes com coverage
 	poetry run pytest -v
+
+test-e2e: check-poetry ## Executa testes E2E com Playwright (headless)
+	poetry run pytest tests/e2e/ -m e2e --browser chromium --no-cov -v
+
+test-e2e-headed: check-poetry ## Executa testes E2E com browser visível
+	poetry run pytest tests/e2e/ -m e2e --browser chromium --headed --slowmo 300 --no-cov -v
+
+test-e2e-debug: check-poetry ## Executa teste E2E específico com browser visível
+	poetry run pytest $(TEST) -m e2e --browser chromium --headed --slowmo 500 --no-cov -v -s
 
 lint: check-poetry ## Executa linters (ruff + mypy)
 	poetry run ruff check toninho tests

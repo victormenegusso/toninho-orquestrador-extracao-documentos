@@ -76,29 +76,7 @@ A alternativa mais citada, Cypress, teria a mesma capacidade técnica mas introd
 
 A estratégia é organizada em duas camadas complementares. A divisão é por velocidade e por tipo de feedback — não por ferramenta.
 
-### 5.1 Camada 1 — Integration (sem browser)
-
-Extensão dos testes de integração existentes. Usa o `AsyncClient` do httpx para chamar a API e validar o HTML renderizado. Não precisa de browser, roda em milissegundos e entra no cálculo de cobertura normalmente.
-
-O que testar aqui:
-- Templates Jinja2 renderizam os dados corretamente
-- Fragmentos HTMX contêm os atributos `hx-*` esperados
-- Endpoints com `HX-Request: true` retornam apenas o fragmento (sem layout completo)
-- Estados de erro (404, 422) renderizam templates de erro corretos
-
-```python
-# tests/integration/test_templates.py
-async def test_fragmento_job_retorna_status(client: AsyncClient):
-    response = await client.get(
-        "/jobs/42/status",
-        headers={"HX-Request": "true"}
-    )
-    assert response.status_code == 200
-    assert 'hx-get="/jobs/42/status"' in response.text
-    assert "Processando" in response.text
-```
-
-### 5.2 Camada 2 — E2E com Playwright (com browser)
+### 5.1 Camada 2 — E2E com Playwright (com browser)
 
 Testes organizados por **caso de uso**, não por página ou componente. Cada teste representa um fluxo completo que um usuário real executaria.
 
@@ -106,31 +84,7 @@ Testes organizados por **caso de uso**, não por página ou componente. Cada tes
 
 #### Casos de uso mapeados para o Toninho
 
-**UC-01 — Criar e acompanhar um job de extração**
-- Usuário preenche o formulário de novo job
-- Submete e vê o card aparecer na lista com status "Aguardando"
-- Status atualiza automaticamente para "Processando" e depois "Concluído" via HTMX polling
-- Usuário acessa os resultados extraídos
-
-**UC-02 — Validação de formulário com Alpine.js**
-- Usuário tenta submeter formulário vazio
-- Alpine.js exibe erros inline sem recarregar a página
-- Usuário corrige e submete com sucesso
-
-**UC-03 — Filtro e busca de jobs**
-- Usuário digita no campo de busca
-- HTMX faz request parcial e atualiza a lista
-- Resultado filtrado é exibido sem recarregar a página
-
-**UC-04 — Cancelar job em andamento**
-- Usuário clica em cancelar num job com status "Processando"
-- Confirmação Alpine.js aparece
-- Após confirmação, job muda para "Cancelado" via request HTMX
-
-**UC-05 — Comportamento com erro de rede**
-- HTMX faz request que falha (simulado via route interception do Playwright)
-- Mensagem de erro é exibida corretamente
-- Interface não trava — usuário pode tentar novamente
+[CONSTRUIR]
 
 #### Estrutura de arquivos proposta
 
@@ -176,6 +130,8 @@ omit = ["tests/e2e/*"]  # E2E não entra no cov-fail-under=90
 # Makefile — novo target
 test-e2e:
     poetry run pytest tests/e2e/ -m e2e --browser chromium
+
+# DEVEMOS ter o Modo visivel tambem
 ```
 
 ---
