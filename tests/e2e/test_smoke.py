@@ -46,5 +46,5 @@ class TestSmoke:
         errors: list[str] = []
         page.on("pageerror", lambda err: errors.append(str(err)))
         page.goto("/dashboard")
-        page.wait_for_load_state("networkidle")
+        page.wait_for_load_state("load")
         assert not errors, f"Erros no console: {errors}"

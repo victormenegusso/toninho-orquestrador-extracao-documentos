@@ -34,7 +34,6 @@ class TestFormularioPrePreenchido:
     def test_campos_default_via_navegacao_htmx(self, page: Page) -> None:
         """Campos default presentes ao navegar via link (HTMX swap)."""
         page.goto("/processos")
-        page.wait_for_load_state("networkidle")
 
         # Navigate to create form via "Novo Processo" link
         novo_link = page.locator("a[href='/processos/novo']").first
@@ -55,18 +54,15 @@ class TestFormularioPrePreenchido:
     def test_campos_persistem_apos_navegacao_ida_e_volta(self, page: Page) -> None:
         """Campos default presentes após navegar ida e volta."""
         page.goto("/processos/novo")
-        page.wait_for_load_state("networkidle")
 
         expect(page.locator("#timeout")).to_have_value("3600")
         expect(page.locator("#max_retries")).to_have_value("3")
 
         # Navigate away
         page.goto("/processos")
-        page.wait_for_load_state("networkidle")
 
         # Navigate back
         page.goto("/processos/novo")
-        page.wait_for_load_state("networkidle")
 
         expect(page.locator("#timeout")).to_have_value("3600")
         expect(page.locator("#max_retries")).to_have_value("3")
@@ -88,7 +84,6 @@ class TestFormularioPrePreenchido:
         processo_id = processo["id"]
 
         page.goto(f"/processos/{processo_id}/editar")
-        page.wait_for_load_state("networkidle")
 
         expect(page.locator("#nome")).to_have_value("Processo Pre-preenchido E2E")
         expect(page.locator("#timeout")).to_have_value("120")
