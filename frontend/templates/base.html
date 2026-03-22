@@ -65,9 +65,20 @@
 
     <!-- HTMX Config -->
     <script>
-        // HTMX event listeners
+        // Re-execute inline scripts after HTMX content swap (hx-boost)
+        // so Alpine.js x-data functions like processoForm() are available.
         document.body.addEventListener('htmx:afterSwap', function(evt) {
-            console.log('HTMX swap completed');
+            var target = evt.detail.target;
+            if (target) {
+                target.querySelectorAll('script').forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(function(attr) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.textContent = oldScript.textContent;
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+            }
         });
 
         // Error handling

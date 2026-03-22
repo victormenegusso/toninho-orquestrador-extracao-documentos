@@ -22,7 +22,7 @@ services:
       # Hot-reload: montar código fonte
       - ./toninho:/app/toninho:ro
       - ./output:/app/output
-      - docling_cache:/root/.cache/docling
+      - docling_cache:/home/toninho/.cache/docling
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG

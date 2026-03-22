@@ -34,6 +34,7 @@ class PageExtractor:
         user_agent: str = "Toninho/1.0",
         use_browser: bool = False,
         browser_wait_for: str = "networkidle",
+        respect_robots_txt: bool = False,
     ):
         """
         Inicializa o extrator.
@@ -48,6 +49,7 @@ class PageExtractor:
                 Requer `playwright` instalado e `playwright install chromium`.
             browser_wait_for: Evento Playwright a aguardar antes de capturar HTML.
                 Opções: "load", "domcontentloaded", "networkidle" (padrão), "commit".
+            respect_robots_txt: Se True, verifica robots.txt antes de extrair cada URL.
         """
         self.storage = storage
         self.use_browser = use_browser
@@ -56,6 +58,7 @@ class PageExtractor:
             max_retries=max_retries,
             cache_enabled=cache_enabled,
             user_agent=user_agent,
+            respect_robots_txt=respect_robots_txt,
         )
         self._browser_client = None
         if use_browser:
