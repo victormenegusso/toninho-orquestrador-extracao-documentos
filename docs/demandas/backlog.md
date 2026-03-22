@@ -23,9 +23,9 @@ Fontes: análise de logs de containers, execução de testes do tutorial, revis�
 | MH-002 | YAML frontmatter em inglês vs. API em português | 🟠 Alta | `extraction/markdown_converter.py` | ✅ Corrigido | Frontmatter agora usa chaves em PT-BR (`titulo`, `extraido_em`, `extrator`), alinhado com a API. |
 | MH-003 | Suporte a páginas com JavaScript (SPAs) | 🟠 Alta | `extraction/browser_client.py` | ✅ Implementado (PRD-018) | `BrowserClient` com Playwright implementado. Flag `use_browser: bool` na configuração controla o modo. |
 | MH-004 | Endpoint para cancelar execução em andamento | 🟡 Média | `api/routes/execucoes.py` | ✅ Implementado | `POST /api/v1/execucoes/{id}/cancelar` implementado com revogação de task Celery e atualização de status. |
-| MH-005 | Rate limiting nas requisições HTTP de extração | 🟡 Média | `extraction/http_client.py` | ⚠️ Parcial | `delay_between_requests: float` implementado com controle por domínio via `_apply_rate_limit()`. Falta: `respect_robots_txt` não implementado. |
+| MH-005 | Rate limiting nas requisições HTTP de extração | 🟡 Média | `extraction/http_client.py` | ✅ Implementado | `delay_between_requests` com controle por domínio + `respect_robots_txt` com cache de robots.txt por origem. |
 | MH-006 | `output_dir` normalizado silenciosamente | 🟢 Baixa | `schemas/configuracao.py` | ✅ Documentado | Comportamento documentado no schema: "Caminhos relativos com `./` são normalizados automaticamente". |
-| MH-007 | Estrutura de diretório de output não documentada | 🟢 Baixa | `docs/` | ⚠️ Parcial | Estrutura `{output_dir}/{processo_id}/{execucao_id}/{slug}.md` documentada no schema, mas poderia ser mais visível em ARCHITECTURE.md e API.md. |
+| MH-007 | Estrutura de diretório de output não documentada | 🟢 Baixa | `docs/` | ✅ Documentado | Estrutura `{output_dir}/{processo_id}/{execucao_id}/{slug}.md` documentada em ARCHITECTURE.md (seção Armazenamento), API.md (seção 7.6) e nos schemas. |
 
 ---
 
@@ -48,5 +48,5 @@ Fontes: análise de logs de containers, execução de testes do tutorial, revis�
 | TD-006 | Falta documentação de arquitetura | 🔴 Alta | Docs | ✅ Implementado (PRD-ORG-002) | `docs/ARCHITECTURE.md` criado com visão completa do sistema. |
 | TD-007 | Docker build redundante | 🟠 Alta | DevOps | ✅ Corrigido (PRD-ORG-006) | Serviço `api` faz build único com `image: toninho:latest`. Worker/beat/flower reutilizam a imagem. |
 | TD-008 | Sem teste anti-regressão de formulários | 🟠 Alta | Frontend | ✅ Implementado (PRD-ORG-007) | `tests/e2e/test_uc15_formulario_pre_preenchido.py` criado com 4 cenários. |
-| MH-008 | `respect_robots_txt` não implementado | 🟢 Baixa | `extraction/http_client.py` | 🔲 Pendente | Rate limiting por domínio existe, mas respeitar `robots.txt` ainda não foi implementado. |
-| MH-009 | Estrutura de output mais visível na documentação | 🟢 Baixa | `docs/` | 🔲 Pendente | Estrutura `{output_dir}/{processo_id}/{execucao_id}/{slug}.md` deveria estar em ARCHITECTURE.md e API.md. |
+| MH-008 | `respect_robots_txt` não implementado | 🟢 Baixa | `extraction/http_client.py` | ✅ Implementado | `RobotsChecker` com cache por domínio. Campo `respect_robots_txt: bool` em model, schema e frontend. Migration adicionada. |
+| MH-009 | Estrutura de output mais visível na documentação | 🟢 Baixa | `docs/` | ✅ Implementado | Seção adicionada em ARCHITECTURE.md (Estrutura de Diretórios de Output) e API.md (seção 7.6). |

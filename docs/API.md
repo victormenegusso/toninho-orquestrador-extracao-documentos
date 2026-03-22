@@ -1634,6 +1634,31 @@ A resposta inclui o objeto `meta` com informações de paginação:
 | `GET /api/v1/paginas/{id}/download` | `application/octet-stream` | Arquivo markdown individual |
 | `GET /api/v1/paginas/{id}/content` | `text/plain` | Conteúdo como texto puro |
 
+### 7.6 Estrutura de Diretórios de Output
+
+Os arquivos Markdown extraídos são organizados na seguinte hierarquia no servidor:
+
+```
+{output_dir}/{processo_id}/{execucao_id}/{slug}.md
+```
+
+**Exemplo real:**
+
+```
+./output/
+└── a1b2c3d4-5678-abcd-ef01-234567890abc/
+    └── f9e8d7c6-5432-abcd-ef01-987654321fed/
+        ├── exemplo-com.md
+        ├── docs-exemplo-com-pagina2.md
+        └── ...
+```
+
+- **`output_dir`**: Configurado na Configuração (default: `./output`). Caminhos com `./` são normalizados automaticamente.
+- **`processo_id`**: UUID do processo
+- **`execucao_id`**: UUID da execução
+- **Nome do arquivo**: Slug seguro gerado a partir da URL via `sanitize_filename()`
+- O campo `caminho_arquivo` na resposta de `PaginaExtraida` contém o caminho completo relativo
+
 ---
 
 ## 8. Enums e Valores Válidos

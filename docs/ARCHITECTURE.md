@@ -341,6 +341,24 @@ O módulo usa o padrão **Strategy** para abstração de armazenamento:
 - **`LocalFileSystemStorage`**: Implementação atual — grava em `./output/`.
 - **S3/Cloud**: Preparado para extensão futura via factory.
 
+#### Estrutura de Diretórios de Output
+
+Os arquivos Markdown extraídos são organizados na seguinte hierarquia:
+
+```
+{output_dir}/
+└── {processo_id}/
+    └── {execucao_id}/
+        ├── exemplo-com.md
+        ├── exemplo-com-pagina2.md
+        └── ...
+```
+
+- **`output_dir`**: Diretório configurado na Configuração (default: `./output`)
+- **`processo_id`**: UUID do processo
+- **`execucao_id`**: UUID da execução
+- **Nome do arquivo**: Slug gerado a partir da URL (via `sanitize_filename()`)
+
 ---
 
 ## 7. Fluxo de Execução (Workflow Completo)
