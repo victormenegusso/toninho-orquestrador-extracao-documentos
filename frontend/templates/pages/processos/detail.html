@@ -119,6 +119,10 @@
                         <p class="font-medium mt-1">{{ 'Sim' if config.use_browser else 'Não' }}</p>
                     </div>
                     <div>
+                        <p class="text-gray-500">Respeitar robots.txt</p>
+                        <p class="font-medium mt-1">{{ 'Sim' if config.respect_robots_txt else 'Não' }}</p>
+                    </div>
+                    <div>
                         <p class="text-gray-500">Diretório de Saída</p>
                         <p class="font-medium mt-1 font-mono text-xs">{{ config.output_dir }}</p>
                     </div>

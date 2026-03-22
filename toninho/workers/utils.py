@@ -104,6 +104,7 @@ class ExtractionOrchestrator:
         metodo_extracao = getattr(
             configuracao, "metodo_extracao", MetodoExtracao.HTML2TEXT
         )
+        respect_robots_txt = getattr(configuracao, "respect_robots_txt", False)
 
         # 5. Log inicial
         self._add_log(
@@ -141,6 +142,7 @@ class ExtractionOrchestrator:
                     output_path,
                     use_browser=use_browser,
                     metodo_extracao=metodo_extracao,
+                    respect_robots_txt=respect_robots_txt,
                 )
             )
 
@@ -227,6 +229,7 @@ class ExtractionOrchestrator:
         output_path: str,
         use_browser: bool = False,
         metodo_extracao: MetodoExtracao = MetodoExtracao.HTML2TEXT,
+        respect_robots_txt: bool = False,
     ) -> dict:
         """Executa extração async de uma URL, escolhendo o motor correto.
 
@@ -236,6 +239,7 @@ class ExtractionOrchestrator:
             output_path: Caminho relativo de saída.
             use_browser: Se True, usa Playwright para pré-renderizar (ambos os motores).
             metodo_extracao: Motor de conversão HTML→Markdown.
+            respect_robots_txt: Se True, verifica robots.txt antes de extrair.
 
         Returns:
             Dict com status, url, path, bytes, title, from_cache, error.
@@ -265,7 +269,11 @@ class ExtractionOrchestrator:
         else:
             # Método padrão: PageExtractor (httpx + html2text)
             extractor_h2t = PageExtractor(
-                storage, timeout=60, max_retries=3, use_browser=use_browser
+                storage,
+                timeout=60,
+                max_retries=3,
+                use_browser=use_browser,
+                respect_robots_txt=respect_robots_txt,
             )
             try:
                 return await extractor_h2t.extract(url, output_path)

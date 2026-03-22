@@ -99,6 +99,14 @@ class ConfiguracaoCreate(BaseSchema):
             "'docling': IBM Docling, saída estruturada para RAG — não suporta SPAs."
         ),
     )
+    respect_robots_txt: bool = Field(
+        default=False,
+        description=(
+            "Se True, verifica o robots.txt de cada domínio antes de extrair. "
+            "URLs bloqueadas pelo robots.txt são ignoradas com status 'bloqueado'. "
+            "Usa o User-Agent configurado para a verificação."
+        ),
+    )
 
     @field_validator("urls")
     @classmethod
@@ -184,6 +192,10 @@ class ConfiguracaoUpdate(BaseSchema):
         None,
         description="Novo motor de extração (opcional).",
     )
+    respect_robots_txt: bool | None = Field(
+        None,
+        description="Se True, verifica robots.txt antes de extrair.",
+    )
 
     @field_validator("urls")
     @classmethod
@@ -256,6 +268,9 @@ class ConfiguracaoResponse(BaseSchema):
     agendamento_tipo: AgendamentoTipo = Field(..., description="Tipo de agendamento")
     use_browser: bool = Field(..., description="Se usa Playwright para renderizar JS")
     metodo_extracao: MetodoExtracao = Field(..., description="Motor de extração ativo")
+    respect_robots_txt: bool = Field(
+        ..., description="Se verifica robots.txt antes de extrair"
+    )
     created_at: datetime = Field(..., description="Data/hora de criação")
     updated_at: datetime = Field(..., description="Data/hora da última atualização")
 

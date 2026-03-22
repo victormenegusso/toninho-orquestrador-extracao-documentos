@@ -7,9 +7,53 @@ com backoff exponencial, cache simples e controle de taxa por domínio.
 
 import asyncio
 from urllib.parse import urlparse
+from urllib.robotparser import RobotFileParser
 
 import httpx
 from loguru import logger
+
+
+class RobotsChecker:
+    """Verifica permissões do robots.txt por domínio, com cache."""
+
+    def __init__(self, user_agent: str, timeout: int = 10):
+        self._user_agent = user_agent
+        self._timeout = timeout
+        self._parsers: dict[str, RobotFileParser | None] = {}
+
+    async def is_allowed(self, url: str) -> bool:
+        """Retorna True se a URL é permitida pelo robots.txt do domínio."""
+        parsed = urlparse(url)
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+
+        if origin not in self._parsers:
+            await self._fetch_robots(origin)
+
+        parser = self._parsers.get(origin)
+        if parser is None:
+            return True  # Se não conseguiu ler robots.txt, permite
+
+        return parser.can_fetch(self._user_agent, url)
+
+    async def _fetch_robots(self, origin: str) -> None:
+        """Busca e parseia o robots.txt de um domínio."""
+        robots_url = f"{origin}/robots.txt"
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                response = await client.get(robots_url, follow_redirects=True)
+                if response.status_code == 200:
+                    parser = RobotFileParser()
+                    parser.parse(response.text.splitlines())
+                    self._parsers[origin] = parser
+                    logger.debug(f"robots.txt carregado: {robots_url}")
+                else:
+                    self._parsers[origin] = None
+                    logger.debug(
+                        f"robots.txt não encontrado ({response.status_code}): {robots_url}"
+                    )
+        except Exception as exc:
+            self._parsers[origin] = None
+            logger.debug(f"Erro ao buscar robots.txt de {origin}: {exc}")
 
 
 class HTTPClient:
@@ -22,6 +66,7 @@ class HTTPClient:
         cache_enabled: bool = True,
         user_agent: str = "Toninho/1.0",
         delay_between_requests: float = 0.0,
+        respect_robots_txt: bool = False,
     ):
         """
         Inicializa o cliente HTTP.
@@ -33,6 +78,7 @@ class HTTPClient:
             user_agent: User-Agent enviado nas requisições
             delay_between_requests: Delay mínimo em segundos entre requisições
                 ao mesmo domínio. Use 1.0 para 1 req/s, 0.0 para sem limite.
+            respect_robots_txt: Se True, verifica robots.txt antes de cada request
         """
         self.timeout = timeout
         self.max_retries = max_retries
@@ -40,6 +86,9 @@ class HTTPClient:
         self.delay_between_requests = delay_between_requests
         self._cache: dict[str, bytes] = {}
         self._last_request_time: dict[str, float] = {}  # domínio -> timestamp
+        self._robots: RobotsChecker | None = None
+        if respect_robots_txt:
+            self._robots = RobotsChecker(user_agent=user_agent, timeout=timeout)
 
         self._client = httpx.AsyncClient(
             timeout=httpx.Timeout(timeout),
@@ -63,6 +112,11 @@ class HTTPClient:
             httpx.TimeoutException: Após esgotar retries por timeout
             httpx.ConnectError: Após esgotar retries por falha de conexão
         """
+        # Verificar robots.txt
+        if self._robots and not await self._robots.is_allowed(url):
+            logger.info(f"Bloqueado por robots.txt: {url}")
+            raise PermissionError(f"URL bloqueada pelo robots.txt: {url}")
+
         # Verificar cache
         if self.cache_enabled and url in self._cache:
             logger.debug(f"Cache hit: {url}")

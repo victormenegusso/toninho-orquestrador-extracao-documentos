@@ -112,6 +112,13 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
         ),
     )
 
+    respect_robots_txt: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        doc="Se True, verifica robots.txt antes de extrair cada URL",
+    )
+
     # Relacionamentos
     processo: Mapped["Processo"] = relationship(
         back_populates="configuracoes",
