@@ -20,6 +20,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: toninho:latest
     container_name: toninho-api
     ports:
       - "8000:8000"
@@ -48,13 +49,12 @@ services:
     command: uvicorn toninho.main:app --host 0.0.0.0 --port 8000
 
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: toninho:latest
     container_name: toninho-worker
     volumes:
       - ./output:/app/output
       - db_data:/app
+      - docling_cache:/home/toninho/.cache/docling
     env_file:
       - .env
     environment:
@@ -73,9 +73,7 @@ services:
     command: celery -A toninho.workers.celery_app worker --loglevel=info --concurrency=2
 
   beat:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: toninho:latest
     container_name: toninho-beat
     volumes:
       - ./output:/app/output
@@ -96,9 +94,7 @@ services:
     command: celery -A toninho.workers.celery_app beat --loglevel=info
 
   flower:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: toninho:latest
     container_name: toninho-flower
     ports:
       - "5555:5555"
@@ -122,6 +118,8 @@ volumes:
   redis_data:
     driver: local
   db_data:
+    driver: local
+  docling_cache:
     driver: local
 
 networks:
