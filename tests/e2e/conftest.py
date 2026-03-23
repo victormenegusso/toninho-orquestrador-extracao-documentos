@@ -125,8 +125,32 @@ def create_processo(api_client: httpx.Client):
     return _create
 
 
+@pytest.fixture(scope="session")
+def _default_volume_id(api_client: httpx.Client) -> str:
+    """Cria volume padrao para testes E2E e retorna seu ID."""
+    response = api_client.post(
+        "/api/v1/volumes",
+        json={
+            "nome": f"Volume E2E {uuid4().hex[:8]}",
+            "path": "./output",
+            "descricao": "Volume padrao para testes E2E",
+        },
+    )
+    if response.status_code == 201:
+        return response.json()["data"]["id"]
+    # If conflict (volume with same path already exists), fetch ativos
+    ativos = api_client.get("/api/v1/volumes/ativos")
+    if ativos.status_code == 200:
+        for vol in ativos.json()["data"]:
+            if vol["path"] in ("./output", "output"):
+                return vol["id"]
+    raise RuntimeError(f"Falha ao criar/obter volume E2E: {response.text}")
+
+
 @pytest.fixture
-def create_processo_com_config(api_client: httpx.Client, create_processo):
+def create_processo_com_config(
+    api_client: httpx.Client, create_processo, _default_volume_id: str
+):
     """Cria processo e configuracao padrao via API para testes E2E."""
 
     def _create(
@@ -144,7 +168,7 @@ def create_processo_com_config(api_client: httpx.Client, create_processo):
             "timeout": config_kwargs.pop("timeout", 3600),
             "max_retries": config_kwargs.pop("max_retries", 3),
             "formato_saida": config_kwargs.pop("formato_saida", "multiplos_arquivos"),
-            "output_dir": config_kwargs.pop("output_dir", "./output"),
+            "volume_id": config_kwargs.pop("volume_id", _default_volume_id),
             "agendamento_tipo": config_kwargs.pop("agendamento_tipo", "manual"),
             "agendamento_cron": config_kwargs.pop("agendamento_cron", None),
             "use_browser": config_kwargs.pop("use_browser", False),

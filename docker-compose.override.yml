@@ -3,36 +3,19 @@
 
 services:
   api:
-    volumes:
-      # Hot-reload: montar código fonte
-      - ./toninho:/app/toninho:ro
-      - ./frontend:/app/frontend:ro
-      - ./output:/app/output
-      # Garante que migrations e alembic.ini do host sobrescrevam o volume
-      # db_data:/app (que preserva conteúdo antigo mesmo após rebuild da imagem)
-      - ./migrations:/app/migrations:ro
-      - ./alembic.ini:/app/alembic.ini:ro
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG
-    command: uvicorn toninho.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn toninho.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/toninho
 
   worker:
     volumes:
-      # Hot-reload: montar código fonte
-      - ./toninho:/app/toninho:ro
-      - ./output:/app/output
       - docling_cache:/home/toninho/.cache/docling
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG
-    # Recarregar automaticamente em mudanças
-    command: watchfiles --filter python 'celery -A toninho.workers.celery_app worker --loglevel=debug --concurrency=2'
 
   beat:
-    volumes:
-      - ./toninho:/app/toninho:ro
-      - ./output:/app/output
     environment:
       - DEBUG=true
       - LOG_LEVEL=DEBUG

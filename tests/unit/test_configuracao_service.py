@@ -7,7 +7,13 @@ import pytest
 
 from toninho.core.exceptions import NotFoundError
 from toninho.models.configuracao import Configuracao
-from toninho.models.enums import AgendamentoTipo, FormatoSaida, MetodoExtracao
+from toninho.models.enums import (
+    AgendamentoTipo,
+    FormatoSaida,
+    MetodoExtracao,
+    VolumeStatus,
+    VolumeTipo,
+)
 from toninho.models.processo import Processo
 from toninho.repositories.configuracao_repository import ConfiguracaoRepository
 from toninho.repositories.processo_repository import ProcessoRepository
@@ -56,6 +62,7 @@ def fake_processo(processo_id):
 
 @pytest.fixture
 def fake_config(config_id, processo_id):
+    vol_id = uuid4()
     c = MagicMock(spec=Configuracao)
     c.id = config_id
     c.processo_id = processo_id
@@ -63,11 +70,18 @@ def fake_config(config_id, processo_id):
     c.timeout = 3600
     c.max_retries = 3
     c.formato_saida = FormatoSaida.MULTIPLOS_ARQUIVOS
-    c.output_dir = "/tmp/output"
+    c.volume_id = vol_id
+    c.volume = MagicMock()
+    c.volume.id = vol_id
+    c.volume.nome = "Volume Teste"
+    c.volume.path = "/tmp/output"
+    c.volume.tipo = VolumeTipo.LOCAL
+    c.volume.status = VolumeStatus.ATIVO
     c.agendamento_tipo = AgendamentoTipo.MANUAL
     c.agendamento_cron = None
     c.use_browser = False
     c.metodo_extracao = MetodoExtracao.HTML2TEXT
+    c.respect_robots_txt = False
     c.created_at = __import__("datetime").datetime.now()
     c.updated_at = __import__("datetime").datetime.now()
     return c
@@ -79,7 +93,7 @@ def config_create():
         urls=["https://exemplo.com"],
         timeout=3600,
         max_retries=3,
-        output_dir="/tmp/output",
+        volume_id=uuid4(),
         agendamento_tipo=AgendamentoTipo.MANUAL,
     )
 
@@ -119,7 +133,7 @@ class TestCreateConfiguracao:
         with pytest.raises(Exception):
             ConfiguracaoCreate(
                 urls=["nao-e-uma-url"],
-                output_dir="/tmp",
+                volume_id=uuid4(),
                 agendamento_tipo=AgendamentoTipo.MANUAL,
             )
 
@@ -131,7 +145,7 @@ class TestCreateConfiguracao:
         with pytest.raises(Exception):
             ConfiguracaoCreate(
                 urls=["https://exemplo.com", "https://exemplo.com"],
-                output_dir="/tmp",
+                volume_id=uuid4(),
                 agendamento_tipo=AgendamentoTipo.MANUAL,
             )
 
@@ -140,7 +154,7 @@ class TestCreateConfiguracao:
         with pytest.raises(Exception):
             ConfiguracaoCreate(
                 urls=[],
-                output_dir="/tmp",
+                volume_id=uuid4(),
                 agendamento_tipo=AgendamentoTipo.MANUAL,
             )
 
@@ -152,7 +166,7 @@ class TestCreateConfiguracao:
         with pytest.raises(Exception):
             ConfiguracaoCreate(
                 urls=["https://exemplo.com"],
-                output_dir="/tmp",
+                volume_id=uuid4(),
                 agendamento_tipo=AgendamentoTipo.RECORRENTE,
                 agendamento_cron=None,
             )
@@ -163,7 +177,7 @@ class TestCreateConfiguracao:
             ConfiguracaoCreate(
                 urls=["https://exemplo.com"],
                 timeout=999999,
-                output_dir="/tmp",
+                volume_id=uuid4(),
                 agendamento_tipo=AgendamentoTipo.MANUAL,
             )
 
@@ -173,7 +187,7 @@ class TestCreateConfiguracao:
             ConfiguracaoCreate(
                 urls=["https://exemplo.com"],
                 max_retries=99,
-                output_dir="/tmp",
+                volume_id=uuid4(),
                 agendamento_tipo=AgendamentoTipo.MANUAL,
             )
 

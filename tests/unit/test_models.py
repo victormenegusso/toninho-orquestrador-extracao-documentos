@@ -24,7 +24,8 @@ from toninho.models import (
     Processo,
     ProcessoStatus,
 )
-from toninho.models.enums import MetodoExtracao
+from toninho.models.enums import MetodoExtracao, VolumeStatus, VolumeTipo
+from toninho.models.volume import Volume
 
 
 class TestProcesso:
@@ -86,9 +87,22 @@ class TestProcesso:
 class TestConfiguracao:
     """Testes para o model Configuracao."""
 
+    def _make_volume(self, db: Session) -> Volume:
+        vol = Volume(
+            nome=f"Vol {uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(vol)
+        db.commit()
+        db.refresh(vol)
+        return vol
+
     def test_criar_configuracao_valida(self, db: Session, processo_factory) -> None:
         """Testa criação de configuração com dados válidos."""
         processo = processo_factory()
+        volume = self._make_volume(db)
 
         configuracao = Configuracao(
             processo_id=processo.id,
@@ -96,7 +110,7 @@ class TestConfiguracao:
             timeout=1800,
             max_retries=3,
             formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-            output_dir="/tmp/output",
+            volume_id=volume.id,
             agendamento_tipo=AgendamentoTipo.MANUAL,
         )
         db.add(configuracao)
@@ -115,12 +129,13 @@ class TestConfiguracao:
         """Testa constraints de timeout."""
         processo = processo_factory()
 
+        volume = self._make_volume(db)
         # Timeout negativo deve falhar
         configuracao = Configuracao(
             processo_id=processo.id,
             urls=["https://exemplo.com"],
             timeout=-1,
-            output_dir="/tmp",
+            volume_id=volume.id,
         )
         db.add(configuracao)
 
@@ -134,7 +149,7 @@ class TestConfiguracao:
             processo_id=processo.id,
             urls=["https://exemplo.com"],
             timeout=100000,
-            output_dir="/tmp",
+            volume_id=volume.id,
         )
         db.add(configuracao2)
 
@@ -147,12 +162,13 @@ class TestConfiguracao:
         """Testa constraints de max_retries."""
         processo = processo_factory()
 
+        volume = self._make_volume(db)
         # max_retries > 10 deve falhar
         configuracao = Configuracao(
             processo_id=processo.id,
             urls=["https://exemplo.com"],
             max_retries=15,
-            output_dir="/tmp",
+            volume_id=volume.id,
         )
         db.add(configuracao)
 
@@ -162,11 +178,12 @@ class TestConfiguracao:
     def test_configuracao_defaults(self, db: Session, processo_factory) -> None:
         """Testa valores default."""
         processo = processo_factory()
+        volume = self._make_volume(db)
 
         configuracao = Configuracao(
             processo_id=processo.id,
             urls=["https://exemplo.com"],
-            output_dir="/tmp",
+            volume_id=volume.id,
         )
         db.add(configuracao)
         db.commit()
@@ -357,15 +374,25 @@ class TestRelacionamentos:
         """Testa relacionamento Processo -> Configuracoes."""
         processo = processo_factory()
 
+        vol = Volume(
+            nome=f"Vol {uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(vol)
+        db.commit()
+        db.refresh(vol)
+
         config1 = Configuracao(
             processo_id=processo.id,
             urls=["https://exemplo1.com"],
-            output_dir="/tmp",
+            volume_id=vol.id,
         )
         config2 = Configuracao(
             processo_id=processo.id,
             urls=["https://exemplo2.com"],
-            output_dir="/tmp",
+            volume_id=vol.id,
         )
         db.add_all([config1, config2])
         db.commit()
@@ -423,10 +450,20 @@ class TestRelacionamentos:
         """Testa cascade delete de Processo."""
         processo = processo_factory()
 
+        vol = Volume(
+            nome=f"Vol {uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(vol)
+        db.commit()
+        db.refresh(vol)
+
         config = Configuracao(
             processo_id=processo.id,
             urls=["https://exemplo.com"],
-            output_dir="/tmp",
+            volume_id=vol.id,
         )
         execucao = Execucao(processo_id=processo.id)
         db.add_all([config, execucao])
@@ -494,13 +531,22 @@ class TestConfiguracaoMetodoExtracao:
 
     def test_cria_com_default_html2text(self, db: Session, processo_factory) -> None:
         processo = processo_factory()
+        vol = Volume(
+            nome=f"Vol {uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(vol)
+        db.commit()
+        db.refresh(vol)
         config = Configuracao(
             processo_id=processo.id,
             urls=["https://x.com"],
             timeout=60,
             max_retries=1,
             formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-            output_dir="/tmp",
+            volume_id=vol.id,
             agendamento_tipo=AgendamentoTipo.MANUAL,
         )
         db.add(config)
@@ -510,13 +556,22 @@ class TestConfiguracaoMetodoExtracao:
 
     def test_cria_com_metodo_docling(self, db: Session, processo_factory) -> None:
         processo = processo_factory()
+        vol = Volume(
+            nome=f"Vol {uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(vol)
+        db.commit()
+        db.refresh(vol)
         config = Configuracao(
             processo_id=processo.id,
             urls=["https://x.com"],
             timeout=60,
             max_retries=1,
             formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-            output_dir="/tmp",
+            volume_id=vol.id,
             agendamento_tipo=AgendamentoTipo.MANUAL,
             metodo_extracao=MetodoExtracao.DOCLING,
         )
@@ -530,13 +585,22 @@ class TestConfiguracaoMetodoExtracao:
     ) -> None:
         """Garante que o enum é serializado como string (ADR-003)."""
         processo = processo_factory()
+        vol = Volume(
+            nome=f"Vol {uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(vol)
+        db.commit()
+        db.refresh(vol)
         config = Configuracao(
             processo_id=processo.id,
             urls=["https://x.com"],
             timeout=60,
             max_retries=1,
             formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-            output_dir="/tmp",
+            volume_id=vol.id,
             agendamento_tipo=AgendamentoTipo.MANUAL,
         )
         db.add(config)
@@ -548,13 +612,22 @@ class TestConfiguracaoMetodoExtracao:
 
     def test_atualiza_metodo_extracao(self, db: Session, processo_factory) -> None:
         processo = processo_factory()
+        vol = Volume(
+            nome=f"Vol {uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(vol)
+        db.commit()
+        db.refresh(vol)
         config = Configuracao(
             processo_id=processo.id,
             urls=["https://x.com"],
             timeout=60,
             max_retries=1,
             formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-            output_dir="/tmp",
+            volume_id=vol.id,
             agendamento_tipo=AgendamentoTipo.MANUAL,
         )
         db.add(config)

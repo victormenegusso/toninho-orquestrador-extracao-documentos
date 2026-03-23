@@ -3,7 +3,7 @@
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from toninho.models.configuracao import Configuracao
 
@@ -38,7 +38,11 @@ class ConfiguracaoRepository:
         Returns:
             Configuracao encontrada ou None
         """
-        stmt = select(Configuracao).where(Configuracao.id == config_id)
+        stmt = (
+            select(Configuracao)
+            .where(Configuracao.id == config_id)
+            .options(joinedload(Configuracao.volume))
+        )
         return db.execute(stmt).scalar_one_or_none()
 
     def get_by_processo_id(self, db: Session, processo_id: UUID) -> Configuracao | None:
@@ -55,6 +59,7 @@ class ConfiguracaoRepository:
         stmt = (
             select(Configuracao)
             .where(Configuracao.processo_id == processo_id)
+            .options(joinedload(Configuracao.volume))
             .order_by(Configuracao.created_at.desc())
             .limit(1)
         )
@@ -76,6 +81,7 @@ class ConfiguracaoRepository:
         stmt = (
             select(Configuracao)
             .where(Configuracao.processo_id == processo_id)
+            .options(joinedload(Configuracao.volume))
             .order_by(Configuracao.created_at.desc())
         )
         return list(db.execute(stmt).scalars().all())

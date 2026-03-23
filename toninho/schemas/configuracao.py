@@ -13,10 +13,10 @@ from toninho.models.enums import AgendamentoTipo, FormatoSaida, MetodoExtracao
 from toninho.schemas.base import BaseSchema
 from toninho.schemas.validators import (
     validate_cron_expression,
-    validate_path,
     validate_timeout,
     validate_urls_list,
 )
+from toninho.schemas.volume import VolumeSummary
 
 
 class ConfiguracaoCreate(BaseSchema):
@@ -29,7 +29,7 @@ class ConfiguracaoCreate(BaseSchema):
         timeout: Timeout em segundos (1-86400)
         max_retries: Número máximo de retentativas (0-10)
         formato_saida: Formato de saída dos arquivos
-        output_dir: Diretório de saída
+        volume_id: ID do volume de saída
         agendamento_cron: Expressão cron (obrigatória se tipo=RECORRENTE)
         agendamento_tipo: Tipo de agendamento
     """
@@ -63,16 +63,9 @@ class ConfiguracaoCreate(BaseSchema):
         default=FormatoSaida.MULTIPLOS_ARQUIVOS,
         description="Formato de saída dos arquivos extraídos",
     )
-    output_dir: str = Field(
+    volume_id: uuid.UUID = Field(
         ...,
-        description=(
-            "Diretório de saída dos arquivos extraídos. "
-            "Caminhos relativos com `./` são normalizados automaticamente "
-            "(ex: `./output` → `output`). "
-            "Os arquivos gerados seguem a estrutura: "
-            "`{output_dir}/{processo_id}/{execucao_id}/{slug}.md`."
-        ),
-        examples=["/tmp/output", "./output", "output"],  # nosec B108
+        description="ID do volume de saída para os arquivos extraídos.",
     )
     agendamento_cron: str | None = Field(
         None,
@@ -120,12 +113,6 @@ class ConfiguracaoCreate(BaseSchema):
         """Valida timeout."""
         return validate_timeout(v)
 
-    @field_validator("output_dir")
-    @classmethod
-    def validate_output_dir(cls, v: str) -> str:
-        """Valida e normaliza output_dir (remove ./ inicial se presente)."""
-        return validate_path(v)
-
     @field_validator("agendamento_cron")
     @classmethod
     def validate_cron(cls, v: str | None) -> str | None:
@@ -142,8 +129,6 @@ class ConfiguracaoCreate(BaseSchema):
                     "agendamento_cron é obrigatório quando agendamento_tipo=RECORRENTE"
                 )
         elif self.agendamento_cron:
-            # Se não é recorrente mas tem cron, emite warning via log
-            # (não bloqueia, mas pode ser melhorado)
             pass
 
 
@@ -176,9 +161,9 @@ class ConfiguracaoUpdate(BaseSchema):
         None,
         description="Novo formato de saída",
     )
-    output_dir: str | None = Field(
+    volume_id: uuid.UUID | None = Field(
         None,
-        description="Novo diretório de saída",
+        description="Novo volume de saída",
     )
     agendamento_cron: str | None = Field(
         None,
@@ -213,14 +198,6 @@ class ConfiguracaoUpdate(BaseSchema):
             return validate_timeout(v)
         return v
 
-    @field_validator("output_dir")
-    @classmethod
-    def validate_output_dir(cls, v: str | None) -> str | None:
-        """Valida output_dir se fornecido."""
-        if v is not None:
-            return validate_path(v)
-        return v
-
     @field_validator("agendamento_cron")
     @classmethod
     def validate_cron(cls, v: str | None) -> str | None:
@@ -237,11 +214,11 @@ class ConfiguracaoResponse(BaseSchema):
     Attributes:
         id: Identificador único
         processo_id: ID do processo
+        volume_id: ID do volume de saída
         urls: Lista de URLs
         timeout: Timeout em segundos
         max_retries: Número máximo de retentativas
         formato_saida: Formato de saída
-        output_dir: Diretório de saída
         agendamento_cron: Expressão cron
         agendamento_tipo: Tipo de agendamento
         use_browser: Se usa Playwright para renderizar JS
@@ -252,18 +229,11 @@ class ConfiguracaoResponse(BaseSchema):
 
     id: uuid.UUID = Field(..., description="Identificador único")
     processo_id: uuid.UUID = Field(..., description="ID do processo")
+    volume_id: uuid.UUID = Field(..., description="ID do volume de saída")
     urls: list[str] = Field(..., description="Lista de URLs para extração")
     timeout: int = Field(..., description="Timeout em segundos")
     max_retries: int = Field(..., description="Número máximo de retentativas")
     formato_saida: FormatoSaida = Field(..., description="Formato de saída")
-    output_dir: str = Field(
-        ...,
-        description=(
-            "Diretório de saída (normalizado). "
-            "Os arquivos extraídos são salvos em: "
-            "`{output_dir}/{processo_id}/{execucao_id}/{slug}.md`."
-        ),
-    )
     agendamento_cron: str | None = Field(None, description="Expressão cron")
     agendamento_tipo: AgendamentoTipo = Field(..., description="Tipo de agendamento")
     use_browser: bool = Field(..., description="Se usa Playwright para renderizar JS")
@@ -271,6 +241,7 @@ class ConfiguracaoResponse(BaseSchema):
     respect_robots_txt: bool = Field(
         ..., description="Se verifica robots.txt antes de extrair"
     )
+    volume: VolumeSummary | None = Field(None, description="Volume de saída vinculado")
     created_at: datetime = Field(..., description="Data/hora de criação")
     updated_at: datetime = Field(..., description="Data/hora da última atualização")
 
