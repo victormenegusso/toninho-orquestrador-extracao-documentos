@@ -18,12 +18,14 @@ from sqlalchemy.orm import Session
 from toninho.api.dependencies.execucao_deps import get_execucao_service
 from toninho.api.dependencies.pagina_extraida_deps import get_pagina_extraida_service
 from toninho.api.dependencies.processo_deps import get_processo_service
+from toninho.api.dependencies.volume_deps import get_volume_service
 from toninho.core.database import get_db
 from toninho.core.exceptions import NotFoundError
 from toninho.models.enums import ExecucaoStatus, PaginaStatus, ProcessoStatus
 from toninho.services.execucao_service import ExecucaoService
 from toninho.services.pagina_extraida_service import PaginaExtraidaService
 from toninho.services.processo_service import ProcessoService
+from toninho.services.volume_service import VolumeService
 
 router = APIRouter(tags=["Frontend"])
 
@@ -314,13 +316,14 @@ async def execucoes_list(
     request: Request,
     page: int = Query(1, ge=1),
     status: str | None = Query(None),
+    processo_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     service: ExecucaoService = Depends(get_execucao_service),
 ):
     """Lista de todas as execuções com paginação."""
     status_filter = _parse_execucao_status_filter(status)
     execucoes_resp = service.list_execucoes(
-        db, page=page, per_page=20, status=status_filter
+        db, page=page, per_page=20, status=status_filter, processo_id=processo_id
     )
     context = get_template_context(
         request,
@@ -328,6 +331,7 @@ async def execucoes_list(
         execucoes=execucoes_resp.data,
         meta=execucoes_resp.meta,
         status_filter=status or "",
+        processo_id=str(processo_id) if processo_id else "",
     )
     return templates.TemplateResponse("pages/execucoes/list.html", context)
 
@@ -418,10 +422,9 @@ async def execucao_paginas(
 
     try:
         estatisticas = pagina_service.get_estatisticas_paginas(db, execucao_id)
-        total_size_bytes = (
-            estatisticas.total_bytes if hasattr(estatisticas, "total_bytes") else 0
-        )
+        total_size_bytes = estatisticas.tamanho_total_bytes
     except Exception:
+        estatisticas = None
         total_size_bytes = 0
 
     total_size_formatted = _format_bytes(total_size_bytes)
@@ -431,6 +434,7 @@ async def execucao_paginas(
         title="Páginas Extraídas",
         execucao=execucao,
         paginas=paginas_resp,
+        estatisticas=estatisticas,
         total_size_formatted=total_size_formatted,
         status_filter=status or "",
         search=search or "",
@@ -461,6 +465,69 @@ async def pagina_detail(
         pagina=pagina,
     )
     return templates.TemplateResponse("pages/paginas/detail.html", context)
+
+
+# ==================== Rotas de Volumes ====================
+
+
+@router.get(
+    "/volumes",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def volumes_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    service: VolumeService = Depends(get_volume_service),
+):
+    """Lista de volumes de armazenamento."""
+    volumes_resp = service.list_volumes(db, page=1, per_page=100)
+    context = get_template_context(
+        request,
+        title="Volumes",
+        volumes=volumes_resp.data,
+    )
+    return templates.TemplateResponse("pages/volumes/list.html", context)
+
+
+@router.get(
+    "/volumes/novo",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def volumes_create(request: Request):
+    """Formulário de criação de novo volume."""
+    context = get_template_context(
+        request,
+        title="Novo Volume",
+        volume=None,
+    )
+    return templates.TemplateResponse("pages/volumes/form.html", context)
+
+
+@router.get(
+    "/volumes/{id}/editar",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def volumes_edit(
+    request: Request,
+    id: UUID,
+    db: Session = Depends(get_db),
+    service: VolumeService = Depends(get_volume_service),
+):
+    """Formulário de edição de volume existente."""
+    try:
+        volume = service.get_volume(db, id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Volume não encontrado")
+    volume_dict = volume.model_dump(mode="json")
+    context = get_template_context(
+        request,
+        title=f"Editar: {volume.nome}",
+        volume=volume_dict,
+    )
+    return templates.TemplateResponse("pages/volumes/form.html", context)
 
 
 # ==================== Helpers ====================

@@ -25,15 +25,15 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./output:/app/output
-      - db_data:/app
+      - output_data:/app/output
+      - db_data:/app/data
     env_file:
       - .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - REDIS_HOST=redis
-      - DATABASE_URL=sqlite:///./toninho.db
+      - DATABASE_URL=sqlite:///./data/toninho.db
     depends_on:
       redis:
         condition: service_healthy
@@ -52,8 +52,8 @@ services:
     image: toninho:latest
     container_name: toninho-worker
     volumes:
-      - ./output:/app/output
-      - db_data:/app
+      - output_data:/app/output
+      - db_data:/app/data
       - docling_cache:/home/toninho/.cache/docling
     env_file:
       - .env
@@ -61,7 +61,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - REDIS_HOST=redis
-      - DATABASE_URL=sqlite:///./toninho.db
+      - DATABASE_URL=sqlite:///./data/toninho.db
     depends_on:
       redis:
         condition: service_healthy
@@ -76,15 +76,15 @@ services:
     image: toninho:latest
     container_name: toninho-beat
     volumes:
-      - ./output:/app/output
-      - db_data:/app
+      - output_data:/app/output
+      - db_data:/app/data
     env_file:
       - .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - REDIS_HOST=redis
-      - DATABASE_URL=sqlite:///./toninho.db
+      - DATABASE_URL=sqlite:///./data/toninho.db
     depends_on:
       - redis
       - worker
@@ -99,7 +99,7 @@ services:
     ports:
       - "5555:5555"
     volumes:
-      - db_data:/app
+      - db_data:/app/data
     env_file:
       - .env
     environment:
@@ -118,6 +118,8 @@ volumes:
   redis_data:
     driver: local
   db_data:
+    driver: local
+  output_data:
     driver: local
   docling_cache:
     driver: local

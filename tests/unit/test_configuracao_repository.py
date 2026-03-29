@@ -5,8 +5,9 @@ from uuid import uuid4
 import pytest
 
 from toninho.models.configuracao import Configuracao
-from toninho.models.enums import AgendamentoTipo, FormatoSaida
+from toninho.models.enums import AgendamentoTipo, FormatoSaida, VolumeStatus, VolumeTipo
 from toninho.models.processo import Processo
+from toninho.models.volume import Volume
 from toninho.repositories.configuracao_repository import ConfiguracaoRepository
 
 
@@ -27,14 +28,28 @@ class TestConfiguracaoRepository:
         return p
 
     @pytest.fixture
-    def config_data(self, processo):
+    def volume(self, db):
+        """Cria um volume para usar como FK."""
+        v = Volume(
+            nome="Volume Repo Teste",
+            path="/tmp/repo-test-output",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(v)
+        db.commit()
+        db.refresh(v)
+        return v
+
+    @pytest.fixture
+    def config_data(self, processo, volume):
         return {
             "processo_id": processo.id,
             "urls": ["https://exemplo.com"],
             "timeout": 3600,
             "max_retries": 3,
             "formato_saida": FormatoSaida.MULTIPLOS_ARQUIVOS,
-            "output_dir": "/tmp/output",
+            "volume_id": volume.id,
             "agendamento_tipo": AgendamentoTipo.MANUAL,
         }
 

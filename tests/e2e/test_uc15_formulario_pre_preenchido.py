@@ -22,7 +22,7 @@ class TestFormularioPrePreenchido:
         expect(page.locator("#timeout")).to_have_value("3600")
         expect(page.locator("#max_retries")).to_have_value("3")
         expect(page.locator("#formato_saida")).to_have_value("multiplos_arquivos")
-        expect(page.locator("#output_dir")).to_have_value("./output")
+        expect(page.locator("#volume_id")).to_be_visible()
         expect(page.locator("#agendamento_tipo")).to_have_value("manual")
 
         # Fields without an id use x-model selectors
@@ -46,7 +46,7 @@ class TestFormularioPrePreenchido:
 
         expect(page.locator("#timeout")).to_have_value("3600")
         expect(page.locator("#max_retries")).to_have_value("3")
-        expect(page.locator("#output_dir")).to_have_value("./output")
+        expect(page.locator("#volume_id")).to_be_visible()
         expect(page.locator("#formato_saida")).to_have_value("multiplos_arquivos")
         expect(page.locator("#agendamento_tipo")).to_have_value("manual")
         expect(page.locator("#status")).to_have_value("ativo")
@@ -66,7 +66,7 @@ class TestFormularioPrePreenchido:
 
         expect(page.locator("#timeout")).to_have_value("3600")
         expect(page.locator("#max_retries")).to_have_value("3")
-        expect(page.locator("#output_dir")).to_have_value("./output")
+        expect(page.locator("#volume_id")).to_be_visible()
         expect(page.locator("#formato_saida")).to_have_value("multiplos_arquivos")
 
     def test_formulario_edicao_carrega_valores_existentes(

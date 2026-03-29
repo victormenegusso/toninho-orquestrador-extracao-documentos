@@ -9,7 +9,7 @@ import asyncio
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from toninho.extraction.extractor import PageExtractor
 from toninho.extraction.storage import StorageInterface, get_storage
@@ -67,6 +67,7 @@ class ExtractionOrchestrator:
         configuracao = (
             db.query(Configuracao)
             .filter(Configuracao.processo_id == execucao.processo_id)
+            .options(joinedload(Configuracao.volume))
             .order_by(Configuracao.created_at.desc())
             .first()
         )
@@ -94,9 +95,10 @@ class ExtractionOrchestrator:
         bytes_total = 0
 
         # 4. Preparar storage
+        volume_path = configuracao.volume.path if configuracao.volume else "./output"
         storage = self.storage or get_storage(
             "local",
-            base_dir=configuracao.output_dir or "./output",
+            base_dir=volume_path,
         )
 
         # 4b. Preparar extractor com modo browser se configurado

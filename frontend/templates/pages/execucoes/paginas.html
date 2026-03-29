@@ -31,15 +31,15 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <p class="text-sm text-gray-600">Total de Páginas</p>
-            <p class="text-2xl font-bold mt-1">{{ execucao.total_urls or '—' }}</p>
+            <p class="text-2xl font-bold mt-1">{{ estatisticas.total if estatisticas else '—' }}</p>
         </div>
         <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <p class="text-sm text-gray-600">Extraídas com Sucesso</p>
-            <p class="text-2xl font-bold text-green-600 mt-1">{{ execucao.urls_sucesso or '—' }}</p>
+            <p class="text-2xl font-bold text-green-600 mt-1">{{ estatisticas.sucesso if estatisticas else '—' }}</p>
         </div>
         <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <p class="text-sm text-gray-600">Erros</p>
-            <p class="text-2xl font-bold text-red-600 mt-1">{{ execucao.urls_erro or '—' }}</p>
+            <p class="text-2xl font-bold text-red-600 mt-1">{{ estatisticas.falhou if estatisticas else '—' }}</p>
         </div>
         <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <p class="text-sm text-gray-600">Tamanho Total</p>

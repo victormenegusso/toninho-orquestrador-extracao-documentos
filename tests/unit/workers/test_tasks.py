@@ -20,7 +20,10 @@ from toninho.models.enums import (
     AgendamentoTipo,
     ExecucaoStatus,
     FormatoSaida,
+    VolumeStatus,
+    VolumeTipo,
 )
+from toninho.models.volume import Volume
 
 # ──────────────────────────────────────────────────────── fixtures ────────────
 
@@ -65,14 +68,28 @@ def execucao(db, processo):
 
 
 @pytest.fixture
-def configuracao_recorrente(db, processo, tmp_path):
+def test_volume(db):
+    v = Volume(
+        nome=f"Vol {uuid.uuid4().hex[:6]}",
+        path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+        tipo=VolumeTipo.LOCAL,
+        status=VolumeStatus.ATIVO,
+    )
+    db.add(v)
+    db.commit()
+    db.refresh(v)
+    return v
+
+
+@pytest.fixture
+def configuracao_recorrente(db, processo, test_volume):
     c = Configuracao(
         processo_id=processo.id,
         urls=["https://example.com"],
         timeout=30,
         max_retries=1,
         formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-        output_dir=str(tmp_path),
+        volume_id=test_volume.id,
         agendamento_tipo=AgendamentoTipo.RECORRENTE,
         agendamento_cron="* * * * *",  # Todo minuto
     )
@@ -212,7 +229,9 @@ class TestVerificarAgendamentos:
         assert "execucoes_criadas" in data
         assert isinstance(data["execucoes_criadas"], int)
 
-    def test_no_execucao_created_when_no_recorrente_config(self, db, processo):
+    def test_no_execucao_created_when_no_recorrente_config(
+        self, db, processo, test_volume
+    ):
         """Sem configurações RECORRENTE, não deve criar execuções."""
         from toninho.workers.tasks.agendamento_task import verificar_agendamentos
 
@@ -223,7 +242,7 @@ class TestVerificarAgendamentos:
             timeout=30,
             max_retries=1,
             formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-            output_dir="./output",
+            volume_id=test_volume.id,
             agendamento_tipo=AgendamentoTipo.MANUAL,
         )
         db.add(config)

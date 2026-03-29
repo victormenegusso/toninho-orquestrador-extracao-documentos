@@ -9,8 +9,9 @@ from sqlalchemy.orm import sessionmaker
 from toninho.core.database import get_db
 from toninho.main import app
 from toninho.models.configuracao import Configuracao
-from toninho.models.enums import AgendamentoTipo, FormatoSaida
+from toninho.models.enums import AgendamentoTipo, FormatoSaida, VolumeStatus, VolumeTipo
 from toninho.models.processo import Processo
+from toninho.models.volume import Volume
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -38,6 +39,21 @@ def client(test_engine):
 
 
 @pytest.fixture
+def volume(db):
+    """Cria um volume para usar nos testes."""
+    v = Volume(
+        nome="Volume Config Teste",
+        path="/tmp/config-test-output",
+        tipo=VolumeTipo.LOCAL,
+        status=VolumeStatus.ATIVO,
+    )
+    db.add(v)
+    db.commit()
+    db.refresh(v)
+    return v
+
+
+@pytest.fixture
 def processo(db):
     """Cria um processo para usar nos testes."""
     p = Processo(nome="Processo Config Teste", descricao="desc")
@@ -48,18 +64,18 @@ def processo(db):
 
 
 @pytest.fixture
-def config_payload():
+def config_payload(volume):
     return {
         "urls": ["https://exemplo.com", "https://exemplo.com/pagina2"],
         "timeout": 3600,
         "max_retries": 3,
-        "output_dir": "/tmp/output",
+        "volume_id": str(volume.id),
         "agendamento_tipo": "manual",
     }
 
 
 @pytest.fixture
-def config_factory(db, processo):
+def config_factory(db, processo, volume):
     """Factory para criar configurações diretamente no DB."""
     counter = {"value": 0}
 
@@ -70,7 +86,7 @@ def config_factory(db, processo):
             "urls": ["https://exemplo.com"],
             "timeout": 3600,
             "max_retries": 3,
-            "output_dir": "/tmp/output",
+            "volume_id": volume.id,
             "agendamento_tipo": AgendamentoTipo.MANUAL,
             "formato_saida": FormatoSaida.MULTIPLOS_ARQUIVOS,
         }
@@ -113,10 +129,10 @@ class TestConfiguracaoAPI:
         )
         assert response.status_code == 404
 
-    def test_create_urls_invalidas(self, client, processo):
+    def test_create_urls_invalidas(self, client, processo, volume):
         payload = {
             "urls": ["nao-e-url"],
-            "output_dir": "/tmp",
+            "volume_id": str(volume.id),
             "agendamento_tipo": "manual",
         }
         response = client.post(
@@ -125,10 +141,10 @@ class TestConfiguracaoAPI:
         )
         assert response.status_code == 422
 
-    def test_create_cron_invalido_recorrente(self, client, processo):
+    def test_create_cron_invalido_recorrente(self, client, processo, volume):
         payload = {
             "urls": ["https://exemplo.com"],
-            "output_dir": "/tmp",
+            "volume_id": str(volume.id),
             "agendamento_tipo": "recorrente",
             "agendamento_cron": None,
         }
@@ -276,12 +292,12 @@ class TestConfiguracaoAPI:
 class TestConfigMetodoExtracao:
     """Testes de integração para metodo_extracao via API REST."""
 
-    def test_post_com_docling_persiste_e_retorna(self, client, processo):
+    def test_post_com_docling_persiste_e_retorna(self, client, processo, volume):
         payload = {
             "urls": ["https://exemplo.com"],
             "timeout": 3600,
             "max_retries": 3,
-            "output_dir": "/tmp/output",
+            "volume_id": str(volume.id),
             "agendamento_tipo": "manual",
             "metodo_extracao": "docling",
         }
@@ -291,12 +307,12 @@ class TestConfigMetodoExtracao:
         assert resp.status_code == 201
         assert resp.json()["data"]["metodo_extracao"] == "docling"
 
-    def test_post_sem_metodo_usa_html2text(self, client, processo):
+    def test_post_sem_metodo_usa_html2text(self, client, processo, volume):
         payload = {
             "urls": ["https://exemplo.com"],
             "timeout": 3600,
             "max_retries": 3,
-            "output_dir": "/tmp/output",
+            "volume_id": str(volume.id),
             "agendamento_tipo": "manual",
         }
         resp = client.post(

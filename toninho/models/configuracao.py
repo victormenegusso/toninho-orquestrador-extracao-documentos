@@ -23,6 +23,7 @@ from toninho.models.enums import AgendamentoTipo, FormatoSaida, MetodoExtracao
 
 if TYPE_CHECKING:
     from toninho.models.processo import Processo
+    from toninho.models.volume import Volume
 
 
 class Configuracao(Base, UUIDMixin, TimestampMixin):
@@ -35,16 +36,17 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
     Attributes:
         id: Identificador único (UUID)
         processo_id: ID do processo pai
+        volume_id: ID do volume de saída
         urls: Lista de URLs para extração (JSON)
         timeout: Timeout em segundos (1-86400)
         max_retries: Número máximo de retentativas (0-10)
         formato_saida: Formato de saída (ARQUIVO_UNICO ou MULTIPLOS_ARQUIVOS)
-        output_dir: Diretório de saída dos arquivos
         agendamento_cron: Expressão cron para agendamento recorrente
         agendamento_tipo: Tipo de agendamento (MANUAL, ONE_TIME, RECORRENTE)
         created_at: Data/hora de criação
         updated_at: Data/hora da última atualização
         processo: Processo pai
+        volume: Volume de saída
     """
 
     __tablename__ = "configuracoes"
@@ -54,6 +56,12 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
         ForeignKey("processos.id", ondelete="CASCADE"),
         nullable=False,
         doc="ID do processo ao qual esta configuração pertence",
+    )
+
+    volume_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("volumes.id"),
+        nullable=False,
+        doc="ID do volume de saída dos arquivos extraídos",
     )
 
     # Campos
@@ -79,10 +87,6 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         default=FormatoSaida.MULTIPLOS_ARQUIVOS,
         doc="Formato de saída dos arquivos extraídos",
-    )
-
-    output_dir: Mapped[str] = mapped_column(
-        String(500), nullable=False, doc="Diretório de saída dos arquivos extraídos"
     )
 
     agendamento_cron: Mapped[str | None] = mapped_column(
@@ -125,6 +129,11 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
         doc="Processo ao qual esta configuração pertence",
     )
 
+    volume: Mapped["Volume"] = relationship(
+        back_populates="configuracoes",
+        doc="Volume de saída dos arquivos extraídos",
+    )
+
     # Constraints
     __table_args__ = (
         CheckConstraint("timeout > 0", name="ck_configuracao_timeout_positive"),
@@ -133,10 +142,11 @@ class Configuracao(Base, UUIDMixin, TimestampMixin):
         CheckConstraint("max_retries <= 10", name="ck_configuracao_retries_max"),
         Index("idx_configuracao_processo_id", "processo_id"),
         Index("idx_configuracao_agendamento_tipo", "agendamento_tipo"),
+        Index("idx_configuracao_volume_id", "volume_id"),
     )
 
     def __repr__(self) -> str:
         return (
             f"<Configuracao(id={self.id}, processo_id={self.processo_id}, "
-            f"agendamento_tipo={self.agendamento_tipo})>"
+            f"volume_id={self.volume_id}, agendamento_tipo={self.agendamento_tipo})>"
         )

@@ -17,7 +17,10 @@ from toninho.models.enums import (
     LogNivel,
     MetodoExtracao,
     PaginaStatus,
+    VolumeStatus,
+    VolumeTipo,
 )
+from toninho.models.volume import Volume
 from toninho.workers.utils import ExtractionOrchestrator
 
 # ──────────────────────────────────────────────────────── fixtures ────────────
@@ -54,14 +57,28 @@ def processo(db):
 
 
 @pytest.fixture
-def configuracao(db, processo, tmp_path):
+def test_volume(db):
+    v = Volume(
+        nome=f"Vol {uuid.uuid4().hex[:6]}",
+        path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+        tipo=VolumeTipo.LOCAL,
+        status=VolumeStatus.ATIVO,
+    )
+    db.add(v)
+    db.commit()
+    db.refresh(v)
+    return v
+
+
+@pytest.fixture
+def configuracao(db, processo, test_volume):
     c = Configuracao(
         processo_id=processo.id,
         urls=["https://example.com/a", "https://example.com/b"],
         timeout=30,
         max_retries=1,
         formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-        output_dir=str(tmp_path),
+        volume_id=test_volume.id,
         agendamento_tipo=AgendamentoTipo.MANUAL,
     )
     db.add(c)
@@ -442,7 +459,7 @@ class TestExtractionOrchestratorMetodoExtracao:
             mock_instance.extract_from_html.assert_not_called()
 
     def test_run_com_docling_inclui_motor_no_log(
-        self, db, processo, mock_storage, tmp_path
+        self, db, processo, mock_storage, test_volume
     ):
         """Log inicial deve identificar o motor docling."""
         from toninho.models.log import Log
@@ -453,7 +470,7 @@ class TestExtractionOrchestratorMetodoExtracao:
             timeout=30,
             max_retries=1,
             formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-            output_dir=str(tmp_path),
+            volume_id=test_volume.id,
             agendamento_tipo=AgendamentoTipo.MANUAL,
             metodo_extracao=MetodoExtracao.DOCLING,
         )

@@ -20,7 +20,8 @@ from toninho.models import (
     PaginaStatus,
     ProcessoStatus,
 )
-from toninho.models.enums import MetodoExtracao
+from toninho.models.enums import MetodoExtracao, VolumeStatus, VolumeTipo
+from toninho.models.volume import Volume
 from toninho.schemas import (
     ConfiguracaoCreate,
     ConfiguracaoResponse,
@@ -94,7 +95,7 @@ class TestConfiguracaoSchemas:
             "urls": ["https://exemplo.com"],
             "timeout": 1800,
             "max_retries": 3,
-            "output_dir": "/tmp/output",
+            "volume_id": str(uuid.uuid4()),
         }
         schema = ConfiguracaoCreate(**data)
 
@@ -107,7 +108,7 @@ class TestConfiguracaoSchemas:
         with pytest.raises(ValidationError):
             ConfiguracaoCreate(
                 urls=[],
-                output_dir="/tmp",
+                volume_id=uuid.uuid4(),
             )
 
     def test_configuracao_url_invalida(self) -> None:
@@ -115,7 +116,7 @@ class TestConfiguracaoSchemas:
         with pytest.raises(ValidationError):
             ConfiguracaoCreate(
                 urls=["not-a-url"],
-                output_dir="/tmp",
+                volume_id=uuid.uuid4(),
             )
 
     def test_configuracao_timeout_negativo(self) -> None:
@@ -124,7 +125,7 @@ class TestConfiguracaoSchemas:
             ConfiguracaoCreate(
                 urls=["https://exemplo.com"],
                 timeout=-1,
-                output_dir="/tmp",
+                volume_id=uuid.uuid4(),
             )
 
     def test_configuracao_timeout_excessivo(self) -> None:
@@ -133,7 +134,7 @@ class TestConfiguracaoSchemas:
             ConfiguracaoCreate(
                 urls=["https://exemplo.com"],
                 timeout=100000,
-                output_dir="/tmp",
+                volume_id=uuid.uuid4(),
             )
 
     def test_configuracao_max_retries_excessivo(self) -> None:
@@ -142,7 +143,7 @@ class TestConfiguracaoSchemas:
             ConfiguracaoCreate(
                 urls=["https://exemplo.com"],
                 max_retries=15,
-                output_dir="/tmp",
+                volume_id=uuid.uuid4(),
             )
 
     def test_configuracao_cron_recorrente_obrigatorio(self) -> None:
@@ -150,7 +151,7 @@ class TestConfiguracaoSchemas:
         with pytest.raises(ValidationError):
             ConfiguracaoCreate(
                 urls=["https://exemplo.com"],
-                output_dir="/tmp",
+                volume_id=uuid.uuid4(),
                 agendamento_tipo=AgendamentoTipo.RECORRENTE,
                 agendamento_cron=None,
             )
@@ -159,7 +160,7 @@ class TestConfiguracaoSchemas:
         """Testa validação de expressão cron válida."""
         schema = ConfiguracaoCreate(
             urls=["https://exemplo.com"],
-            output_dir="/tmp",
+            volume_id=uuid.uuid4(),
             agendamento_tipo=AgendamentoTipo.RECORRENTE,
             agendamento_cron="0 */6 * * *",
         )
@@ -170,17 +171,26 @@ class TestConfiguracaoSchemas:
         with pytest.raises(ValidationError):
             ConfiguracaoCreate(
                 urls=["https://exemplo.com"],
-                output_dir="/tmp",
+                volume_id=uuid.uuid4(),
                 agendamento_cron="invalid cron",
             )
 
     def test_configuracao_response_from_model(self, db, processo_factory) -> None:
         """Testa conversão de model para schema."""
         processo = processo_factory()
+        vol = Volume(
+            nome=f"Vol {uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(vol)
+        db.commit()
+        db.refresh(vol)
         config = Configuracao(
             processo_id=processo.id,
             urls=["https://exemplo.com"],
-            output_dir="/tmp",
+            volume_id=vol.id,
         )
         db.add(config)
         db.commit()
@@ -196,7 +206,7 @@ class TestConfiguracaoSchemas:
         """use_browser deve ser False por padrão (MH-003)."""
         schema = ConfiguracaoCreate(
             urls=["https://exemplo.com"],
-            output_dir="/tmp",
+            volume_id=uuid.uuid4(),
         )
         assert schema.use_browser is False
 
@@ -204,7 +214,7 @@ class TestConfiguracaoSchemas:
         """use_browser=True deve ser aceito (MH-003)."""
         schema = ConfiguracaoCreate(
             urls=["https://exemplo.com"],
-            output_dir="/tmp",
+            volume_id=uuid.uuid4(),
             use_browser=True,
         )
         assert schema.use_browser is True
@@ -522,7 +532,7 @@ class TestConfiguracaoCreateMetodoExtracao:
     def test_default_e_html2text(self) -> None:
         schema = ConfiguracaoCreate(
             urls=["https://x.com"],
-            output_dir="output",
+            volume_id=uuid.uuid4(),
             agendamento_tipo="manual",
         )
         assert schema.metodo_extracao == MetodoExtracao.HTML2TEXT
@@ -530,7 +540,7 @@ class TestConfiguracaoCreateMetodoExtracao:
     def test_aceita_docling(self) -> None:
         schema = ConfiguracaoCreate(
             urls=["https://x.com"],
-            output_dir="output",
+            volume_id=uuid.uuid4(),
             agendamento_tipo="manual",
             metodo_extracao="docling",
         )
@@ -539,7 +549,7 @@ class TestConfiguracaoCreateMetodoExtracao:
     def test_aceita_html2text_explicito(self) -> None:
         schema = ConfiguracaoCreate(
             urls=["https://x.com"],
-            output_dir="output",
+            volume_id=uuid.uuid4(),
             agendamento_tipo="manual",
             metodo_extracao="html2text",
         )
@@ -549,7 +559,7 @@ class TestConfiguracaoCreateMetodoExtracao:
         with pytest.raises(ValidationError):
             ConfiguracaoCreate(
                 urls=["https://x.com"],
-                output_dir="output",
+                volume_id=uuid.uuid4(),
                 agendamento_tipo="manual",
                 metodo_extracao="invalido",
             )

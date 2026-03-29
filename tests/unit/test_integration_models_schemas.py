@@ -19,6 +19,8 @@ from toninho.models import (
     Processo,
     ProcessoStatus,
 )
+from toninho.models.enums import VolumeStatus, VolumeTipo
+from toninho.models.volume import Volume
 from toninho.schemas import (
     ConfiguracaoResponse,
     ExecucaoResponse,
@@ -50,6 +52,17 @@ def test_full_workflow_model_to_schema(db: Session) -> None:
     assert processo_schema.id == processo.id
     assert processo_schema.nome == processo.nome
 
+    # Criar volume
+    volume = Volume(
+        nome="Volume Integração",
+        path="/tmp/integ-output",
+        tipo=VolumeTipo.LOCAL,
+        status=VolumeStatus.ATIVO,
+    )
+    db.add(volume)
+    db.commit()
+    db.refresh(volume)
+
     # Criar configuração
     config = Configuracao(
         processo_id=processo.id,
@@ -57,7 +70,7 @@ def test_full_workflow_model_to_schema(db: Session) -> None:
         timeout=1800,
         max_retries=3,
         formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-        output_dir="/tmp/output",
+        volume_id=volume.id,
         agendamento_tipo=AgendamentoTipo.MANUAL,
     )
     db.add(config)
@@ -154,10 +167,20 @@ def test_cascade_delete_with_schemas(db: Session) -> None:
     db.commit()
     db.refresh(processo)
 
+    volume = Volume(
+        nome="Volume Cascade",
+        path="/tmp/cascade-output",
+        tipo=VolumeTipo.LOCAL,
+        status=VolumeStatus.ATIVO,
+    )
+    db.add(volume)
+    db.commit()
+    db.refresh(volume)
+
     config = Configuracao(
         processo_id=processo.id,
         urls=["https://exemplo.com"],
-        output_dir="/tmp",
+        volume_id=volume.id,
     )
     execucao = Execucao(processo_id=processo.id)
     db.add_all([config, execucao])

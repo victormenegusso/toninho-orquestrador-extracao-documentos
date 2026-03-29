@@ -7,6 +7,12 @@ from playwright.sync_api import Page, expect
 def _fill_campos_minimos(page: Page, nome: str = "Processo Validacao") -> None:
     page.locator("#nome").fill(nome)
     page.locator("#urls").fill("https://example.com")
+    # Aguardar volumes carregarem e selecionar o primeiro
+    page.wait_for_function(
+        "document.querySelectorAll('#volume_id option').length > 1",
+        timeout=5000,
+    )
+    page.locator("#volume_id").select_option(index=1)
 
 
 @pytest.mark.e2e

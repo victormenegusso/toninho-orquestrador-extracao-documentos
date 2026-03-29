@@ -17,6 +17,7 @@ from toninho.api.routes import (
     monitoring,
     paginas_extraidas,
     processos,
+    volumes,
 )
 from toninho.core.config import settings
 from toninho.core.logging import setup_logging
@@ -48,6 +49,7 @@ app.include_router(logs.router)
 app.include_router(paginas_extraidas.router_execucoes)
 app.include_router(paginas_extraidas.router)
 app.include_router(monitoring.router)
+app.include_router(volumes.router)
 
 # Registrar rotas do frontend (devem ser incluídas após as rotas da API)
 app.include_router(frontend.router)
