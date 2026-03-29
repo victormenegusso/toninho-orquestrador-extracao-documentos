@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 
 from toninho.core.exceptions import ConflictError, NotFoundError, ValidationError
-from toninho.models.enums import ExecucaoStatus, ProcessoStatus
+from toninho.models.enums import ProcessoStatus
 from toninho.models.processo import Processo
 from toninho.schemas.processo import ProcessoCreate, ProcessoUpdate
 from toninho.services.processo_service import ProcessoService
@@ -129,6 +129,8 @@ class TestProcessoService:
         processo_mock.execucoes = []
 
         mock_repository.get_by_id_with_details.return_value = processo_mock
+        mock_repository.get_recent_execucoes.return_value = []
+        mock_repository.count_execucoes.return_value = 0
 
         # Executar
         result = service.get_processo_detail(db_mock, processo_id)
@@ -280,7 +282,8 @@ class TestProcessoService:
         processo_mock.id = processo_id
         processo_mock.execucoes = []
 
-        mock_repository.get_by_id_with_details.return_value = processo_mock
+        mock_repository.get_by_id.return_value = processo_mock
+        mock_repository.has_execucoes_em_andamento.return_value = 0
         mock_repository.delete.return_value = True
 
         # Executar
@@ -293,7 +296,7 @@ class TestProcessoService:
     def test_delete_processo_nao_encontrado(self, service, mock_repository, db_mock):
         """Testa deleção de processo inexistente."""
         processo_id = uuid4()
-        mock_repository.get_by_id_with_details.return_value = None
+        mock_repository.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
             service.delete_processo(db_mock, processo_id)
@@ -304,18 +307,14 @@ class TestProcessoService:
         """Testa deleção com execuções em andamento."""
         processo_id = uuid4()
 
-        # Criar mock do processo com execucoes como atributo simples
+        # Criar mock do processo
         processo_mock = Mock()
         processo_mock.id = processo_id
         processo_mock.nome = "Processo Teste"
         processo_mock.status = ProcessoStatus.ATIVO
 
-        # Execução em andamento
-        execucao_mock = Mock()
-        execucao_mock.status = ExecucaoStatus.EM_EXECUCAO
-        processo_mock.execucoes = [execucao_mock]
-
-        mock_repository.get_by_id_with_details.return_value = processo_mock
+        mock_repository.get_by_id.return_value = processo_mock
+        mock_repository.has_execucoes_em_andamento.return_value = 1
 
         with pytest.raises(ConflictError) as exc_info:
             service.delete_processo(db_mock, processo_id)

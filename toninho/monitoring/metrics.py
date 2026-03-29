@@ -119,35 +119,40 @@ class MetricsService:
         return round(rate, 2)
 
     def _calculate_avg_duration(self) -> float:
-        """Calcula duração média das execuções concluídas (minutos)."""
-        rows = (
-            self.db.query(Execucao.iniciado_em, Execucao.finalizado_em)
+        """Calcula duração média das execuções concluídas (minutos) via SQL."""
+        from sqlalchemy import Float, cast
+
+        avg_seconds = (
+            self.db.query(
+                func.avg(
+                    cast(
+                        func.julianday(Execucao.finalizado_em)
+                        - func.julianday(Execucao.iniciado_em),
+                        Float,
+                    )
+                    * 86400
+                )
+            )
             .filter(
                 Execucao.status == ExecucaoStatus.CONCLUIDO,
                 Execucao.finalizado_em.isnot(None),
                 Execucao.iniciado_em.isnot(None),
             )
-            .all()
+            .scalar()
         )
 
-        if not rows:
+        if not avg_seconds:
             return 0.0
 
-        durations = []
-        for row in rows:
-            delta = row.finalizado_em - row.iniciado_em
-            durations.append(delta.total_seconds())
-
-        if not durations:
-            return 0.0
-
-        avg_seconds = sum(durations) / len(durations)
         return round(avg_seconds / 60, 2)
 
     def _get_recent_activity(self, limit: int = 10) -> list[dict[str, Any]]:
-        """Retorna as últimas N execuções."""
+        """Retorna as últimas N execuções com nome do processo via JOIN."""
+        from sqlalchemy.orm import joinedload
+
         execucoes = (
             self.db.query(Execucao)
+            .options(joinedload(Execucao.processo))
             .order_by(Execucao.created_at.desc())
             .limit(limit)
             .all()

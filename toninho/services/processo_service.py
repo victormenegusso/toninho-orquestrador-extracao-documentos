@@ -119,19 +119,18 @@ class ProcessoService:
             for config in processo.configuracoes
         ]
 
-        # Adicionar últimas 5 execuções ordenadas por data (mais recentes primeiro)
-        execucoes_ordenadas = sorted(
-            processo.execucoes, key=lambda e: e.created_at, reverse=True
-        )[:5]
+        # Buscar últimas 5 execuções e total via queries otimizadas
+        execucoes_recentes_models = self.repository.get_recent_execucoes(
+            db, processo_id, limit=5
+        )
         execucoes_recentes = [
-            ExecucaoResponse.model_validate(exec) for exec in execucoes_ordenadas
+            ExecucaoResponse.model_validate(exec) for exec in execucoes_recentes_models
         ]
 
-        # Calcular métricas básicas
-        total_execucoes = len(processo.execucoes)
+        total_execucoes = self.repository.count_execucoes(db, processo_id)
         ultima_execucao_em = (
-            max(e.created_at for e in processo.execucoes)
-            if processo.execucoes
+            execucoes_recentes_models[0].created_at
+            if execucoes_recentes_models
             else None
         )
 
@@ -281,19 +280,17 @@ class ProcessoService:
             ConflictError: Se há execuções em andamento
         """
         # Buscar processo
-        processo = self.repository.get_by_id_with_details(db, processo_id)
+        processo = self.repository.get_by_id(db, processo_id)
 
         if not processo:
             raise NotFoundError("Processo", str(processo_id))
 
-        # Verificar se há execuções em andamento
-        execucoes_em_andamento = [
-            e for e in processo.execucoes if e.status == ExecucaoStatus.EM_EXECUCAO
-        ]
+        # Verificar se há execuções em andamento via query otimizada
+        em_andamento = self.repository.has_execucoes_em_andamento(db, processo_id)
 
-        if execucoes_em_andamento:
+        if em_andamento:
             raise ConflictError(
-                f"Não é possível deletar processo com {len(execucoes_em_andamento)} "
+                f"Não é possível deletar processo com {em_andamento} "
                 "execução(ões) em andamento"
             )
 

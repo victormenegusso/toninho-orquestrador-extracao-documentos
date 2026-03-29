@@ -149,7 +149,7 @@ class LogRepository:
 
     def delete_by_execucao_id(self, db: Session, execucao_id: UUID) -> int:
         """
-        Deleta todos os logs de uma execução.
+        Deleta todos os logs de uma execução via bulk DELETE.
 
         Args:
             db: Sessão do SQLAlchemy
@@ -158,10 +158,9 @@ class LogRepository:
         Returns:
             Quantidade de registros deletados
         """
-        stmt = select(Log).where(Log.execucao_id == execucao_id)
-        logs = list(db.execute(stmt).scalars().all())
-        count = len(logs)
-        for log in logs:
-            db.delete(log)
+        from sqlalchemy import delete
+
+        stmt = delete(Log).where(Log.execucao_id == execucao_id)
+        result = db.execute(stmt)
         db.commit()
-        return count
+        return result.rowcount
