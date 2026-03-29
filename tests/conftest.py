@@ -14,6 +14,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from toninho.models import Base, Execucao, Processo
+from toninho.models.enums import VolumeStatus, VolumeTipo
+from toninho.models.volume import Volume
 
 
 @pytest.fixture
@@ -146,6 +148,21 @@ def execucao_factory(
         return execucao
 
     return _create_execucao
+
+
+@pytest.fixture
+def volume(db: Session) -> Volume:
+    """Creates a test volume."""
+    vol = Volume(
+        nome="Volume Teste",
+        path="/tmp/test-output",
+        tipo=VolumeTipo.LOCAL,
+        status=VolumeStatus.ATIVO,
+    )
+    db.add(vol)
+    db.commit()
+    db.refresh(vol)
+    return vol
 
 
 # ─── Additional fixtures ──────────────────────────────────────────────────────

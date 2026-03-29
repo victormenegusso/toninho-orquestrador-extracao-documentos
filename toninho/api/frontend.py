@@ -18,12 +18,14 @@ from sqlalchemy.orm import Session
 from toninho.api.dependencies.execucao_deps import get_execucao_service
 from toninho.api.dependencies.pagina_extraida_deps import get_pagina_extraida_service
 from toninho.api.dependencies.processo_deps import get_processo_service
+from toninho.api.dependencies.volume_deps import get_volume_service
 from toninho.core.database import get_db
 from toninho.core.exceptions import NotFoundError
 from toninho.models.enums import ExecucaoStatus, PaginaStatus, ProcessoStatus
 from toninho.services.execucao_service import ExecucaoService
 from toninho.services.pagina_extraida_service import PaginaExtraidaService
 from toninho.services.processo_service import ProcessoService
+from toninho.services.volume_service import VolumeService
 
 router = APIRouter(tags=["Frontend"])
 
@@ -461,6 +463,69 @@ async def pagina_detail(
         pagina=pagina,
     )
     return templates.TemplateResponse("pages/paginas/detail.html", context)
+
+
+# ==================== Rotas de Volumes ====================
+
+
+@router.get(
+    "/volumes",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def volumes_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    service: VolumeService = Depends(get_volume_service),
+):
+    """Lista de volumes de armazenamento."""
+    volumes_resp = service.list_volumes(db, page=1, per_page=100)
+    context = get_template_context(
+        request,
+        title="Volumes",
+        volumes=volumes_resp.data,
+    )
+    return templates.TemplateResponse("pages/volumes/list.html", context)
+
+
+@router.get(
+    "/volumes/novo",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def volumes_create(request: Request):
+    """Formulário de criação de novo volume."""
+    context = get_template_context(
+        request,
+        title="Novo Volume",
+        volume=None,
+    )
+    return templates.TemplateResponse("pages/volumes/form.html", context)
+
+
+@router.get(
+    "/volumes/{id}/editar",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def volumes_edit(
+    request: Request,
+    id: UUID,
+    db: Session = Depends(get_db),
+    service: VolumeService = Depends(get_volume_service),
+):
+    """Formulário de edição de volume existente."""
+    try:
+        volume = service.get_volume(db, id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Volume não encontrado")
+    volume_dict = volume.model_dump(mode="json")
+    context = get_template_context(
+        request,
+        title=f"Editar: {volume.nome}",
+        volume=volume_dict,
+    )
+    return templates.TemplateResponse("pages/volumes/form.html", context)
 
 
 # ==================== Helpers ====================

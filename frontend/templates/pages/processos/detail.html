@@ -123,8 +123,9 @@
                         <p class="font-medium mt-1">{{ 'Sim' if config.respect_robots_txt else 'Não' }}</p>
                     </div>
                     <div>
-                        <p class="text-gray-500">Diretório de Saída</p>
-                        <p class="font-medium mt-1 font-mono text-xs">{{ config.output_dir }}</p>
+                        <p class="text-gray-500">Volume de Saída</p>
+                        <p class="font-medium mt-1">{{ config.volume.nome if config.volume else 'N/A' }}</p>
+                        <p class="text-xs text-gray-400 font-mono mt-0.5">{{ config.volume.path if config.volume else '' }}</p>
                     </div>
                     <div>
                         <p class="text-gray-500">URLs</p>

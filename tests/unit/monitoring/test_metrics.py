@@ -10,9 +10,12 @@ from toninho.models.enums import (
     AgendamentoTipo,
     ExecucaoStatus,
     FormatoSaida,
+    VolumeStatus,
+    VolumeTipo,
 )
 from toninho.models.execucao import Execucao
 from toninho.models.processo import Processo
+from toninho.models.volume import Volume
 from toninho.monitoring.metrics import MetricsService
 
 
@@ -116,13 +119,23 @@ class TestMetricsService:
         db.commit()
         db.refresh(p)
 
+        v = Volume(
+            nome="Vol Metrics Schedule",
+            path="/tmp/metrics-schedule",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(v)
+        db.commit()
+        db.refresh(v)
+
         c = Configuracao(
             processo_id=p.id,
             urls=["https://example.com"],
             agendamento_tipo=AgendamentoTipo.RECORRENTE,
             agendamento_cron="0 * * * *",
             formato_saida=FormatoSaida.ARQUIVO_UNICO,
-            output_dir="/tmp/output",
+            volume_id=v.id,
         )
         db.add(c)
         db.commit()
@@ -135,12 +148,22 @@ class TestMetricsService:
 
     def test_count_processes_without_schedule(self, db: Session, processo: Processo):
         """Processo sem agendamento não conta em with_schedule."""
+        v = Volume(
+            nome="Vol Metrics NoSchedule",
+            path="/tmp/metrics-nosched",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(v)
+        db.commit()
+        db.refresh(v)
+
         c = Configuracao(
             processo_id=processo.id,
             urls=["https://example.com"],
             agendamento_tipo=AgendamentoTipo.MANUAL,
             formato_saida=FormatoSaida.ARQUIVO_UNICO,
-            output_dir="/tmp/output",
+            volume_id=v.id,
         )
         db.add(c)
         db.commit()

@@ -68,3 +68,16 @@ class MetodoExtracao(str, Enum):
         "html2text"  # Método atual: BeautifulSoup + html2text (rápido, suporta SPA)
     )
     DOCLING = "docling"  # IBM Docling: saída semântica estruturada (não suporta SPA)
+
+
+class VolumeStatus(str, Enum):
+    """Status de um volume de armazenamento."""
+
+    ATIVO = "ativo"  # Volume disponível para uso
+    INATIVO = "inativo"  # Volume desativado (não aparece no combo de seleção)
+
+
+class VolumeTipo(str, Enum):
+    """Tipo de backend de armazenamento do volume."""
+
+    LOCAL = "local"  # Diretório local no filesystem

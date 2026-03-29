@@ -19,8 +19,11 @@ from toninho.models.enums import (
     FormatoSaida,
     MetodoExtracao,
     PaginaStatus,
+    VolumeStatus,
+    VolumeTipo,
 )
 from toninho.models.pagina_extraida import PaginaExtraida
+from toninho.models.volume import Volume
 from toninho.workers.utils import ExtractionOrchestrator
 
 
@@ -74,13 +77,21 @@ class TestOrchestratorComDocling:
         p = Processo(nome=f"test-{uuid.uuid4().hex[:6]}", descricao="d")
         db.add(p)
         db.flush()
+        v = Volume(
+            nome=f"vol-{uuid.uuid4().hex[:6]}",
+            path=f"/tmp/test-{uuid.uuid4().hex[:6]}",
+            tipo=VolumeTipo.LOCAL,
+            status=VolumeStatus.ATIVO,
+        )
+        db.add(v)
+        db.flush()
         c = Configuracao(
             processo_id=p.id,
             urls=urls,
             timeout=30,
             max_retries=1,
             formato_saida=FormatoSaida.MULTIPLOS_ARQUIVOS,
-            output_dir="output",
+            volume_id=v.id,
             agendamento_tipo=AgendamentoTipo.MANUAL,
             metodo_extracao=metodo,
         )

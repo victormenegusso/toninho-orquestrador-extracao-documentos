@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
+from toninho.models.configuracao import Configuracao
 from toninho.models.enums import ProcessoStatus
 from toninho.models.processo import Processo
 
@@ -214,7 +215,7 @@ class ProcessoRepository:
             select(Processo)
             .where(Processo.id == processo_id)
             .options(
-                joinedload(Processo.configuracoes),
+                joinedload(Processo.configuracoes).joinedload(Configuracao.volume),
                 joinedload(Processo.execucoes),
             )
         )

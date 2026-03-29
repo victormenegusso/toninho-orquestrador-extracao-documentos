@@ -16,7 +16,7 @@
     'timeout': processo.configuracoes[0].timeout if processo and processo.configuracoes else 3600,
     'max_retries': processo.configuracoes[0].max_retries if processo and processo.configuracoes else 3,
     'formato_saida': processo.configuracoes[0].formato_saida if processo and processo.configuracoes else 'multiplos_arquivos',
-    'output_dir': processo.configuracoes[0].output_dir if processo and processo.configuracoes else './output',
+    'volume_id': (processo.configuracoes[0].volume_id|string) if processo and processo.configuracoes and processo.configuracoes[0].volume_id else '',
     'agendamento_tipo': processo.configuracoes[0].agendamento_tipo if processo and processo.configuracoes else 'manual',
     'agendamento_cron': processo.configuracoes[0].agendamento_cron if processo and processo.configuracoes and processo.configuracoes[0].agendamento_cron else '',
     'use_browser': processo.configuracoes[0].use_browser if processo and processo.configuracoes else false,
@@ -122,15 +122,15 @@
                         </div>
 
                         <div>
-                            <label for="output_dir" class="block text-sm font-medium text-gray-700 mb-1">Diretório de saída</label>
-                            <input id="output_dir" type="text" x-model="config.output_dir"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   placeholder="./output">
-                            <div class="mt-1 flex flex-wrap gap-2 text-xs">
-                                <button type="button" @click="config.output_dir = './output'" class="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200">./output</button>
-                                <button type="button" @click="config.output_dir = '/tmp/output'" class="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200">/tmp/output</button>
-                            </div>
-                            <p x-show="errors.output_dir" x-text="errors.output_dir" class="text-sm text-red-600 mt-1"></p>
+                            <label for="volume_id" class="block text-sm font-medium text-gray-700 mb-1">Volume de saída</label>
+                            <select id="volume_id" x-model="config.volume_id"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Selecione um volume...</option>
+                                <template x-for="vol in volumes" :key="vol.id">
+                                    <option :value="vol.id" x-text="vol.nome + ' (' + vol.path + ')'"></option>
+                                </template>
+                            </select>
+                            <p x-show="errors.volume_id" x-text="errors.volume_id" class="text-sm text-red-600 mt-1"></p>
                         </div>
                     </div>
 
@@ -240,6 +240,7 @@ function processoForm(initialProcesso, initialConfig) {
         isSubmitting: false,
         globalError: '',
         errors: {},
+        volumes: [],
         form: {
             nome: initialProcesso.nome || '',
             descricao: initialProcesso.descricao || '',
@@ -250,7 +251,7 @@ function processoForm(initialProcesso, initialConfig) {
             timeout: Number(initialConfig.timeout || 3600),
             max_retries: Number(initialConfig.max_retries || 3),
             formato_saida: initialConfig.formato_saida || 'multiplos_arquivos',
-            output_dir: initialConfig.output_dir || './output',
+            volume_id: initialConfig.volume_id || '',
             agendamento_tipo: initialConfig.agendamento_tipo || 'manual',
             agendamento_cron: initialConfig.agendamento_cron || '',
             agendamento_datetime: '',
@@ -260,9 +261,26 @@ function processoForm(initialProcesso, initialConfig) {
         },
 
         async init() {
+            await this.loadVolumes();
             if (this.isEdit) {
                 this.tryParseOneTimeFromCron();
             }
+        },
+
+        async loadVolumes() {
+            try {
+                const response = await fetch('/api/v1/volumes/ativos');
+                if (response.ok) {
+                    const payload = await response.json();
+                    this.volumes = payload.data || [];
+                    // Force re-apply selection after options render
+                    if (this.config.volume_id) {
+                        const saved = this.config.volume_id;
+                        this.config.volume_id = '';
+                        this.$nextTick(() => { this.config.volume_id = saved; });
+                    }
+                }
+            } catch (_) {}
         },
 
         async loadCurrentConfig() {
@@ -279,7 +297,7 @@ function processoForm(initialProcesso, initialConfig) {
                 this.config.timeout = data.timeout;
                 this.config.max_retries = data.max_retries;
                 this.config.formato_saida = data.formato_saida;
-                this.config.output_dir = data.output_dir;
+                this.config.volume_id = data.volume_id;
                 this.config.agendamento_tipo = data.agendamento_tipo;
                 this.config.agendamento_cron = data.agendamento_cron || '';
                 this.config.use_browser = Boolean(data.use_browser);
@@ -386,8 +404,8 @@ function processoForm(initialProcesso, initialConfig) {
             if (this.config.max_retries < 0 || this.config.max_retries > 10) {
                 this.setError('max_retries', 'Tentativas deve estar entre 0 e 10.');
             }
-            if (!this.config.output_dir || !this.config.output_dir.trim()) {
-                this.setError('output_dir', 'Diretório de saída é obrigatório.');
+            if (!this.config.volume_id) {
+                this.setError('volume_id', 'Volume de saída é obrigatório.');
             }
 
             if (this.config.agendamento_tipo === 'recorrente' && !this.config.agendamento_cron.trim()) {
@@ -464,7 +482,7 @@ function processoForm(initialProcesso, initialConfig) {
                 timeout: Number(this.config.timeout),
                 max_retries: Number(this.config.max_retries),
                 formato_saida: this.config.formato_saida,
-                output_dir: this.config.output_dir.trim(),
+                volume_id: this.config.volume_id,
                 agendamento_tipo: this.config.agendamento_tipo,
                 agendamento_cron: cron,
                 use_browser: Boolean(this.config.use_browser),

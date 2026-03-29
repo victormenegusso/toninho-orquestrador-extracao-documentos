@@ -57,7 +57,7 @@ COPY --chown=toninho:toninho . .
 RUN chmod +x /app/entrypoint.sh
 
 # Criar diretórios necessários
-RUN mkdir -p /app/output /app/logs && \
+RUN mkdir -p /app/output /app/logs /app/data && \
     chown -R toninho:toninho /app
 
 # Mudar para usuário não-root

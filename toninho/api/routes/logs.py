@@ -184,11 +184,12 @@ async def stream_logs(
     from asyncio import sleep
 
     from sqlalchemy import select as sa_select
+    from sqlalchemy.orm import sessionmaker
 
     from toninho.models.enums import ExecucaoStatus
     from toninho.models.log import Log
 
-    # Verificar execução existe
+    # Verificar execução existe (usa a sessão do request, liberada logo após)
     from toninho.repositories.execucao_repository import ExecucaoRepository
 
     execucao_repo = ExecucaoRepository()
@@ -206,38 +207,41 @@ async def stream_logs(
         ExecucaoStatus.CONCLUIDO_COM_ERROS,
     }
 
+    # Derive factory from injected db so tests can override the engine
+    poll_session_factory = sessionmaker(
+        bind=db.get_bind(), autocommit=False, autoflush=False, expire_on_commit=False
+    )
+
     async def event_generator():
         ultimo_id = None
         while True:
-            # Buscar novos logs desde o último ID
-            stmt = (
-                sa_select(Log)
-                .where(Log.execucao_id == execucao_id)
-                .order_by(Log.timestamp.asc())
-            )
-            if ultimo_id is not None:
-                from sqlalchemy import select as sel
+            # Sessão curta por iteração para não reter conexões do pool
+            poll_db = poll_session_factory()
+            try:
+                stmt = (
+                    sa_select(Log)
+                    .where(Log.execucao_id == execucao_id)
+                    .order_by(Log.timestamp.asc())
+                )
+                if ultimo_id is not None:
+                    ultimo_log = poll_db.execute(
+                        sa_select(Log).where(Log.id == ultimo_id)
+                    ).scalar_one_or_none()
+                    if ultimo_log:
+                        stmt = stmt.where(Log.timestamp > ultimo_log.timestamp)
 
-                from toninho.models.log import Log as LogModel
+                novos_logs = list(poll_db.execute(stmt).scalars().all())
+                for log in novos_logs:
+                    log_response = LogResponse.model_validate(log)
+                    yield f"data: {log_response.model_dump_json()}\n\n"
+                    ultimo_id = log.id
 
-                # Filter logs com id > ultimo_id by timestamp comparison
-                ultimo_log = db.execute(
-                    sel(LogModel).where(LogModel.id == ultimo_id)
-                ).scalar_one_or_none()
-                if ultimo_log:
-                    stmt = stmt.where(Log.timestamp > ultimo_log.timestamp)
-
-            novos_logs = list(db.execute(stmt).scalars().all())
-            for log in novos_logs:
-                log_response = LogResponse.model_validate(log)
-                yield f"data: {log_response.model_dump_json()}\n\n"
-                ultimo_id = log.id
-
-            # Verificar se execução finalizou (re-query para estado atualizado)
-            execucao_atual = execucao_repo.get_by_id(db, execucao_id)
-            if execucao_atual is None or execucao_atual.status in ESTADOS_FINAIS:
-                yield "event: done\ndata: {}\n\n"
-                break
+                execucao_atual = execucao_repo.get_by_id(poll_db, execucao_id)
+                if execucao_atual is None or execucao_atual.status in ESTADOS_FINAIS:
+                    yield "event: done\ndata: {}\n\n"
+                    break
+            finally:
+                poll_db.close()
 
             await sleep(1)
 

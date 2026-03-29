@@ -13,11 +13,14 @@ from toninho.models.enums import (
     LogNivel,
     PaginaStatus,
     ProcessoStatus,
+    VolumeStatus,
+    VolumeTipo,
 )
 from toninho.models.execucao import Execucao
 from toninho.models.log import Log
 from toninho.models.pagina_extraida import PaginaExtraida
 from toninho.models.processo import Processo
+from toninho.models.volume import Volume
 
 __all__ = [
     # Base
@@ -30,6 +33,7 @@ __all__ = [
     "Execucao",
     "Log",
     "PaginaExtraida",
+    "Volume",
     # Enums
     "ProcessoStatus",
     "FormatoSaida",
@@ -37,4 +41,6 @@ __all__ = [
     "ExecucaoStatus",
     "LogNivel",
     "PaginaStatus",
+    "VolumeStatus",
+    "VolumeTipo",
 ]

@@ -71,6 +71,15 @@ from toninho.schemas.validators import (
     validate_urls_list,
 )
 
+# Volume
+from toninho.schemas.volume import (
+    VolumeCreate,
+    VolumeResponse,
+    VolumeSummary,
+    VolumeUpdate,
+    VolumeValidationResult,
+)
+
 __all__ = [
     # Base
     "BaseSchema",
@@ -117,6 +126,12 @@ __all__ = [
     "PaginaExtraidaResponse",
     "PaginaExtraidaSummary",
     "PaginaExtraidaDetail",
+    # Volume
+    "VolumeCreate",
+    "VolumeUpdate",
+    "VolumeResponse",
+    "VolumeSummary",
+    "VolumeValidationResult",
 ]
 
 # Rebuild models with forward references
