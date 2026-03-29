@@ -523,3 +523,199 @@ class TestExtractionOrchestratorMetodoExtracao:
             )
 
         assert resultado["status"] == ExecucaoStatus.CONCLUIDO
+
+
+# ────────────────────────────────────── Arquivo Único (consolidation) ────
+
+
+class TestExtractionOrchestratorArquivoUnico:
+    """Testes para consolidação em arquivo único."""
+
+    @pytest.fixture
+    def configuracao_arquivo_unico(self, db, processo, test_volume):
+        c = Configuracao(
+            processo_id=processo.id,
+            urls=["https://example.com/a", "https://example.com/b"],
+            timeout=30,
+            max_retries=1,
+            formato_saida=FormatoSaida.ARQUIVO_UNICO,
+            volume_id=test_volume.id,
+            agendamento_tipo=AgendamentoTipo.MANUAL,
+        )
+        db.add(c)
+        db.commit()
+        db.refresh(c)
+        return c
+
+    @staticmethod
+    def _write_mock_files(mock_storage, processo_id, execucao_id, urls):
+        """Pre-write files that _extract_url would create."""
+        import asyncio as _asyncio
+
+        from toninho.extraction.utils import build_output_path as _bop
+
+        for url in urls:
+            path = _bop(str(processo_id), str(execucao_id), url)
+            content = f"# Content from {url}\n\nSome markdown content."
+            _asyncio.run(mock_storage.save_file(path, content.encode("utf-8")))
+
+    def test_consolidates_files_when_arquivo_unico(
+        self, db, processo, configuracao_arquivo_unico, mock_storage
+    ):
+        """Deve criar resultado_completo.md quando formato_saida=ARQUIVO_UNICO."""
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+        db.refresh(execucao)
+
+        self._write_mock_files(
+            mock_storage,
+            processo.id,
+            execucao.id,
+            configuracao_arquivo_unico.urls,
+        )
+
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
+            mock_extract.return_value = SUCESSO_RESULT
+            resultado = ExtractionOrchestrator(db, storage=mock_storage).run(
+                execucao.id
+            )
+
+        assert resultado["status"] == ExecucaoStatus.CONCLUIDO
+
+        consolidated_path = f"{processo.id}/{execucao.id}/resultado_completo.md"
+        assert mock_storage.exists(consolidated_path)
+
+    def test_consolidated_file_contains_all_urls(
+        self, db, processo, configuracao_arquivo_unico, mock_storage
+    ):
+        """Arquivo consolidado deve conter separadores com cada URL."""
+        import asyncio as _asyncio
+
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+        db.refresh(execucao)
+
+        self._write_mock_files(
+            mock_storage,
+            processo.id,
+            execucao.id,
+            configuracao_arquivo_unico.urls,
+        )
+
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
+            mock_extract.return_value = SUCESSO_RESULT
+            ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+
+        consolidated_path = f"{processo.id}/{execucao.id}/resultado_completo.md"
+        content = _asyncio.run(mock_storage.get_file(consolidated_path))
+        text = content.decode("utf-8")
+
+        assert "# URL: https://example.com/a" in text
+        assert "# URL: https://example.com/b" in text
+        assert "---" in text
+
+    def test_no_consolidation_when_multiplos_arquivos(
+        self, db, processo, configuracao, mock_storage
+    ):
+        """Não deve consolidar quando formato_saida=MULTIPLOS_ARQUIVOS."""
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+        db.refresh(execucao)
+
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
+            mock_extract.return_value = SUCESSO_RESULT
+            ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+
+        consolidated_path = f"{processo.id}/{execucao.id}/resultado_completo.md"
+        assert not mock_storage.exists(consolidated_path)
+
+    def test_no_consolidation_when_all_pages_fail(
+        self, db, processo, configuracao_arquivo_unico, mock_storage
+    ):
+        """Não deve consolidar quando todas as páginas falharam."""
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+        db.refresh(execucao)
+
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
+            mock_extract.return_value = ERRO_RESULT
+            ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+
+        consolidated_path = f"{processo.id}/{execucao.id}/resultado_completo.md"
+        assert not mock_storage.exists(consolidated_path)
+
+    def test_consolidation_only_includes_successful_pages(
+        self, db, processo, configuracao_arquivo_unico, mock_storage
+    ):
+        """Consolidação deve incluir apenas páginas com sucesso."""
+        import asyncio as _asyncio
+
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+        db.refresh(execucao)
+
+        self._write_mock_files(
+            mock_storage,
+            processo.id,
+            execucao.id,
+            ["https://example.com/a"],
+        )
+
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
+            mock_extract.side_effect = [SUCESSO_RESULT, ERRO_RESULT]
+            ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+
+        consolidated_path = f"{processo.id}/{execucao.id}/resultado_completo.md"
+        assert mock_storage.exists(consolidated_path)
+
+        content = _asyncio.run(mock_storage.get_file(consolidated_path))
+        text = content.decode("utf-8")
+        assert "# URL: https://example.com/a" in text
+        assert "# URL: https://example.com/b" not in text
+
+    def test_consolidation_creates_log(
+        self, db, processo, configuracao_arquivo_unico, mock_storage
+    ):
+        """Consolidação deve registrar log INFO."""
+        from toninho.models.log import Log
+
+        execucao = Execucao(processo_id=processo.id, status=ExecucaoStatus.CRIADO)
+        db.add(execucao)
+        db.commit()
+        db.refresh(execucao)
+
+        self._write_mock_files(
+            mock_storage,
+            processo.id,
+            execucao.id,
+            configuracao_arquivo_unico.urls,
+        )
+
+        with patch.object(
+            ExtractionOrchestrator, "_extract_url", new_callable=AsyncMock
+        ) as mock_extract:
+            mock_extract.return_value = SUCESSO_RESULT
+            ExtractionOrchestrator(db, storage=mock_storage).run(execucao.id)
+
+        logs = db.query(Log).filter(Log.execucao_id == execucao.id).all()
+        consolidation_logs = [
+            log for log in logs if "consolidado" in log.mensagem.lower()
+        ]
+        assert len(consolidation_logs) == 1
+        assert consolidation_logs[0].contexto is not None
+        assert consolidation_logs[0].contexto["paginas_consolidadas"] == 2
