@@ -15,13 +15,20 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from toninho.api.dependencies.configuracao_deps import get_configuracao_service
 from toninho.api.dependencies.execucao_deps import get_execucao_service
 from toninho.api.dependencies.pagina_extraida_deps import get_pagina_extraida_service
 from toninho.api.dependencies.processo_deps import get_processo_service
 from toninho.api.dependencies.volume_deps import get_volume_service
 from toninho.core.database import get_db
 from toninho.core.exceptions import NotFoundError
-from toninho.models.enums import ExecucaoStatus, PaginaStatus, ProcessoStatus
+from toninho.models.enums import (
+    ExecucaoStatus,
+    FormatoSaida,
+    PaginaStatus,
+    ProcessoStatus,
+)
+from toninho.services.configuracao_service import ConfiguracaoService
 from toninho.services.execucao_service import ExecucaoService
 from toninho.services.pagina_extraida_service import PaginaExtraidaService
 from toninho.services.processo_service import ProcessoService
@@ -404,12 +411,21 @@ async def execucao_paginas(
     db: Session = Depends(get_db),
     execucao_service: ExecucaoService = Depends(get_execucao_service),
     pagina_service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
+    config_service: ConfiguracaoService = Depends(get_configuracao_service),
 ):
     """Lista páginas extraídas de uma execução."""
     try:
         execucao = execucao_service.get_execucao(db, execucao_id)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Execução não encontrada")
+
+    # Determinar formato_saida do processo
+    formato_saida = FormatoSaida.MULTIPLOS_ARQUIVOS.value
+    try:
+        config = config_service.get_configuracao_by_processo(db, execucao.processo_id)
+        formato_saida = config.formato_saida
+    except Exception:
+        pass
 
     status_filter = _parse_pagina_status_filter(status)
     paginas_resp = pagina_service.list_paginas_by_execucao(
@@ -436,6 +452,7 @@ async def execucao_paginas(
         paginas=paginas_resp,
         estatisticas=estatisticas,
         total_size_formatted=total_size_formatted,
+        formato_saida=formato_saida,
         status_filter=status or "",
         search=search or "",
     )
