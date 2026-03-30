@@ -201,6 +201,115 @@ def download_all_paginas(
     )
 
 
+@router_execucoes.get(
+    "/{execucao_id}/download-consolidated",
+    summary="Download do arquivo consolidado (arquivo único)",
+    responses={
+        200: {"description": "Arquivo markdown consolidado"},
+        404: {
+            "description": "Execução não encontrada ou sem arquivo consolidado",
+            "model": ErrorResponse,
+        },
+    },
+)
+def download_consolidated(
+    execucao_id: UUID,
+    db: Session = Depends(get_db),
+    service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
+):
+    """Download do arquivo markdown consolidado de uma execução com formato arquivo_unico."""
+    from toninho.models.execucao import Execucao
+
+    execucao = db.query(Execucao).filter(Execucao.id == execucao_id).first()
+    if not execucao:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada"
+        )
+
+    # Derive the consolidated file path from an existing page's path
+    try:
+        paginas_resp = service.list_paginas_by_execucao(
+            db, execucao_id, page=1, per_page=1, status=PaginaStatus.SUCESSO
+        )
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    if not paginas_resp.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nenhuma página extraída com sucesso",
+        )
+
+    first_page = service.get_pagina_extraida(db, paginas_resp.data[0].id)
+    exec_dir = Path(first_page.caminho_arquivo).parent
+    consolidated_path = exec_dir / "resultado_completo.md"
+
+    if not consolidated_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Arquivo consolidado não encontrado. "
+            "Este processo pode não estar configurado como 'Arquivo Único'.",
+        )
+
+    return FileResponse(
+        path=str(consolidated_path),
+        media_type="application/octet-stream",
+        filename="resultado_completo.md",
+        headers={"Content-Disposition": 'attachment; filename="resultado_completo.md"'},
+    )
+
+
+@router_execucoes.get(
+    "/{execucao_id}/consolidated-content",
+    summary="Conteúdo do arquivo consolidado como texto",
+    responses={
+        200: {"description": "Conteúdo markdown como texto"},
+        404: {
+            "description": "Execução não encontrada ou sem arquivo consolidado",
+            "model": ErrorResponse,
+        },
+    },
+)
+def get_consolidated_content(
+    execucao_id: UUID,
+    db: Session = Depends(get_db),
+    service: PaginaExtraidaService = Depends(get_pagina_extraida_service),
+):
+    """Retorna o conteúdo do arquivo consolidado como texto para preview."""
+    from toninho.models.execucao import Execucao
+
+    execucao = db.query(Execucao).filter(Execucao.id == execucao_id).first()
+    if not execucao:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada"
+        )
+
+    try:
+        paginas_resp = service.list_paginas_by_execucao(
+            db, execucao_id, page=1, per_page=1, status=PaginaStatus.SUCESSO
+        )
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    if not paginas_resp.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nenhuma página extraída com sucesso",
+        )
+
+    first_page = service.get_pagina_extraida(db, paginas_resp.data[0].id)
+    exec_dir = Path(first_page.caminho_arquivo).parent
+    consolidated_path = exec_dir / "resultado_completo.md"
+
+    if not consolidated_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Arquivo consolidado não encontrado.",
+        )
+
+    return PlainTextResponse(content=consolidated_path.read_text(encoding="utf-8"))
+
+
 # ---------------------------------------------------------------------------
 # Rotas por pagina_id
 # ---------------------------------------------------------------------------
@@ -260,7 +369,7 @@ def download_pagina(
 
         return FileResponse(
             path=str(filepath),
-            media_type="text/markdown",
+            media_type="application/octet-stream",
             filename=filename,
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )

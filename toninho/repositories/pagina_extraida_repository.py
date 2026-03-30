@@ -155,7 +155,7 @@ class PaginaExtraidaRepository:
 
     def delete_by_execucao_id(self, db: Session, execucao_id: UUID) -> int:
         """
-        Deleta todas as páginas de uma execução.
+        Deleta todas as páginas de uma execução via bulk DELETE.
 
         Args:
             db: Sessão do SQLAlchemy
@@ -164,10 +164,9 @@ class PaginaExtraidaRepository:
         Returns:
             Quantidade de registros deletados
         """
-        stmt = select(PaginaExtraida).where(PaginaExtraida.execucao_id == execucao_id)
-        paginas = list(db.execute(stmt).scalars().all())
-        count = len(paginas)
-        for pagina in paginas:
-            db.delete(pagina)
+        from sqlalchemy import delete
+
+        stmt = delete(PaginaExtraida).where(PaginaExtraida.execucao_id == execucao_id)
+        result = db.execute(stmt)
         db.commit()
-        return count
+        return result.rowcount

@@ -14,7 +14,13 @@ from sqlalchemy.orm import Session, joinedload
 from toninho.extraction.extractor import PageExtractor
 from toninho.extraction.storage import StorageInterface, get_storage
 from toninho.extraction.utils import build_output_path
-from toninho.models.enums import ExecucaoStatus, LogNivel, MetodoExtracao, PaginaStatus
+from toninho.models.enums import (
+    ExecucaoStatus,
+    FormatoSaida,
+    LogNivel,
+    MetodoExtracao,
+    PaginaStatus,
+)
 
 
 class ExtractionOrchestrator:
@@ -184,6 +190,15 @@ class ExtractionOrchestrator:
 
             db.commit()
 
+        # 6b. Consolidar em arquivo único se configurado
+        if configuracao.formato_saida == FormatoSaida.ARQUIVO_UNICO and sucesso > 0:
+            self._consolidate_files(
+                db=db,
+                storage=storage,
+                execucao_id=execucao_id,
+                processo_id=str(execucao.processo_id),
+            )
+
         # 7. Calcular taxa de erro e status final
         if total > 0:
             execucao.taxa_erro = round((falha / total) * 100, 2)
@@ -223,6 +238,81 @@ class ExtractionOrchestrator:
         }
 
     # ──────────────────────────────────────────────── helpers ────────────
+
+    def _consolidate_files(
+        self,
+        db: Session,
+        storage: StorageInterface,
+        execucao_id: uuid.UUID,
+        processo_id: str,
+    ) -> str | None:
+        """
+        Consolida arquivos extraídos com sucesso em um único markdown.
+
+        Lê cada arquivo individual, concatena com separadores e salva
+        como resultado_completo.md.
+
+        Returns:
+            Caminho do arquivo consolidado, ou None se nada consolidado.
+        """
+        from toninho.models.pagina_extraida import PaginaExtraida
+
+        paginas = (
+            db.query(PaginaExtraida)
+            .filter(
+                PaginaExtraida.execucao_id == execucao_id,
+                PaginaExtraida.status == PaginaStatus.SUCESSO,
+            )
+            .order_by(PaginaExtraida.timestamp)
+            .all()
+        )
+
+        if not paginas:
+            return None
+
+        parts: list[str] = []
+        for pagina in paginas:
+            relative_path = build_output_path(
+                processo_id, str(execucao_id), pagina.url_original
+            )
+            try:
+                content_bytes = asyncio.run(storage.get_file(relative_path))
+                text = content_bytes.decode("utf-8", errors="replace")
+                parts.append(f"---\n\n# URL: {pagina.url_original}\n\n{text}")
+            except FileNotFoundError:
+                self._add_log(
+                    db,
+                    execucao_id,
+                    LogNivel.WARNING,
+                    f"Arquivo não encontrado ao consolidar: {relative_path}",
+                    contexto={"caminho": relative_path},
+                )
+                continue
+
+        if not parts:
+            return None
+
+        consolidated_content = "\n\n".join(parts)
+        output_path = f"{processo_id}/{execucao_id}/resultado_completo.md"
+
+        saved_path = asyncio.run(
+            storage.save_file(output_path, consolidated_content.encode("utf-8"))
+        )
+
+        self._add_log(
+            db,
+            execucao_id,
+            LogNivel.INFO,
+            f"Arquivo único consolidado: {output_path} ({len(parts)} páginas)",
+            contexto={
+                "caminho": output_path,
+                "paginas_consolidadas": len(parts),
+                "tamanho_bytes": len(consolidated_content.encode("utf-8")),
+            },
+        )
+        db.flush()
+
+        return saved_path
 
     @staticmethod
     async def _extract_url(

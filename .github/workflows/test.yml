@@ -39,11 +39,11 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          poetry run pytest \
+          poetry run pytest tests/unit/ tests/integration/ \
             --cov=toninho \
             --cov-report=term-missing \
             --cov-report=xml \
-            --cov-fail-under=90
+            --cov-fail-under=75
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

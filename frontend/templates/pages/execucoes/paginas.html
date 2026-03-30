@@ -14,9 +14,37 @@
             </p>
         </div>
         <div class="flex space-x-2">
+            {% if formato_saida == 'arquivo_unico' %}
+            <!-- Preview Consolidated -->
+            <button
+                onclick="openConsolidatedPreview('{{ execucao.id }}')"
+                class="inline-flex items-center px-4 py-2 bg-white text-green-700 text-sm font-medium rounded-md border border-green-600 hover:bg-green-50 {% if not paginas or not paginas.data %}opacity-50 cursor-not-allowed pointer-events-none{% endif %}">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                Preview Arquivo Único
+            </button>
+            <!-- Download Consolidated -->
+            <a
+                href="/api/v1/execucoes/{{ execucao.id }}/download-consolidated"
+                download="resultado_completo.md"
+                hx-boost="false"
+                class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 {% if not paginas or not paginas.data %}opacity-50 cursor-not-allowed pointer-events-none{% endif %}">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Baixar Arquivo Único
+            </a>
+            {% endif %}
             <!-- Download All -->
             <a
                 href="/api/v1/execucoes/{{ execucao.id }}/download-all"
+                download="execucao_paginas.zip"
+                hx-boost="false"
                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 {% if not paginas or not paginas.data %}opacity-50 cursor-not-allowed pointer-events-none{% endif %}">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -31,15 +59,15 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <p class="text-sm text-gray-600">Total de Páginas</p>
-            <p class="text-2xl font-bold mt-1">{{ execucao.total_urls or '—' }}</p>
+            <p class="text-2xl font-bold mt-1">{{ estatisticas.total if estatisticas else '—' }}</p>
         </div>
         <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <p class="text-sm text-gray-600">Extraídas com Sucesso</p>
-            <p class="text-2xl font-bold text-green-600 mt-1">{{ execucao.urls_sucesso or '—' }}</p>
+            <p class="text-2xl font-bold text-green-600 mt-1">{{ estatisticas.sucesso if estatisticas else '—' }}</p>
         </div>
         <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <p class="text-sm text-gray-600">Erros</p>
-            <p class="text-2xl font-bold text-red-600 mt-1">{{ execucao.urls_erro or '—' }}</p>
+            <p class="text-2xl font-bold text-red-600 mt-1">{{ estatisticas.falhou if estatisticas else '—' }}</p>
         </div>
         <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <p class="text-sm text-gray-600">Tamanho Total</p>
@@ -100,5 +128,34 @@
 
 <!-- Preview Modal -->
 {% include 'components/preview_modal.html' %}
+
+<script>
+function openConsolidatedPreview(execucaoId) {
+    const modal = document.getElementById('preview-modal');
+    modal.style.display = 'block';
+
+    document.getElementById('preview-loading').classList.remove('hidden');
+    document.getElementById('preview-content').classList.add('hidden');
+    document.getElementById('preview-error').classList.add('hidden');
+    document.getElementById('preview-title').textContent = 'Arquivo Consolidado';
+    document.getElementById('preview-url').textContent = 'resultado_completo.md';
+    document.getElementById('preview-download-link').href = `/api/v1/execucoes/${execucaoId}/download-consolidated`;
+
+    fetch(`/api/v1/execucoes/${execucaoId}/consolidated-content`)
+        .then(r => {
+            if (!r.ok) throw new Error('Arquivo não disponível');
+            return r.text();
+        })
+        .then(content => {
+            document.getElementById('preview-loading').classList.add('hidden');
+            document.getElementById('preview-content').classList.remove('hidden');
+            document.getElementById('preview-text').textContent = content;
+        })
+        .catch(() => {
+            document.getElementById('preview-loading').classList.add('hidden');
+            document.getElementById('preview-error').classList.remove('hidden');
+        });
+}
+</script>
 
 {% endblock %}

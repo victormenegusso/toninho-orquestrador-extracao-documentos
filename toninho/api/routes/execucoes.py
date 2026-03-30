@@ -109,6 +109,7 @@ def list_execucoes(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     status: ExecucaoStatus | None = Query(None),
+    processo_id: UUID | None = Query(None),
     ordem: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     service: ExecucaoService = Depends(get_execucao_service),
@@ -119,6 +120,7 @@ def list_execucoes(
         page=page,
         per_page=per_page,
         status=status,
+        processo_id=processo_id,
         ordem=ordem,
     )
 

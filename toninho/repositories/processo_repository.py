@@ -202,22 +202,83 @@ class ProcessoRepository:
 
     def get_by_id_with_details(self, db: Session, processo_id: UUID) -> Processo | None:
         """
-        Busca um processo por ID com eager loading de relacionamentos.
+        Busca um processo por ID com eager loading de configurações.
 
         Args:
             db: Sessão do SQLAlchemy
             processo_id: UUID do processo
 
         Returns:
-            Processo encontrado com configurações e execuções, ou None
+            Processo encontrado com configurações, ou None
         """
         stmt = (
             select(Processo)
             .where(Processo.id == processo_id)
             .options(
                 joinedload(Processo.configuracoes).joinedload(Configuracao.volume),
-                joinedload(Processo.execucoes),
             )
         )
         result = db.execute(stmt)
         return result.unique().scalar_one_or_none()
+
+    def count_execucoes(self, db: Session, processo_id: UUID) -> int:
+        """
+        Conta total de execuções de um processo.
+
+        Args:
+            db: Sessão do SQLAlchemy
+            processo_id: UUID do processo
+
+        Returns:
+            Total de execuções
+        """
+        from toninho.models.execucao import Execucao
+
+        stmt = select(func.count(Execucao.id)).where(
+            Execucao.processo_id == processo_id
+        )
+        return db.execute(stmt).scalar() or 0
+
+    def get_recent_execucoes(
+        self, db: Session, processo_id: UUID, limit: int = 5
+    ) -> list:
+        """
+        Retorna as execuções mais recentes de um processo.
+
+        Args:
+            db: Sessão do SQLAlchemy
+            processo_id: UUID do processo
+            limit: Número máximo de execuções
+
+        Returns:
+            Lista de execuções ordenadas por created_at desc
+        """
+        from toninho.models.execucao import Execucao
+
+        stmt = (
+            select(Execucao)
+            .where(Execucao.processo_id == processo_id)
+            .order_by(Execucao.created_at.desc())
+            .limit(limit)
+        )
+        return list(db.execute(stmt).scalars().all())
+
+    def has_execucoes_em_andamento(self, db: Session, processo_id: UUID) -> int:
+        """
+        Conta execuções em andamento de um processo.
+
+        Args:
+            db: Sessão do SQLAlchemy
+            processo_id: UUID do processo
+
+        Returns:
+            Número de execuções EM_EXECUCAO
+        """
+        from toninho.models.enums import ExecucaoStatus
+        from toninho.models.execucao import Execucao
+
+        stmt = select(func.count(Execucao.id)).where(
+            Execucao.processo_id == processo_id,
+            Execucao.status == ExecucaoStatus.EM_EXECUCAO,
+        )
+        return db.execute(stmt).scalar() or 0
