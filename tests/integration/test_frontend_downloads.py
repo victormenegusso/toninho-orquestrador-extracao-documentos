@@ -383,13 +383,10 @@ class TestDownloadIndividualEndpoint:
         assert resp.status_code == 200
 
     def test_download_pagina_content_type(self, client, pagina_sucesso_no_db):
-        """Download retorna content-type text/markdown."""
+        """Download retorna content-type application/octet-stream (forçar download)."""
         resp = client.get(f"/api/v1/paginas/{pagina_sucesso_no_db.id}/download")
         assert resp.status_code == 200
-        assert (
-            "markdown" in resp.headers["content-type"]
-            or "text" in resp.headers["content-type"]
-        )
+        assert "application/octet-stream" in resp.headers["content-type"]
 
     def test_download_pagina_inexistente_retorna_404(self, client):
         """Página inexistente retorna 404."""
