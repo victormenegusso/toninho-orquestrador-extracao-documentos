@@ -31,6 +31,7 @@
             <a
                 href="/api/v1/execucoes/{{ execucao.id }}/download-consolidated"
                 download="resultado_completo.md"
+                hx-boost="false"
                 class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 {% if not paginas or not paginas.data %}opacity-50 cursor-not-allowed pointer-events-none{% endif %}">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -43,6 +44,7 @@
             <a
                 href="/api/v1/execucoes/{{ execucao.id }}/download-all"
                 download="execucao_paginas.zip"
+                hx-boost="false"
                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 {% if not paginas or not paginas.data %}opacity-50 cursor-not-allowed pointer-events-none{% endif %}">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
