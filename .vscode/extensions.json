@@ -2,10 +2,11 @@
     "recommendations": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-python.black-formatter",
         "ms-azuretools.vscode-docker",
         "tamasfe.even-better-toml",
         "charliermarsh.ruff",
-        "ms-python.isort"
+        "ms-python.isort",
+        "github.copilot",
+        "github.copilot-chat"
     ]
 }
