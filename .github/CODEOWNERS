@@ -1,0 +1,30 @@
+# Default owner for everything
+* @menegusso
+
+# Backend core
+toninho/core/ @menegusso
+toninho/api/ @menegusso
+toninho/services/ @menegusso
+toninho/models/ @menegusso
+toninho/schemas/ @menegusso
+
+# Extraction engine
+toninho/extraction/ @menegusso
+
+# Workers
+toninho/workers/ @menegusso
+
+# Frontend
+frontend/ @menegusso
+
+# Tests
+tests/ @menegusso
+
+# Infrastructure
+Dockerfile @menegusso
+docker-compose*.yml @menegusso
+.github/ @menegusso
+
+# Documentation
+docs/ @menegusso
+*.md @menegusso

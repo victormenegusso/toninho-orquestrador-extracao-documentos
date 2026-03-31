@@ -1,0 +1,36 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Configure Poetry virtualenv in-project
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install project dependencies
+        run: poetry install --no-interaction
+
+      - name: Install Playwright browsers
+        run: poetry run playwright install --with-deps chromium
